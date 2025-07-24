@@ -31,6 +31,7 @@ type SessionRecord struct {
 	Level         int8
 	Advanced      bool
 	Private       string
+	PrivateCheck  string
 	Public        string
 	Created       int64
 	Expires       int64

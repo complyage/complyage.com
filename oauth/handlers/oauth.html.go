@@ -79,7 +79,6 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	if scope == "" {
-		// No scope provided, use all permitted
 		requestedScopes = siteScopes
 	} else {
 		scopeParts := strings.Split(scope, ",")
@@ -89,7 +88,10 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// Check if this scope is in allowed site permissions
+			//||------------------------------------------------------------------------------------------------||
+			//|| Check if this scope is in allowed site permissions
+			//||------------------------------------------------------------------------------------------------||
+
 			found := false
 			for _, allowed := range siteScopes {
 				if strings.EqualFold(s, allowed) {
@@ -97,6 +99,10 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 			}
+
+			//||------------------------------------------------------------------------------------------------||
+			//|| An unapproved scope was requested
+			//||------------------------------------------------------------------------------------------------||
 
 			if !found {
 				responses.ErrorHTML(w, fmt.Sprintf("Invalid scope requested: %s", s))
@@ -119,9 +125,11 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			session = interfaces.SessionRecord{
 				ID:            "0",
-				Username:      "asdasd2adwasdX",
+				Username:      "Anonymous",
 				Status:        "RMVD",
 				Type:          "USER",
+				Private:       "",
+				PrivateCheck:  "",
 				Level:         0,
 				Verifications: []interfaces.UserVerification{},
 			}
@@ -260,14 +268,17 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	oauthSession := interfaces.OAuthSession{
-		APIKey:    apiKey,
-		AccessKey: uuid.NewString(),
-		State:     state,
-		Redirect:  siteRedirect,
-		Scope:     requestedScopes,
-		Expires:   time.Now().Unix() + 3600,
-		Created:   time.Now().Unix(),
-		Status:    "PEND",
+		AccountID:    session.ID,
+		Private:      session.Private,
+		PrivateCheck: session.PrivateCheck,
+		APIKey:       apiKey,
+		AccessKey:    uuid.NewString(),
+		State:        state,
+		Redirect:     siteRedirect,
+		Scope:        requestedScopes,
+		Expires:      time.Now().Unix() + 3600,
+		Created:      time.Now().Unix(),
+		Status:       "PEND",
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -319,13 +330,23 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	vars["REMAININGCOUNT"] = fmt.Sprintf("%d", totalPermissions-matchPermissions)
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Do we need to request the private key?
+	//||------------------------------------------------------------------------------------------------||
+
+	pErr := helpers.CheckPrivateKey(session.Private, session.PrivateCheck)
+	if pErr != nil || session.Private == "" {
+		vars["OAUTHAPPR"] = os.Getenv("VITE_COMPLYAGE_OAUTH_URL") + "/v1/private?oauth=" + referenceKey
+	} else {
+		vars["OAUTHAPPR"] = os.Getenv("VITE_COMPLYAGE_OAUTH_URL") + "/v1/approve?oauth=" + referenceKey
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Add Translations
 	//||------------------------------------------------------------------------------------------------||
 
 	vars["LOGINURL"] = os.Getenv("VITE_COMPLYAGE_UI_URL") + "/login?oauth=" + referenceKey
 	vars["SIGNUPURL"] = os.Getenv("VITE_COMPLYAGE_UI_URL") + "/signup?oauth=" + referenceKey
 	vars["OAUTHDENY"] = os.Getenv("VITE_COMPLYAGE_OAUTH_URL") + "/v1/deny?oauth=" + referenceKey
-	vars["OAUTHAPPR"] = os.Getenv("VITE_COMPLYAGE_OAUTH_URL") + "/v1/approve?oauth=" + referenceKey
 	vars["EXITURL"] = os.Getenv("VITE_COMPLYAGE_UI_URL") + "/exit"
 	vars["ACCOUNTURL"] = os.Getenv("VITE_COMPLYAGE_UI_URL") + "/members/"
 	vars["VERIFYURL"] = os.Getenv("VITE_COMPLYAGE_UI_URL") + "/members/verify?oauth=" + referenceKey

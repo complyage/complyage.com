@@ -35,15 +35,17 @@ func SessionCreate(email string, account models.Account) (string, error) {
 	//||------------------------------------------------------------------------------------------------||
 
 	session := interfaces.SessionRecord{
-		Email:    email,
-		Username: account.AccountUsername,
-		ID:       account.IDAccount,
-		Status:   account.AccountStatus,
-		Type:     account.AccountType,
-		Level:    DerefInt8(account.AccountLevel),
-		Advanced: account.AccountAdvanced != nil && *account.AccountAdvanced == 1,
-		Created:  time.Now().Unix(),
-		Expires:  time.Now().Add(30 * 24 * time.Hour).Unix(),
+		Email:        email,
+		Username:     account.AccountUsername,
+		ID:           account.IDAccount,
+		Status:       account.AccountStatus,
+		Type:         account.AccountType,
+		Private:      account.AccountPrivate,
+		PrivateCheck: account.AccountPrivateCheck,
+		Level:        DerefInt8(account.AccountLevel),
+		Advanced:     account.AccountAdvanced != nil && *account.AccountAdvanced == 1,
+		Created:      time.Now().Unix(),
+		Expires:      time.Now().Add(30 * 24 * time.Hour).Unix(),
 	}
 
 	//||------------------------------------------------------------------------------------------------||

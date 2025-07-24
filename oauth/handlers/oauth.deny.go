@@ -68,8 +68,12 @@ func DenyOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	q := url.Values{}
-	q.Set("state", session.State)
-	q.Set("scope", strings.Join(session.Scope, ","))
+	if session.State != "" {
+		q.Set("state", session.State)
+	}
+	if len(session.Scope) > 0 {
+		q.Set("scope", strings.Join(session.Scope, ","))
+	}
 	q.Set("accessKey", session.AccessKey)
 	q.Set("status", session.Status)
 
@@ -84,5 +88,7 @@ func DenyOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Send it
 	//||------------------------------------------------------------------------------------------------||
 
-	http.Redirect(w, r, finalURL, http.StatusFound)
+	//http.Redirect(w, r, finalURL, http.StatusFound)
+	responses.ErrorHTML(w, "<p>Redirect URL:</p><pre>"+finalURL+"</pre>")
+
 }

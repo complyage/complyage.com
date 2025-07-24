@@ -1,22 +1,7 @@
 package interfaces
 
 //||------------------------------------------------------------------------------------------------||
-//|| OAuth Session
-//||------------------------------------------------------------------------------------------------||
-
-type OAuthSession struct {
-	APIKey    string   `json:"apiKey"`
-	AccessKey string   `json:"accessKey"`
-	State     string   `json:"state"`
-	Redirect  string   `json:"redirect"`
-	Scope     []string `json:"scope"`
-	Expires   int64    `json:"expires"`
-	Created   int64    `json:"created"`
-	Status    string   `json:"status"`
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| OAuth Response Types
+//|| OAuth Verification
 //||------------------------------------------------------------------------------------------------||
 
 type OAuthVerification struct {
@@ -24,6 +9,45 @@ type OAuthVerification struct {
 	Status string      `json:"status"`
 	Data   interface{} `json:"data"`
 }
+
+//||------------------------------------------------------------------------------------------------||
+//|| OAuth Session
+//||------------------------------------------------------------------------------------------------||
+
+type OAuthSession struct {
+	AccountID     string              `json:"userId"`
+	APIKey        string              `json:"apiKey"`
+	AccessKey     string              `json:"accessKey"`
+	State         string              `json:"state"`
+	Private       string              `json:"private"`
+	PrivateCheck  string              `json:"id"`
+	Redirect      string              `json:"redirect"`
+	Scope         []string            `json:"scope"`
+	Expires       int64               `json:"expires"`
+	Created       int64               `json:"created"`
+	Status        string              `json:"status"`
+	Verifications []OAuthVerification `json:"verifications"`
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| OAuth Session
+//||------------------------------------------------------------------------------------------------||
+
+type OAuthAccess struct {
+	AccountID     string              `json:"userId"`
+	APIKey        string              `json:"apiKey"`
+	AccessKey     string              `json:"accessKey"`
+	State         string              `json:"state"`
+	Scope         []string            `json:"scope"`
+	Expires       int64               `json:"expires"`
+	Created       int64               `json:"created"`
+	Status        string              `json:"status"`
+	Verifications []OAuthVerification `json:"verifications"`
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| OAuth Response Types
+//||------------------------------------------------------------------------------------------------||
 
 type OAuthRequirements struct {
 	Type     string `json:"type"`

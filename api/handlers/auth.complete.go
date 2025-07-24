@@ -12,6 +12,7 @@ import (
 	"base/models"
 	"base/responses"
 	"fmt"
+	"helpers/encrypt"
 	"log"
 	"net/http"
 )
@@ -74,6 +75,10 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	passwordHash, saltHash := helpers.GeneratePassword(password)
+	passwordCheck, err := encrypt.GenerateCheckKey(passwordHash)
+	if (err != nil) || (passwordCheck == "") {
+		responses.Error(w, http.StatusBadRequest, "Could not generate private key")
+	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Generate Private / Public Key
@@ -103,6 +108,7 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 	account.AccountEmail = dbAccount.AccountEmail
 	account.AccountPublic = publicKey
 	account.AccountPassword = passwordHash
+	account.AccountPrivateCheck = passwordCheck
 	account.AccountSalt = saltHash
 	account.AccountLevel = helpers.Int8Ptr(1) // Default level
 	account.AccountStatus = "ACTV"

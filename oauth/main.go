@@ -91,8 +91,9 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Global Routes
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/oauth", handlers.ServeOAuthHandler).Methods("GET")
+	router.HandleFunc("/v1/authorize", handlers.ServeOAuthHandler).Methods("GET")
 	router.HandleFunc("/v1/deny", handlers.DenyOAuthHandler).Methods("GET")
+	router.HandleFunc("/v1/approve", handlers.ApproveOAuthHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Simple Up Check
 	//||------------------------------------------------------------------------------------------------||
