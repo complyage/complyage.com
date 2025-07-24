@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>ComplyAge :: OAuth Provide</title>
+      <style>
+            body,
+            html {
+                  margin: 0;
+                  padding: 0;
+                  font-family: sans-serif;
+                  height: 100%;
+                  font-size:1.1em;
+            }
+
+            .container {
+                  position: fixed;
+                  width: 100%;
+                  height: 100%;
+                  display: flex;
+                  flex-direction: column;
+            }
+
+            .content {
+                  display: flex;
+                  flex: 1;
+            }
+
+            .sidebar {
+                  width: 100%;
+                  background-color: #f7fafc;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  padding: 2rem;
+            }
+
+            .main-panel {
+                  background : oklch(0.2326 0.014 253.1);
+                  display: flex;
+                  flex-direction: column;
+                  height: 100%;
+                  width : 100%;
+            }
+
+            div.userLoggedOut,
+            div.userLoggedIn {
+                  display                 : none;
+                  flex-direction          : column;
+                  align-items             : center;
+                  justify-content         : center;
+                  text-align              : center;
+                  padding                 : 1rem 2rem;
+                  border-radius           : 10px;
+                  font-size               : 0.9rem;
+                  font-weight             : bold;
+                  width                   : 80%;
+            }
+
+            body.loggedout div.userLoggedOut { 
+                  display                 : flex;
+            }
+
+            body.loggedin div.userLoggedIn { 
+                  display                 : flex;
+                  background-color        : rgba(0, 0, 0, 0.03);
+            }
+
+            div.userLoggedIn span.username { 
+                  color                   : blue;
+                  padding                 : 5px 5px 0;
+            }
+
+            div.userLoggedIn a {
+                  text-decoration         : none;
+                  color                   : #fff;
+                  background-color        : rgba(0,0,0,0.8);
+                  padding                 : 1rem 3rem;
+                  border-radius           : 5px;
+                  font-size               : 1.2rem;
+                  margin-top              : 1rem;
+            }
+
+            .siteArea { 
+                  display                 : flex;
+                  flex-direction          : column;
+                  align-items             : center;
+                  text-align              : center;
+            }
+
+            .permissionList { 
+                  flex-grow               : 1;
+                  overflow-y              : auto;
+                  padding                 : 1rem 2rem;                  
+                  height                  : 500px;
+                  max-height              : 80%;
+            }
+
+            .permissionList ul {
+                  margin                  : 0;
+                  padding                 : 0;
+                  list-style              : none;
+            }            
+
+            .permission {
+                  display                 : flex;
+                  align-items             : center;
+                  justify-content         : space-between;
+                  gap                     : 1rem;
+                  padding                 : 1rem;
+                  background-color        : rgba(255,255,255,0.05);
+                  border-left             : 6px solid #fb923c;
+                  border-radius           : 0.1rem;
+                  margin-bottom           : 0.5rem;
+                  font-family             : sans-serif;
+                  opacity                 : 0.8;
+            }
+
+            .permission.loggedout {
+                  border-left             : 6px solid #999;
+            }
+
+            .permission.verified {
+                  border-left             : 6px solid rgba(0, 255, 0, 0.5);
+            }
+
+            .permission.unverified {
+                  border-left             : 6px solid red;
+            }
+
+            .permission-content {
+                  flex-grow               : 1;
+                  display                 : flex;
+                  flex-direction          : column;
+                  justify-content         : center;
+            }
+
+            .permission-title {
+                  font-size               : 1.2rem;
+                  color                   : #F1F1F1;
+                  margin                  : 0;
+            }
+            
+            .permission-desc {
+                  font-size               : 0.9rem;
+                  color                   : #BBB;
+                  margin                  : 0.25rem 0 0;
+            }
+
+            .permission:hover {
+                  opacity                 : 1;
+                  background-color        : rgba(0,0,0,0.1);
+                  transition              : 0.15s ease-in-out;
+                  cursor                  : pointer;
+            }
+
+            .permission-icon {
+                  display                 : flex;
+                  align-items             : center;
+                  justify-content         : center;
+                  flex-shrink             : 0;
+                  padding                 : 0 1em;
+                  color                   : rgba(255, 255, 255, 0.2);
+            }
+
+            .permission-status {
+                  display                 : flex;
+                  align-items             : center;
+                  color                   : #FFF;
+            }
+
+            .permission-status .status {
+                  margin-left            : 0.5rem;
+                  display                : none;
+                  width                  : 36px;
+                  height                 : 36px;
+            }
+
+            .permission-status .href {
+                  display                 : none;
+            }
+
+            .permission.verified .permission-status .ready {
+                  display                 : block;
+                  padding                 : 0 0.2rem;
+                  text-align              : center;
+                  width                   : 40px;
+                  height                  : 40px;
+
+            }
+
+            .permission.unverified .permission-status .href.miss {
+                  display                 : flex;
+                  background              : rgba(255, 0, 0, 0.8);
+                  border-radius           : 5px;
+                  padding                 : 0.3rem 1rem 0.3rem 0rem;
+                  text-align              : center;
+                  flex-direction          : row;
+                  align-items             : center;
+                  color                   : #FFF;
+                  text-decoration         : none;
+                  font-size               : 0.9rem;
+                  font-weight             : bold;
+            }
+
+            .permission.unverified .permission-status .status.miss {
+                  display                 : block;
+                  margin-right            : 10px;
+                  width                   : 28px;
+                  height                  : 28px;
+            }
+
+            .permission.loggedout .permission-status .loggedout {
+                  display                 : block;
+            }
+
+            .allowButtons {
+                  display                 : flex;
+                  justify-content         : center;
+                  align-items             : center;
+                  padding                 : 1rem 2rem;
+                  gap                     : 1.5rem;
+            }
+
+            .allowButtons a {
+                  padding                 : 15px 30px;
+                  font-size               : 1.1rem;
+                  font-weight             : bold;
+                  border                  : none;
+                  border-radius           : 8px;
+                  cursor                  : pointer;
+                  transition              : all 0.2s ease-in-out;
+                  background              : linear-gradient(to right, #3b82f6, #2563eb);
+                  color                   : white;
+                  box-shadow              : 0 4px 14px rgba(0, 0, 0, 0.25);
+                  width                   : 50%;
+                  display                 : none;
+                  text-align              : center;
+                  text-decoration         : none;
+            }
+
+            body.mismatched .allowButtons a.mismatch {
+                  display                 : block;
+                  background              : rgba(255, 0, 0, 0.7);
+            }
+
+            body.loggedout .allowButtons a.login {
+                  display: block;
+            }
+
+            body.matched .allowButtons a.accept {
+                  display: block;
+            }
+
+            body.matched .allowButtons a.deny {
+                  display: block;
+            }
+
+
+            .allowButtons a:hover {
+                  transform: scale(1.05);
+                  background: linear-gradient(to right, #2563eb, #1e40af);
+            }
+
+            .allowButtons a.deny { 
+                  background: #ef4444;
+            }
+            
+            .allowButtons a.login { 
+                  background: rgba(59, 130, 246, 0.8);
+            }
+
+
+      </style>
+</head>
+
+<body class="[%%LOGINSTATUS%%] [%%VERIFICATIONSTATUS%%]">
+      <main class="container">
+            <div class="content">
+                  <aside class="sidebar">
+                        <div style="
+                        flex:1/2;
+                        display:flex;
+                        flex-direction:column;
+                        align-items:center;
+                        justify-content:center;
+                        text-align:center;
+                        width:80%;
+                  ">                        
+                        <img class="agegate-logo" src="[%%COMPLYAGE_CLIENT_URL%%]/static/media/complyage.webp" alt="Logo">
+                        <h2 style="color:#666;font-size:1rem; line-height:1.4em padding: 0 0 0 10px;">[%%TAKEBACKPRIVACY%%] <br />[%%KEEPPRIVACY%%]</h2>
+                        <p style="font-size:0.9em; line-height:1.8em; padding: 6px 10px 25px; margin:0;">[%%BLURBSIGNUP%%]<b>[%%PRIVACYSECURE%%]</b></p>
+                        <div class="userLoggedOut">
+                              <a href="[%%SIGNUPURL%%]" style="text-decoration:none; background-color:black; color:white; border:none; padding:15px 25px; border-radius:5px; cursor:pointer; font-size:1.2rem; font-weight:bold;">[%%SIGNUPSECURE%%]</a>
+                              <span style="font-size:0.8em; font-weight:bold; padding:10px">[%%TAKEBACKPRIVACY%%]</span>
+                        </div>
+                        <div class="userLoggedIn">
+                              You are currently logged in as <span class="username"">[%%USERNAME%%]</span>
+                              <a href="[%%ACCOUNTURL%%]" target="_blank">[%%MY_ACCOUNT%%]</a>
+                        </div>
+                  </div>
+                  </aside>
+                  <section class="main-panel">
+                        <div class="siteArea">
+                              <img
+                                 src="[%%SITE_LOGO%%]"
+                                 alt="Site Logo"
+                                 width="80"
+                                 height="80"
+                              >
+                              <h1 style="color:#CCC; margin: 0; padding: 0px 5px 5px;">[%%SITE_NAME%%]</h1>
+                              <b style="margin-bottom: 10px; color: blue;">[%%SITE_URL%%] <span style="color:#EEE">[%%WANTSTOACCESSINFO%%]</b>
+                        </div>
+                        <div class="permissionList">
+                              <ul>
+                                    [%%PERMISSIONS%%]
+                              </ul>
+                        </div>   
+                        <div class="allowButtons">
+                              <a class="allow login" href="[%%LOGINURL%%]">[%%WORD_LOGIN%%]</a>
+                              <a class="allow accept" href="[%%OAUTHAPPR%%]">[%%WORD_ALLOW%%]</a>
+                              <a class="allow deny"  href="[%%OAUTHDENY%%]">[%%WORD_DENY%%]</a>
+                              <a class="allow mismatch" href="[%%VERIFYALLURL%%]?apiKey=[%%APIKEY%%]">[%%VERIFY_REMAINING_ITEMS%%] - [%%REMAININGCOUNT%%]</a>
+                        </div>
+                  </section>
+            </div>
+      </main>
+</body>
+
+</html>

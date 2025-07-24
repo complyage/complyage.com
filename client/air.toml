@@ -1,0 +1,36 @@
+# .air.toml
+
+# Which directory to watch
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o tmp/main ."
+  bin = "tmp/main"
+  include_ext = ["go"]
+  exclude_dir = ["cli", "assets", "cache", "loader", "vendor", "tmp", "frontend", "loader\*", "loader\node_modules\*"]
+  exclude_file = []
+  exclude_regex = ["_test.go"]
+  follow_symlink = true
+  stop_on_error = true
+
+[build.watcher]
+  directories = [
+    ".",
+    "../base"
+  ]
+
+[color]
+  main = "yellow"
+  watcher = "cyan"
+  build = "green"
+  runner = "magenta"
+
+[log]
+  time = true
+
+[debug]
+  enable = false
+
+[env]
+  INCLUDE = ["ENV_MODE", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"]

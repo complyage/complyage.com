@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_server
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  api:
+    build: ./api
+    container_name: go_api
+    restart: always
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: myuser
+      DB_PASSWORD: mypassword
+      DB_NAME: myapp
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - "8080:8080"
+    command: ["go", "run", "main.go"]
+
+  frontend:
+    build: ./ui
+    container_name: react_ui
+    restart: always
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    command: ["npm", "run", "dev"]
+
+  mock:
+    build: ./mock
+    container_name: php_mock
+    restart: always
+    ports:
+      - "7357:80"
+    volumes:
+      - ./mock:/var/www/html
+
+volumes:
+  db_data:
+  redis_data:

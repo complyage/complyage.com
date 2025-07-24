@@ -1,0 +1,17 @@
+{
+	"name": "loader",
+	"version": "1.0.0",
+	"main": "index.js",
+	"scripts": {
+            "build": "esbuild src/index.ts --bundle --outfile=../../public/js/loader.js --platform=browser --format=iife --minify",
+            "dev":   "esbuild src/index.ts --bundle --outfile=../../public/js/loader.dev.js --platform=browser --format=iife --watch"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"dependencies": {
+		"esbuild": "^0.25.8",
+		"typescript": "^5.8.3"
+	}
+}
