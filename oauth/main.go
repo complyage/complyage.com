@@ -94,6 +94,8 @@ func main() {
 	router.HandleFunc("/v1/authorize", handlers.ServeOAuthHandler).Methods("GET")
 	router.HandleFunc("/v1/deny", handlers.DenyOAuthHandler).Methods("GET")
 	router.HandleFunc("/v1/approve", handlers.ApproveOAuthHandler).Methods("GET")
+	router.HandleFunc("/v1/private", handlers.ServePrivateKeyForm).Methods("GET")
+	router.HandleFunc("/v1/private/submit", handlers.SubmitPrivateKeyHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Simple Up Check
 	//||------------------------------------------------------------------------------------------------||
