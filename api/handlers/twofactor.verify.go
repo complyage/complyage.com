@@ -144,6 +144,7 @@ func TwoFactorHandler(w http.ResponseWriter, r *http.Request) {
 	account.AccountEmail = hashedEmail
 	account.AccountStatus = constants.AccountStatus.Verified
 	account.AccountLevel = helpers.Int8Ptr(1)
+	account.AccountIdentity = "{}"
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create the Account Record

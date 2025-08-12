@@ -1,7 +1,8 @@
-
 export default interface Verification {
-      id_verification               : number;
-      verification_type             : string;
-      verification_status           : string;
-      verification_meta             : string;
-}
+      id: number;
+      type: string;
+      status: string;
+      meta: string;
+      created: string;
+      updated: string;
+  }

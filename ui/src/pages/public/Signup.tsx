@@ -2,12 +2,18 @@
 //|| Import
 //||------------------------------------------------------------------------------------------------||
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import NavMain from "../../components/nav/NavMain";
-import FooterMain from "../../components/footer/FooterMain";
-import Turnstile from "../../components/base/Turnstile";
-import SpinnerCircle from "../../components/base/SpinnerCircle";
+import React, { useState }                from "react";
+import { useNavigate }                    from "react-router-dom";
+import { useLocation }                 from "react-router-dom";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Components
+//||------------------------------------------------------------------------------------------------||
+
+import NavMain                            from "../../components/nav/NavMain";
+import FooterMain                         from "../../components/footer/FooterMain";
+import Turnstile                          from "../../components/base/Turnstile";
+import SpinnerCircle                      from "../../components/base/SpinnerCircle";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default
@@ -26,6 +32,14 @@ export default function Signup() {
       const [statusMessage, setStatusMessage] = useState("");
 
       //||------------------------------------------------------------------------------------------------||
+      //|| Extract oauth query param from current URL
+      //||------------------------------------------------------------------------------------------------||
+
+      const location      = useLocation();
+      const params        = new URLSearchParams(location.search);
+      const oauthParam    = params.get("oauth");
+
+      //||------------------------------------------------------------------------------------------------||
       //|| CAPTCHA Handler
       //||------------------------------------------------------------------------------------------------||
 
@@ -41,9 +55,10 @@ export default function Signup() {
             e.preventDefault();
 
             const payload = {
-                  captchaToken: captchaToken,
-                  email: email,
-                  type: tab,
+                  area              : "SIGNUP",
+                  captchaToken      : captchaToken,
+                  email             : email,
+                  type              : tab,
             };
 
             try {
@@ -58,7 +73,8 @@ export default function Signup() {
 
                   if (json.success) {
                         const { token } = json.data;
-                        navigate(`/verify?token=${encodeURIComponent(token)}`);
+                        const redirectURL = `/verify?token=${encodeURIComponent(token)}` + (oauthParam ? `&oauth=${oauthParam}` : "");
+                        navigate(redirectURL);
                   } else {
                         setStatusMessage(`❌ Error: ${json.error}`);
                   }
@@ -146,7 +162,7 @@ export default function Signup() {
                                                       {captchaToken ? (
                                                             <button
                                                                   type="submit"
-                                                                  className="btn btn-primary w-full"
+                                                                  className="btn btn-secondary w-full"
                                                                   disabled={!captchaToken}>
                                                                   Sign Up as {tab === "USER" ? "User" : "Vendor"}
                                                             </button>
@@ -168,8 +184,8 @@ export default function Signup() {
                                                 <button onClick={() => navigate("/login")} className="btn btn-black">
                                                       Already have an account?
                                                 </button>
-                                                <button onClick={() => setEmail("")} className="btn btn-secondary">
-                                                      Reset Form
+                                                <button onClick={() => navigate("/forgot")} className="btn btn-tertiary">
+                                                      Forgot your password?
                                                 </button>
                                           </div>
                                     </div>

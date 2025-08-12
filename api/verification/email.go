@@ -18,7 +18,7 @@ import (
 //|| CreateEmailVerification inserts a new email verification record
 //||------------------------------------------------------------------------------------------------||
 
-func CreateEmailVerification(fidAccount string, email string, publicKeyPEM string) error {
+func CreateEmailVerification(fidAccount int64, email string, publicKeyPEM string) error {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Encrypt the email address
@@ -53,28 +53,29 @@ func CreateEmailVerification(fidAccount string, email string, publicKeyPEM strin
 		Where("fid_account = ? AND verification_type = ?", fidAccount, "MAIL").
 		First(&existing).Error
 
-	if err == nil {
-		existing.Data = string(encrypted)
-		existing.Meta = string(metaJSON)
-		existing.Status = "APPR"
-		return db.DB.Save(&existing).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return err // return if there's any other DB error
 	}
 
 	if err == gorm.ErrRecordNotFound {
 		record := models.Verification{
 			FidAccount: fidAccount,
 			Type:       "MAIL",
-			Data:       string(encrypted),
+			Data:       encrypted,
 			Meta:       string(metaJSON),
 			Status:     "APPR",
 		}
 		return db.DB.Create(&record).Error
 	}
 
+	existing.Data = encrypted
+	existing.Meta = string(metaJSON)
+	existing.Status = "APPR"
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Error Handling
 	//||------------------------------------------------------------------------------------------------||
 
-	return err // any other DB error
+	return db.DB.Save(&existing).Error
 
 }

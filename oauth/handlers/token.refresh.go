@@ -66,7 +66,7 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	access := interfaces.OAuthAccess{
 		AccountID:     session.AccountID,
-		APIKey:        session.APIKey,
+		APIKey:        session.ClientID,
 		AccessKey:     session.AccessKey,
 		State:         session.State,
 		Scope:         session.Scope,

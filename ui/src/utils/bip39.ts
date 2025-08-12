@@ -1,4 +1,17 @@
-// Auto-generated BIP39 word list
+import { BIPList } from "../interfaces/bip.list";
+
+export function makeBIPList(): BIPList {
+      const wordList = bip39();
+      const bip39List: BIPList = {
+            "word1": wordList[Math.floor(Math.random() * wordList.length)],
+            "word2": wordList[Math.floor(Math.random() * wordList.length)],
+            "word3": wordList[Math.floor(Math.random() * wordList.length)],
+            "word4": wordList[Math.floor(Math.random() * wordList.length)],
+            "word5": wordList[Math.floor(Math.random() * wordList.length)],
+            "word6": wordList[Math.floor(Math.random() * wordList.length)]
+      };
+      return bip39List;
+}
 
 export function bip39(): string[] {
       return [

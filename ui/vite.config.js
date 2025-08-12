@@ -4,7 +4,7 @@ import path from 'path'
 
 export default defineConfig({
    plugins: [react()],
-   envDir: path.resolve(__dirname, '../base'), 
+   envDir: path.resolve(__dirname, '..'), 
    server: {
       port: 5173,
       proxy: {
@@ -14,6 +14,16 @@ export default defineConfig({
             changeOrigin: true,
             secure: false,
          },
+         '/user': {
+            target: 'http://localhost:8081',
+            changeOrigin: true,
+            secure: false,
+         },         
+         '/verify': {
+            target: 'http://localhost:8081',
+            changeOrigin: true,
+            secure: false,
+         },         
          // If you have other API paths like /v1/api/, add them here too:
          '/v1/api': {
             target: 'http://localhost:8081',

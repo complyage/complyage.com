@@ -4,6 +4,7 @@ import (
 	"base/db"
 	"base/helpers"
 	"base/loaders"
+	"base/template"
 	"fmt"
 	"log"
 	"net/http"
@@ -29,7 +30,7 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Env
 	//||------------------------------------------------------------------------------------------------||
-	err := godotenv.Load("../base/.env")
+	err := godotenv.Load("../.env")
 	if err != nil {
 		fmt.Println("No .env file found, continuing...")
 	}
@@ -45,6 +46,16 @@ func main() {
 		fmt.Println("Running in development mode, using DB")
 		UseInMemory = false
 	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Register Templates
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("oauth", "./assets/oauth.html")
+	template.Register("private", "./assets/private.html")
+	template.Register("private_locked", "./assets/private.locked.html")
+	template.Register("private_unlocked", "./assets/private.unlocked.html")
+	template.Register("private_key", "./assets/private.key.html")
+	template.Register("private_bip39", "./assets/private.bip39.html")
+	template.Register("permission", "./assets/permission.html")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Open DB Connection
 	//||------------------------------------------------------------------------------------------------||
@@ -95,7 +106,7 @@ func main() {
 	router.HandleFunc("/v1/deny", handlers.DenyOAuthHandler).Methods("GET")
 	router.HandleFunc("/v1/approve", handlers.ApproveOAuthHandler).Methods("GET")
 	router.HandleFunc("/v1/private", handlers.ServePrivateKeyForm).Methods("GET")
-	router.HandleFunc("/v1/private/submit", handlers.SubmitPrivateKeyHandler).Methods("GET")
+	router.HandleFunc("/v1/return", handlers.OAuthReturnHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Simple Up Check
 	//||------------------------------------------------------------------------------------------------||

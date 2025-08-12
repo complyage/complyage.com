@@ -1,60 +1,88 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
+
+import React, {useEffect, useState}                   from "react";
+import {useNavigate}                                  from "react-router-dom";
+import SpinnerCircle                                  from "../base/SpinnerCircle";
+
+//||------------------------------------------------------------------------------------------------||
+//|| User Type (Matches /auth/me API Response)
+//||------------------------------------------------------------------------------------------------||
 
 export type User = {
-   user_id: number;
-   email: string;
+	id                : number;
+	email?            : string;
+	status            : string;
+	type              : string;
+	level             : number;
+	security          : number;
+	verifications     : any[];
 };
+
+//||------------------------------------------------------------------------------------------------||
+//|| Props
+//||------------------------------------------------------------------------------------------------||
 
 type RequireMemberProps = {
-   children: (user: User) => React.ReactNode;
+	children: (user: User) => React.ReactNode;
 };
 
-export default function RequireMember({ children }: RequireMemberProps) {
-   const navigate = useNavigate();
-   const [loading, setLoading] = useState(true);
-   const [user, setUser] = useState<User | null>(null);
+//||------------------------------------------------------------------------------------------------||
+//|| RequireMember Component
+//||------------------------------------------------------------------------------------------------||
 
-   useEffect(() => {
-      const checkAuth = async () => {
-         // TEMP: hardcoded user
-         setUser({ user_id: 1, email: "test@example.com" });
-         setLoading(false);
-         return;
+export default function RequireMember({children}: RequireMemberProps) {
+	const navigate = useNavigate();
+	const [loading, setLoading] = useState(true);
+	const [user, setUser] = useState<User | null>(null);
 
-         // Uncomment for real check:
-         // try {
-         //    const res = await fetch("/auth/me", { method: "GET", credentials: "include" });
-         //    if (res.ok) {
-         //       const data = await res.json();
-         //       if (data.success) {
-         //          setUser(data.data);
-         //       } else {
-         //          navigate("/login");
-         //       }
-         //    } else {
-         //       navigate("/login");
-         //    }
-         // } catch (err) {
-         //    console.error(err);
-         //    navigate("/login");
-         // } finally {
-         //    setLoading(false);
-         // }
-      };
+	useEffect(() => {
+		const checkAuth = async () => {
+			try {
+				const res = await fetch("/auth/me", {method: "GET", credentials: "include"});
+				if (!res.ok) {
+					navigate("/login");
+					return;
+				}
 
-      checkAuth();
-   }, [navigate]);
+				const json = await res.json();
+				if (json.success && json.data) {
+					setUser(json.data as User);
+				} else {
+					navigate("/login");
+				}
+			} catch (err) {
+				console.error("Auth check failed", err);
+				navigate("/login");
+			} finally {
+				setLoading(false);
+			}
+		};
 
-   if (loading) {
-      return (
-         <main className="min-h-screen flex items-center justify-center">
-            <p>Checking your login status...</p>
-         </main>
-      );
-   }
+		checkAuth();
+	}, [navigate]);
 
-   if (!user) return null;
+	//||------------------------------------------------------------------------------------------------||
+	//|| Render States
+	//||------------------------------------------------------------------------------------------------||
 
-   return <>{children(user)}</>; // ✅ This is key
+	if (loading) {
+		return (
+                  <main className="min-h-screen flex items-center justify-center">
+                        <div className="flex justify-center items-center w-[300px]">
+                              <SpinnerCircle className="inline-block mx-auto" />
+                        </div>
+                  </main>
+		);
+	}
+
+	if (!user) {
+		return null; // In case of unexpected state
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Render Protected Content
+	//||------------------------------------------------------------------------------------------------||
+	return <>{children(user)}</>;
 }

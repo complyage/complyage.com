@@ -52,7 +52,6 @@ export default function Verifications() {
             <div className="min-h-screen flex bg-base-200">
                <Sidebar onLogout={handleLogout} />
                <main className="flex-1 flex flex-col">
-                  <Topbar email={user.email} userId={user.user_id} />
 
                   <div className="p-10 flex flex-col gap-6">
                      <h1 className="text-3xl font-bold mb-4">

@@ -2,10 +2,16 @@
 //|| Import
 //||------------------------------------------------------------------------------------------------||
 
-import React, {useState} from "react";
-import {useSearchParams, useNavigate} from "react-router-dom";
-import NavMain from "../../components/nav/NavMain";
-import FooterMain from "../../components/footer/FooterMain";
+import React, {useState}                        from "react";
+import {useSearchParams, useNavigate}           from "react-router-dom";
+import { useLocation }                          from "react-router-dom";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Components
+//||------------------------------------------------------------------------------------------------||
+
+import NavMain                                  from "../../components/nav/NavMain";
+import FooterMain                               from "../../components/footer/FooterMain";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default
@@ -24,6 +30,14 @@ export default function TwoFactorVerify() {
 	const [statusMessage, setStatusMessage]   = useState("");
 	const [loading, setLoading]               = useState(false);
 
+      //||------------------------------------------------------------------------------------------------||
+      //|| Extract oauth query param from current URL
+      //||------------------------------------------------------------------------------------------------||
+
+      const location      = useLocation();
+      const params        = new URLSearchParams(location.search);
+      const oauthParam    = params.get("oauth");
+            
 	//||------------------------------------------------------------------------------------------------||
 	//|| Handle Submit
 	//||------------------------------------------------------------------------------------------------||
@@ -53,8 +67,8 @@ export default function TwoFactorVerify() {
                   //||------------------------------------------------------------------------------------------------||
                   //|| Handle the Response
                   //||------------------------------------------------------------------------------------------------||
-                  const next = json.data?.next || "/complete";
-			if (json.success) return navigate(next);
+                  const redirectURL = (oauthParam) ? `/complete?oauth=${oauthParam}` : `/complete`;
+			if (json.success) return navigate(redirectURL);
                   //||------------------------------------------------------------------------------------------------||
                   //|| Failed
                   //||------------------------------------------------------------------------------------------------||
@@ -95,7 +109,7 @@ export default function TwoFactorVerify() {
 							className="flex flex-col gap-4">
 							<input
 								type="text"
-								placeholder="Enter your 2FA code"
+								placeholder="Code"
 								value={code}
 								onChange={(e) => setCode(e.target.value) }
 								className="border border-white w-full text-center tracking-widest text-4xl p-5"

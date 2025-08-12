@@ -5,8 +5,9 @@ package interfaces
 //||------------------------------------------------------------------------------------------------||
 
 type UserVerification struct {
-	ID     int    `json:"id"`
+	ID     int64  `json:"id"`
 	Type   string `json:"type"`
 	Data   string `json:"data"`
+	Meta   string `json:"meta"`
 	Status string `json:"status"`
 }

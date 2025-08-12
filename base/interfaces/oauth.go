@@ -15,12 +15,12 @@ type OAuthVerification struct {
 //||------------------------------------------------------------------------------------------------||
 
 type OAuthSession struct {
-	AccountID     string              `json:"userId"`
-	APIKey        string              `json:"apiKey"`
+	AccountID     int64               `json:"userId"`
+	ClientID      string              `json:"clientId"`
 	AccessKey     string              `json:"accessKey"`
 	State         string              `json:"state"`
 	Private       string              `json:"private"`
-	PrivateCheck  string              `json:"id"`
+	PrivateHash   string              `json:"hash"`
 	Redirect      string              `json:"redirect"`
 	Scope         []string            `json:"scope"`
 	Expires       int64               `json:"expires"`
@@ -34,7 +34,7 @@ type OAuthSession struct {
 //||------------------------------------------------------------------------------------------------||
 
 type OAuthAccess struct {
-	AccountID     string              `json:"userId"`
+	AccountID     int64               `json:"accountId"`
 	APIKey        string              `json:"apiKey"`
 	AccessKey     string              `json:"accessKey"`
 	State         string              `json:"state"`

@@ -1,6 +1,7 @@
 import React from "react";
 import {Link} from "react-router-dom";
 import {ShieldCheck, EyeOff, UserX} from "lucide-react";
+import LinkQuery          from "../../components/dynamic/LinkQuery";
 
 export default function FooterMain() {
 	return (
@@ -17,24 +18,24 @@ export default function FooterMain() {
 					<h4 className="font-bold text-lg mb-4">Quick Links</h4>
 					<ul className="space-y-2">
 						<li>
-							<Link to="/about" className="hover:underline">
+							<LinkQuery to="/about" className="hover:underline">
 								About Us
-							</Link>
+							</LinkQuery>
 						</li>
 						<li>
-							<Link to="/terms" className="hover:underline">
+							<LinkQuery to="/terms" className="hover:underline">
 								Terms of Service
-							</Link>
+							</LinkQuery>
 						</li>
 						<li>
-							<Link to="/privacy" className="hover:underline">
+							<LinkQuery to="/privacy" className="hover:underline">
 								Privacy Policy
-							</Link>
+							</LinkQuery>
 						</li>
 						<li>
-							<Link to="/support" className="hover:underline">
+							<LinkQuery to="/support" className="hover:underline">
 								Support
-							</Link>
+							</LinkQuery>
 						</li>
 					</ul>
 				</div>

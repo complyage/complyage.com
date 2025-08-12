@@ -3,6 +3,7 @@
 //||------------------------------------------------------------------------------------------------||
 
 import React, { useEffect, useState }                 from "react";
+import { useNavigate }                                from "react-router-dom";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components
@@ -20,84 +21,103 @@ export default function MembersSettings() {
       //|| Const
       //||------------------------------------------------------------------------------------------------||
 
-      const [currentPassword, setCurrentPassword]                 = useState("");
-	const [newPassword, setNewPassword]                         = useState("");
-	const [statusMessage, setStatusMessage]                     = useState("");
+      const navigate = useNavigate();
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Const
+      //||------------------------------------------------------------------------------------------------||
+
+      const [password, setPassword]                   = useState("");
+	const [confirmPassword, setConfirmPassword]     = useState("");
+      const [statusMessage, setStatusMessage]         = useState<React.ReactNode>("");
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Alert
+      //||------------------------------------------------------------------------------------------------||
+
+      const showAlert = (message: string, type: "success" | "error" = "success") => {
+            const alertBox = (
+                  <div className={`w-full max-w-2xl text-sm p-4 ${type === "success" ? "bg-green-500" : "bg-red-500"} text-white mb-4 rounded-lg shadow`}>
+                        {message}
+                  </div>
+            );
+            setStatusMessage(alertBox);
+            setTimeout(() => setStatusMessage(""), 5000);
+      };
 
       //||------------------------------------------------------------------------------------------------||
       //|| Update Password
       //||------------------------------------------------------------------------------------------------||
       
-	const handlePasswordUpdate = async () => {
+	const handleLogout = async () => {
 		try {
-			const res = await fetch("/members/password", {
+			const res = await fetch("/auth/logout", {
 				method: "POST",
 				headers: {"Content-Type": "application/x-www-form-urlencoded"},
 				credentials: "include",
-				body: new URLSearchParams({
-					currentPassword,
-					newPassword,
-				}).toString(),
 			});
 
 			const json = await res.json();
 			if (json.success) {
-				setStatusMessage("✅ Password updated successfully.");
-				setCurrentPassword("");
-				setNewPassword("");
-			} else {
-				setStatusMessage(`❌ ${json.error}`);
-			}
+                        navigate("/auth/login");
+                        
+			} else showAlert("Logout failed", "error");
+
 		} catch (err) {
-			setStatusMessage("❌ Something went wrong. Please try again.");
+                  showAlert("Something went wrong. Please try again.", "error");
 		}
 	};
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Handle Delete Private Keys
+      //|| Update Password
       //||------------------------------------------------------------------------------------------------||
+      
+      const handlePasswordUpdate = async () => {
+            if (!password || !confirmPassword) {
+                  showAlert("Please fill out both password fields.", "error");
+                  return;
+            }
+            if (password !== confirmPassword) {
+                  showAlert("Passwords do not match.", "error");
+                  return;
+            }
 
-	const handleDeletePrivateKeys = async () => {
-		if (!window.confirm("Are you sure you want to delete your private keys?")) return;
+            try {
+                  const res = await fetch("/user/reset", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        credentials: "include",
+                        body: new URLSearchParams({
+                              password,
+                              confirmPassword,
+                        }).toString(),
+                  });
 
-		try {
-			const res = await fetch("/members/delete-private-keys", {
-				method: "POST",
-				credentials: "include",
-			});
-			const json = await res.json();
-			if (json.success) {
-				setStatusMessage("✅ Private keys deleted.");
-			} else {
-				setStatusMessage(`❌ ${json.error}`);
-			}
-		} catch (err) {
-			setStatusMessage("❌ Error deleting private keys.");
-		}
-	};
+                  const json = await res.json();
+                  if (json.success) {
+                        showAlert("Password updated successfully.");
+                        setPassword("");
+                        setConfirmPassword("");
+                  } else {
+                        showAlert(json.message || "Failed to update password", "error");
+                  }
+            } catch {
+                  showAlert("Something went wrong. Please try again.", "error");
+            }
+      };
 
       //||------------------------------------------------------------------------------------------------||
       //|| Handle Delete Account
       //||------------------------------------------------------------------------------------------------||
 
-	const handleDeleteAccount = async () => {
-		if (!window.confirm("This will permanently delete your account. Continue?")) return;
-
-		try {
-			const res = await fetch("/members/delete-account", {
-				method: "POST",
-				credentials: "include",
-			});
-			const json = await res.json();
-			if (json.success) {
-				await handleLogout();
-			} else {
-				setStatusMessage(`❌ ${json.error}`);
-			}
-		} catch (err) {
-			setStatusMessage("❌ Error deleting account.");
-		}
-	};
+      const handleDeleteAccount = async () => {
+            if (!window.confirm("This will permanently delete your account. Continue?")) return;
+            try {
+                  navigate("/members/quit"); // Ensure user is logged out before deleting account
+            } catch {
+                  showAlert("❌ Error deleting account.", "error");
+            }
+      };
 
       //||------------------------------------------------------------------------------------------------||
       //|| JSX
@@ -109,19 +129,20 @@ export default function MembersSettings() {
                         {/* Change Password */}
                         <div className="w-full max-w-2xl bg-base-100 shadow-lg rounded-lg p-8 mb-10">
                               <h2 className="text-2xl font-bold mb-4">Change Password</h2>
+                              {statusMessage}
                               <input
                                     type="password"
                                     placeholder="Current password"
                                     className="input input-bordered w-full mb-4"
-                                    value={currentPassword}
-                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                               />
                               <input
                                     type="password"
                                     placeholder="New password"
                                     className="input input-bordered w-full mb-4"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                               />
                               <button onClick={handlePasswordUpdate} className="btn btn-primary">
                                     Update Password
@@ -130,16 +151,6 @@ export default function MembersSettings() {
 
                         <h1 className="text-2xl font-bold bg-black mb-10 p-4">Warning! The following actions are highly destructive and can not be reversed!</h1>
 
-                        {/* Delete Private Keys */}
-                        <div className="w-full max-w-2xl bg-base-100 shadow-lg rounded-lg p-8 mb-10">
-                              <h2 className="text-2xl font-bold mb-4">Delete Private Keys</h2>
-                              <p className="mb-4 text-sm text-base-content/70">
-                                    This action will permanently delete any stored private keys.
-                              </p>
-                              <button onClick={handleDeletePrivateKeys} className="btn btn-warning">
-                                    Delete Private Keys
-                              </button>
-                        </div>
 
                         {/* Delete Account */}
                         <div className="w-full max-w-2xl bg-base-100 shadow-lg rounded-lg p-8">
@@ -151,8 +162,6 @@ export default function MembersSettings() {
                                     Delete Account
                               </button>
                         </div>
-
-                        {statusMessage && <div className="w-full max-w-2xl text-sm p-4 bg-base-100 rounded-lg shadow">{statusMessage}</div>}
                   </>
 		</MembersLayout>
 	);

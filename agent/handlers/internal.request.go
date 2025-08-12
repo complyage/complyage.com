@@ -5,89 +5,84 @@ package handlers
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"api/oauth"
+	"agent/agent_helpers"
+	"agent/agent_interfaces"
 	"base/db"
 	"base/helpers"
-	"base/models"
 	"base/responses"
+	"encoding/json"
 	"net/http"
-	"strings"
+	"os"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Handler
+//|| Handler: Accept AgentRequest and Queue It
 //||------------------------------------------------------------------------------------------------||
 
-func OAuthResponseHandler(w http.ResponseWriter, r *http.Request) {
+func InternalRequestHandler(w http.ResponseWriter, r *http.Request, model string, action string) {
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get the general response
+	//|| Parse JSON Body
 	//||------------------------------------------------------------------------------------------------||
 
-	oauthResponse := oauth.CreateResponse()
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Parse site_public Token
-	//||------------------------------------------------------------------------------------------------||
-
-	token := r.URL.Query().Get("token")
-	if token == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing token parameter")
+	var req agent_interfaces.AgentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		responses.Error(w, http.StatusBadRequest, "Invalid JSON body")
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Load Site by public token
+	//|| Validate Model
 	//||------------------------------------------------------------------------------------------------||
 
-	site, err := helpers.OAuthSite(token)
-	if err == nil {
-		oauthResponse.Site = site
+	if !agent_helpers.IsValidModel(model) {
+		responses.Error(w, http.StatusBadRequest, "Invalid model: "+model)
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get Cookie
+	//|| Validate Action
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
-	myCookie := ""
-	if err == nil {
-		myCookie = cookie.Value
+	if !agent_helpers.IsValidAction(model, action) {
+		responses.Error(w, http.StatusBadRequest, "Invalid action: "+model+"-"+action)
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session Cookie
+	//|| Have Required Media?
 	//||------------------------------------------------------------------------------------------------||
 
-	oauthResponse.User = oauth.CreateUserResponse(myCookie)
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Determine Client IP and Lookup IP record
-	//||------------------------------------------------------------------------------------------------||
-
-	clientIP := helpers.GetClientIP(r)
-	location, err := helpers.GetLocationByIP(clientIP)
-
-	if err == nil && location.Country != "" && location.State != "" {
-		var zone models.Zone
-		if err := db.DB.
-			Where("zone_country = ? AND zone_state = ?", location.Country, location.State).
-			Order("zone_effective DESC").
-			Limit(1).
-			First(&zone).Error; err != nil {
-		}
-
-		reqs := []string{}
-		for _, t := range strings.Split(*zone.ZoneRequirements, ",") {
-			if s := strings.TrimSpace(t); s != "" {
-				reqs = append(reqs, s)
-			}
-		}
+	if len(req.Media) > agent_helpers.RequiresImage(model, action) {
+		responses.Error(w, http.StatusBadRequest, "Invalid media count for action: "+model+"-"+action+". Requires "+string(agent_helpers.RequiresImage(model, action))+" media items.")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Return JSON
+	//|| Add Fields
 	//||------------------------------------------------------------------------------------------------||
 
-	responses.Success(w, http.StatusOK, oauthResponse)
+	req.Action = action
+	req.Model = model
+	req.Timestamp = helpers.UniversalNow()
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Publish to RabbitMQ (using global agent.MQChan)
+	//||------------------------------------------------------------------------------------------------||
+
+	channelName := os.Getenv("RABBITMQ_CHANNEL")
+	if err := agent_helpers.PublishAgentRequest(db.MQChan, channelName, req); err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to enqueue AgentRequest")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Respond with Success
+	//||------------------------------------------------------------------------------------------------||
+
+	responses.Success(w, http.StatusOK, map[string]any{
+		"queued":   true,
+		"action":   req.Action,
+		"callback": req.CallBack,
+	})
 }

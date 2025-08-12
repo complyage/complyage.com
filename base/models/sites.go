@@ -12,8 +12,8 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type Site struct {
-	IDSite     uint   `gorm:"column:id_site;primaryKey;autoIncrement" json:"id"`
-	FidAccount string `gorm:"column:fid_account;size:36;index"          json:"fid_account"`
+	IDSite     uint  `gorm:"column:id_site;primaryKey;autoIncrement" json:"id"`
+	FidAccount int64 `gorm:"column:fid_account;size:36;index"          json:"fid_account"`
 
 	SiteName        string `gorm:"column:site_name;size:128"                 json:"name"`
 	SiteLogo        string `gorm:"column:site_logo;size:128"                 json:"logo"`
@@ -32,13 +32,13 @@ type Site struct {
 
 	SiteTestMode bool `gorm:"column:site_testmode;default:1"            json:"testmode"`
 
-	// new gate fields
 	SiteGateSignup  types.IntBool `gorm:"column:site_gate_signup;default:1" 	json:"gateSignup"`
 	SiteGateConfirm string        `gorm:"column:site_gate_confirm;size:256"       json:"gateConfirm"`
 	SiteGateExit    string        `gorm:"column:site_gate_exit;size:256"          json:"gateExit"`
 
-	SiteCreated time.Time `gorm:"column:site_created;autoCreateTime"        json:"created"`
-	SiteUpdated time.Time `gorm:"column:site_updated;autoUpdateTime"        json:"updated"`
+	SiteCreated      time.Time `gorm:"column:site_created;autoCreateTime"        json:"created"`
+	SiteUpdated      time.Time `gorm:"column:site_updated;autoUpdateTime"        json:"updated"`
+	SiteAgentPrivate string    `gorm:"column:site_agent_private;size:64"         json:"agentPrivate"`
 }
 
 //||------------------------------------------------------------------------------------------------||

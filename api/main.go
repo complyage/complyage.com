@@ -30,7 +30,7 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Env
 	//||------------------------------------------------------------------------------------------------||
-	err := godotenv.Load("../base/.env")
+	err := godotenv.Load("../.env")
 	if err != nil {
 		fmt.Println("No .env file found, continuing...")
 	}
@@ -54,6 +54,10 @@ func main() {
 	//|| Connect to Redis
 	//||------------------------------------------------------------------------------------------------||
 	db.ConnectRedis() // Redis
+	//||------------------------------------------------------------------------------------------------||
+	//|| Connect to RabbitMQ
+	//||------------------------------------------------------------------------------------------------||
+	db.ConnectMQ() // RabbitMQ
 	//||------------------------------------------------------------------------------------------------||
 	//|| GORM
 	//||------------------------------------------------------------------------------------------------||
@@ -84,11 +88,6 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	router.Use(LoggerMiddleware)
 	//||------------------------------------------------------------------------------------------------||
-	//|| Global Routes
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/client", handlers.CheckClientEnforcement).Methods("GET")
-	router.HandleFunc("/v1/api/oauth", handlers.OAuthResponseHandler).Methods("GET")
-	//||------------------------------------------------------------------------------------------------||
 	//|| Get News/Zones Public
 	//||------------------------------------------------------------------------------------------------||
 	router.HandleFunc("/v1/api/news", handlers.NewsHandler).Methods("GET")
@@ -109,11 +108,29 @@ func main() {
 	//|| Publc Routes
 	//||------------------------------------------------------------------------------------------------||
 	router.HandleFunc("/auth/signup", handlers.SignupHandler).Methods("POST")
+	router.HandleFunc("/auth/forgot", handlers.ForgotPasswordHandler).Methods("POST")
 	router.HandleFunc("/auth/twofactor", handlers.TwoFactorHandler).Methods("POST")
 	router.HandleFunc("/auth/me", handlers.AuthMeHandler).Methods("GET")
 	router.HandleFunc("/auth/complete", handlers.CompleteHandler).Methods("POST", "GET")
 	router.HandleFunc("/auth/login", handlers.LoginHandler).Methods("POST")
 	router.HandleFunc("/auth/logout", handlers.LogoutHandler).Methods("GET")
+	router.HandleFunc("/auth/generate", handlers.GenerateKeyPairHandler).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| User Routes
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/user/dashboard", handlers.UserDashboard).Methods("GET")
+	router.HandleFunc("/user/verifications", handlers.UserVerifications).Methods("GET")
+	router.HandleFunc("/user/reset", handlers.ResetPasswordHandler).Methods("POST")
+	router.HandleFunc("/user/quit", handlers.QuitHandler).Methods("POST")
+	router.HandleFunc("/user/delete-account", handlers.DeleteAccountHandler).Methods("POST")
+	router.HandleFunc("/user/shared", handlers.UserSharedHandler).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/verify/init", handlers.VerificationInit).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/process", handlers.VerificationIDProcess).Methods("GET")
+	router.HandleFunc("/v1/api/verify/upload", handlers.UploadVerificationIDMedia).Methods("POST")
+	router.HandleFunc("/v1/api/verify/qr/generate", handlers.QRCodeGenerate).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Simple Up Check
 	//||------------------------------------------------------------------------------------------------||

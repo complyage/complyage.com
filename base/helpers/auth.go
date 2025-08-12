@@ -1,9 +1,11 @@
 package helpers
 
 import (
+	"base/db"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -18,6 +20,37 @@ func GenerateRandom() ([]byte, error) {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
 	return key, err
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Generate Username
+//||------------------------------------------------------------------------------------------------||
+
+func GenerateUsername() (string, error) {
+	for i := 0; i < 5; i++ {
+		// generate 6 random bytes -> 12 hex characters
+		randomBytes := make([]byte, 6)
+		if _, err := rand.Read(randomBytes); err != nil {
+			return "", fmt.Errorf("failed to generate random bytes: %v", err)
+		}
+
+		username := "user_" + hex.EncodeToString(randomBytes)
+
+		// check existence in DB
+		var count int64
+		err := db.DB.Table("accounts").
+			Where("account_username = ?", username).
+			Count(&count).Error
+		if err != nil {
+			return "", fmt.Errorf("db query failed: %v", err)
+		}
+
+		if count == 0 {
+			return username, nil // ✅ found unique username
+		}
+	}
+
+	return "", fmt.Errorf("failed to generate a unique username after 5 attempts")
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -68,6 +101,7 @@ func VerifyPassword(password string, accountSalt string, accountPassword string)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Decode the stored salt
 	//||------------------------------------------------------------------------------------------------||
+
 	decodedSalt, err := base64.StdEncoding.DecodeString(accountSalt)
 	if err != nil {
 		fmt.Println("[VerifyPassword] Failed to base64 decode accountSalt:", err)
@@ -94,7 +128,7 @@ func VerifyPassword(password string, accountSalt string, accountPassword string)
 //|| Generate Password (for account creation)
 //||------------------------------------------------------------------------------------------------||
 
-func GeneratePassword(password string) (string, string) {
+func GeneratePassword(password string, passwordSalt string) (string, string) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get the Pepper
@@ -110,21 +144,25 @@ func GeneratePassword(password string) (string, string) {
 	//|| Generate the Salt
 	//||------------------------------------------------------------------------------------------------||
 
-	salt, err := GenerateRandom() // This generates a []byte salt
-	if err != nil {
-		fmt.Println("[GeneratePassword] Failed to generate salt:", err)
-		return "", ""
+	salt := passwordSalt
+	if salt == "" {
+		saltBytes, pwErr := GenerateRandom()
+		if pwErr != nil {
+			fmt.Println("[GeneratePassword] Failed to generate salt:", pwErr)
+			return "", ""
+		}
+		salt = string(saltBytes)
 	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Make the Hash
 	//||------------------------------------------------------------------------------------------------||
 
-	hash := argon2.IDKey([]byte(pepper+password+pepper), salt, 1, 64*1024, 4, 32)
+	hash := argon2.IDKey([]byte(pepper+password+pepper), []byte(salt), 1, 64*1024, 4, 32)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Response - Encode both salt and hash to Base64 strings for storage
 	//||------------------------------------------------------------------------------------------------||
 
-	return base64.StdEncoding.EncodeToString(salt), base64.StdEncoding.EncodeToString(hash)
+	return base64.StdEncoding.EncodeToString(hash), base64.StdEncoding.EncodeToString([]byte(salt))
 }

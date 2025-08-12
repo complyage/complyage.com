@@ -33,7 +33,7 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Serves the HTML file with dynamic replacements
 	//||------------------------------------------------------------------------------------------------||
 
-	apiKey := r.URL.Query().Get("client_id")
+	clientID := r.URL.Query().Get("client_id")
 	scope := r.URL.Query().Get("scope")
 	state := r.URL.Query().Get("state")
 
@@ -41,7 +41,7 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//|| APIKey
 	//||------------------------------------------------------------------------------------------------||
 
-	if apiKey == "" {
+	if clientID == "" {
 		responses.ErrorHTML(w, "client_id is required")
 		return
 	}
@@ -50,7 +50,7 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Site By API Key
 	//||------------------------------------------------------------------------------------------------||
 
-	site := loaders.GetSiteByPublic(apiKey)
+	site := loaders.GetSiteByPublic(clientID)
 	if site == nil {
 		responses.ErrorHTML(w, "Invalid apiKey")
 		return
@@ -67,7 +67,8 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Clean Scope Requests
 	//||------------------------------------------------------------------------------------------------||
 
-	for _, p := range strings.Split(site.SitePermissions, ",") {
+	formatPerm := site.SitePermissions
+	for _, p := range strings.Split(formatPerm, ",") {
 		p = strings.TrimSpace(p)
 		if p != "" {
 			siteScopes = append(siteScopes, p)
@@ -81,7 +82,9 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	if scope == "" {
 		requestedScopes = siteScopes
 	} else {
-		scopeParts := strings.Split(scope, ",")
+		cleanScope := strings.Trim(scope, "[] ") // remove brackets
+		scopePerm := strings.NewReplacer(" ", "|", ",", "|").Replace(cleanScope)
+		scopeParts := strings.Split(scopePerm, "|")
 		for _, s := range scopeParts {
 			s = strings.TrimSpace(strings.ToUpper(s))
 			if s == "" {
@@ -124,14 +127,15 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 		session, err = helpers.FetchSession(cookie.Value)
 		if err != nil {
 			session = interfaces.SessionRecord{
-				ID:            "0",
-				Username:      "Anonymous",
-				Status:        "RMVD",
-				Type:          "USER",
-				Private:       "",
-				PrivateCheck:  "",
-				Level:         0,
-				Verifications: []interfaces.UserVerification{},
+				ID:          0,
+				Username:    "Anonymous",
+				Status:      "RMVD",
+				Type:        "USER",
+				Private:     "",
+				PrivateHash: "",
+				Security:    1,
+				Level:       0,
+				Identity:    interfaces.Identity{},
 			}
 		}
 	}
@@ -225,13 +229,14 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 			//|| Loop Through Users Verifications
 			//||------------------------------------------------------------------------------------------------||
 
-			for _, v := range session.Verifications {
-				if strings.EqualFold(v.Type, perm) && strings.EqualFold(v.Status, "VERF") {
+			for _, a := range session.Identity.Approved {
+				if strings.EqualFold(strings.TrimSpace(a), perm) {
 					statusClass = "verified"
 					matchPermissions++
 					break
 				}
 			}
+
 		}
 
 		//||------------------------------------------------------------------------------------------------||
@@ -268,17 +273,17 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	oauthSession := interfaces.OAuthSession{
-		AccountID:    session.ID,
-		Private:      session.Private,
-		PrivateCheck: session.PrivateCheck,
-		APIKey:       apiKey,
-		AccessKey:    uuid.NewString(),
-		State:        state,
-		Redirect:     siteRedirect,
-		Scope:        requestedScopes,
-		Expires:      time.Now().Unix() + 3600,
-		Created:      time.Now().Unix(),
-		Status:       "PEND",
+		AccountID:   session.ID,
+		Private:     session.Private,
+		PrivateHash: session.PrivateHash,
+		ClientID:    clientID,
+		AccessKey:   uuid.NewString(),
+		State:       state,
+		Redirect:    siteRedirect,
+		Scope:       requestedScopes,
+		Expires:     time.Now().Unix() + 3600,
+		Created:     time.Now().Unix(),
+		Status:      "PEND",
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -333,7 +338,7 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Do we need to request the private key?
 	//||------------------------------------------------------------------------------------------------||
 
-	pErr := helpers.CheckPrivateKey(session.Private, session.PrivateCheck)
+	pErr := helpers.CheckPrivateKey(session.Private, session.PrivateHash)
 	if pErr != nil || session.Private == "" {
 		vars["OAUTHAPPR"] = os.Getenv("VITE_COMPLYAGE_OAUTH_URL") + "/v1/private?oauth=" + referenceKey
 	} else {
@@ -385,7 +390,7 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	vars["SITE_URL"] = site.SiteURL
 	vars["SITE_NAME"] = site.SiteName
 	vars["SITE_LOGO"] = logoURL
-	vars["APIKEY"] = apiKey
+	vars["APIKEY"] = clientID
 
 	//||----------------------------------------------------------------------------------------------||
 	//|| Local

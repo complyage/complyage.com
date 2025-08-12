@@ -9,12 +9,14 @@ import (
 	"base/constants"
 	"base/db"
 	"base/helpers"
+	"base/interfaces"
 	"base/models"
 	"base/responses"
+	"encoding/json"
 	"fmt"
-	"helpers/encrypt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -48,7 +50,7 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Database Account
 	//||------------------------------------------------------------------------------------------------||
 
-	dbAccount, err := abstract.GetAccountByID(session.ID)
+	dbAccount, err := abstract.GetAccountByID(fmt.Sprintf("%d", session.ID))
 	if err != nil || dbAccount == nil {
 		responses.Error(w, http.StatusInternalServerError, "Could not retrieve account")
 		return
@@ -68,34 +70,149 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	password := r.FormValue("password")
-	advanced := (r.FormValue("advanced") == "advanced")
+	rawEncrypt := r.FormValue("encryptionLevel")
+	privateKeyInput := r.FormValue("privateKey")
+	publicKeyInput := r.FormValue("publicKey")
+	wordListJSON := r.FormValue("wordList")
+
+	//||------------------------------------------------------------------------------------------------||
+	//||
+	//|| Sanitize and Validate
+	//|| Also generate the private/public key if needed
+	//||
+	//||------------------------------------------------------------------------------------------------||
+
+	if password == "" || len(password) < 8 {
+		responses.Error(w, http.StatusBadRequest, "Password must be at least 8 characters long")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Validate Encryption Level
+	//||------------------------------------------------------------------------------------------------||
+
+	encryptionLevel, err := strconv.Atoi(rawEncrypt)
+	if err != nil || encryptionLevel < 1 || encryptionLevel > 3 {
+		responses.Error(w, http.StatusBadRequest, "Invalid or missing encryption level")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Validate and Generate Private/Public Key
+	//||------------------------------------------------------------------------------------------------||
+
+	var privateKey, publicKey string
+	var BIPList interfaces.BIPList
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Level 1 - We handle the keys
+	//||------------------------------------------------------------------------------------------------||
+
+	if encryptionLevel == 1 {
+		genPrivateKey, genPublicKey, err := helpers.GenerateKeyPair()
+		if err != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to generate keys")
+			return
+		}
+		privateKey = genPrivateKey
+		publicKey = genPublicKey
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Level 2 - BIPList
+	//||------------------------------------------------------------------------------------------------||
+
+	if encryptionLevel == 2 {
+		BIPList, err := helpers.ValidateBIP39(wordListJSON)
+		if err != nil {
+			responses.Error(w, http.StatusBadRequest, "Invalid BIP39 word list: "+err.Error())
+			return
+		}
+		genPrivate, genPublic, err := helpers.GenerateBIP39Keys(BIPList)
+		if err != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to generate BIP39 keys")
+			return
+		}
+		privateKey = genPrivate
+		publicKey = genPublic
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Level 3 requires both keys
+	//||------------------------------------------------------------------------------------------------||
+
+	if encryptionLevel == 3 {
+		err := helpers.ValidateKeyPair(privateKeyInput, publicKeyInput)
+		if err != nil {
+			responses.Error(w, http.StatusBadRequest, "Invalid key pair: "+err.Error())
+			return
+		}
+		privateKey = privateKeyInput
+		publicKey = publicKeyInput
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Generate the Private Key Hash
+	//||------------------------------------------------------------------------------------------------||
+
+	privateKeyHash, err := helpers.GenerateCheckKey(privateKey)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to generate private key hash")
+		return
+	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Password/Salt
 	//||------------------------------------------------------------------------------------------------||
 
-	passwordHash, saltHash := helpers.GeneratePassword(password)
-	passwordCheck, err := encrypt.GenerateCheckKey(passwordHash)
-	if (err != nil) || (passwordCheck == "") {
-		responses.Error(w, http.StatusBadRequest, "Could not generate private key")
+	passwordHash, saltHash := helpers.GeneratePassword(password, "")
+	if passwordHash == "" {
+		responses.Error(w, http.StatusBadRequest, "Could not generate password")
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Generate Private / Public Key
+	//||
+	//|| Contact the User with the keys if needed
+	//||
 	//||------------------------------------------------------------------------------------------------||
 
-	privateKey, publicKey, err := helpers.GenerateKeyPair()
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to generate keys")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Email the Private Key to the User if Advanced
-	//||------------------------------------------------------------------------------------------------||
-
-	if advanced {
+	if encryptionLevel == 1 {
 		_ = helpers.EmailPrivateKeyToUser(session.Email, privateKey)
+	}
+
+	if encryptionLevel == 2 {
+		_ = helpers.EmailBIPListToUser(session.Email, BIPList, privateKey)
+	}
+
+	if encryptionLevel == 3 {
+		_ = helpers.EmailPrivateKeyToUser(session.Email, privateKey)
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Random Usenrame
+	//||------------------------------------------------------------------------------------------------||
+
+	randomUsername, err := helpers.GenerateUsername()
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to generate username")
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Create the Identity
+	//||------------------------------------------------------------------------------------------------||
+
+	var identity interfaces.Identity
+
+	if email, err := helpers.CreateEmail(session.Email, publicKey); err != nil {
+		identity.Approved = []constants.VerificationType{}
+	} else {
+		identity.Email = &email
+		identity.Approved = []constants.VerificationType{"MAIL"}
+	}
+
+	identityJSON, err := json.Marshal(identity)
+	if (err != nil) || (identityJSON == nil) {
+		identityJSON = []byte(`{"approved":[]}`)
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -104,21 +221,27 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	account := models.Account{}
 	account.IDAccount = dbAccount.IDAccount
+	account.AccountUsername = dbAccount.AccountUsername
 	account.AccountType = dbAccount.AccountType
 	account.AccountEmail = dbAccount.AccountEmail
+	account.AccountUsername = randomUsername
 	account.AccountPublic = publicKey
 	account.AccountPassword = passwordHash
-	account.AccountPrivateCheck = passwordCheck
+	account.AccountPrivateHash = privateKeyHash
 	account.AccountSalt = saltHash
 	account.AccountLevel = helpers.Int8Ptr(1) // Default level
 	account.AccountStatus = "ACTV"
+	account.AccountSecurity = encryptionLevel // Default security level
+	account.AccountIdentity = string(identityJSON)
 
-	if advanced {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Don't store private key unless we're Level 1
+	//||------------------------------------------------------------------------------------------------||
+
+	if encryptionLevel > 1 {
 		account.AccountPrivate = ""
-		account.AccountAdvanced = helpers.BoolToInt8Ptr(true)
 	} else {
 		account.AccountPrivate = privateKey
-		account.AccountAdvanced = helpers.BoolToInt8Ptr(false)
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -127,9 +250,8 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbErr := verification.CreateEmailVerification(account.IDAccount, account.AccountEmail, account.AccountPublic)
 	if dbErr != nil {
-		log.Println("❌ Failed to create email verification:", err)
-	} else {
-		log.Println("✅ Email verification record created or updated")
+		log.Println("Failed to create email verification:", err)
+		responses.Error(w, http.StatusInternalServerError, "Failed to create email verification record: "+dbErr.Error())
 	}
 
 	//||------------------------------------------------------------------------------------------------||

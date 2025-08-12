@@ -1,91 +1,137 @@
 /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
-//|| /components/base/BIP39.tsx
-//|| BIP39 word input component with dropdown auto-complete
+//|| /components/base/BIP39Six.tsx
+//|| Fixed 6 BIP39 word input component with dropdown auto-complete
 //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-      import React, { useState, useEffect }                 from "react";
-      import { bip39 }                                      from "../../utils/bip39";
+      /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+      //|| Import
+      //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+
+      import React, {useState, useEffect}                   from "react";
+      import {bip39}                                        from "../../utils/bip39";
+      import { RefreshCcw }                                    from "lucide-react";
+
+      /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+      //|| Interfaces
+      //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+
+      import { BIPList }                                    from "../../interfaces/bip.list";
 
       /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
       //|| Props
       //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-      interface TextBIP39Props {
-            count                         : number;
-            initialWords?                 : string[];
-            setValue?                     : (words: string[]) => void;
+      interface BIP39Props {
+            initialWords                 : BIPList;
+            setValue                     : (bipList : BIPList) => void;
       }
 
       /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
       //|| Component
       //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-      export default function TextBIP39({count, initialWords, setValue}: TextBIP39Props) {
-		const wordlist = bip39();
+      export default function BIP39({initialWords, setValue}: BIP39Props) {
 
-		const getRandomWords = (n: number): string[] => Array.from({length: n}, () => wordlist[Math.floor(Math.random() * wordlist.length)]);
+            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+            //|| Var
+            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-		const [words, setWords] = useState<string[]>(initialWords?.slice(0, count) || getRandomWords(count));
-		const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+            const [words, setWords]                   = useState<BIPList>(initialWords);
+            const [focusedIndex, setFocusedIndex]     = useState<number | null>(null);
+            const wordlist                            = bip39();
 
-		useEffect(() => {
-			const newWords = initialWords?.slice(0, count) || getRandomWords(count);
-			setWords(newWords);
-			if (setValue) setValue(newWords);
-		}, [count]);
+            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+            //|| Update Word
+            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-		const updateWord = (index: number, value: string) => {
-			const newWords = [...words];
-			newWords[index] = value.trim().toLowerCase();
-			setWords(newWords);
-			if (setValue) setValue(newWords);
-		};
+            const updateWord = (index: number, value: string) => {
+                  // create a new copy so React detects the change
+                  const updatedWords: BIPList = { ...words };
+            
+                  const key = `word${index + 1}` as keyof BIPList;
+                  updatedWords[key] = value;
+            
+                  setWords(updatedWords);
+                  setValue(updatedWords);
+            };
 
-		const getSuggestions = (input: string) => (input ? wordlist.filter((w) => w.startsWith(input.toLowerCase())).slice(0, 10) : []);
+            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+            //|| Get Suggestions
+            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-		const isValid = (word: string) => wordlist.includes(word);
+            const getSuggestions = (input: string) => (input ? wordlist.filter((w) => w.startsWith(input.toLowerCase())).slice(0, 10) : []);
 
-		return (
-			<div className="bg-gray-800 p-4 rounded-lg">
-				<h3 className="text-2xl font-bold my-3">Choose your word list</h3>
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 min-h-[300px]">
-					{words.map((word, index) => {
-						const suggestions = getSuggestions(word);
+            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+            //|| IsValid
+            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-						return (
-							<div key={index} className="relative bg-black p-2">
-								<label className="text-center block font-bold mb-2">{`${index + 1}`}</label>
-								<input
-									value={word}
-									onChange={(e) => updateWord(index, e.target.value)}
-									onFocus={() => setFocusedIndex(index)}
-									onBlur={() => setTimeout(() => setFocusedIndex(null), 120)}
-									className={`input input-bordered w-full text-xl text-center ${
-										word && !isValid(word) ? "input-error" : "input-primary"
-									}`}
-									placeholder={`Word ${index + 1}`}
-									autoComplete="off"
-								/>
+            const isValid = (word: string) => wordlist.includes(word);
 
-								{focusedIndex === index && suggestions.length > 0 && (
-									<ul className="absolute z-20 w-full bg-white border border-gray-300 shadow max-h-40 overflow-y-auto rounded text-sm">
-										{suggestions.map((suggestion) => (
-											<li
-												key={suggestion}
-												onMouseDown={() => updateWord(index, suggestion)}
-												className="px-3 py-2 bg-gray-800 hover:bg-gray-400 cursor-pointer text-white">
-												{suggestion}
-											</li>
-										))}
-									</ul>
-								)}
-							</div>
-						);
-					})}
-				</div>
-			</div>
-		);
-	}
+            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+            //|| JSX
+            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            
+            return (
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                        <h3 className="text-2xl font-bold mb-4 text-white text-center">Your 6-Word Passphrase</h3>
+
+                        {/* Fixed 2x3 grid */}
+                        <div className="grid grid-cols-3 grid-rows-2 gap-4">
+                              {Object.values(words).map((word, index) => {
+                                    const suggestions = getSuggestions(word);
+
+                                    // function to generate a random word for this index
+                                    const randomizeWord = () => {
+                                          const random = wordlist[Math.floor(Math.random() * wordlist.length)];
+                                          updateWord(index, random);
+                                    };
+
+                                    return (
+                                          <div key={index} className="relative bg-black p-2 rounded flex flex-col gap-2">
+                                                <label className="block text-center font-bold text-gray-300">{index + 1}</label>
+
+                                                <div className="flex gap-2">
+                                                      <input
+                                                            value={word}
+                                                            onChange={(e) => updateWord(index, e.target.value)}
+                                                            onFocus={() => setFocusedIndex(index)}
+                                                            onBlur={() => setTimeout(() => setFocusedIndex(null), 120)}
+                                                            className={`input input-bordered w-full text-xl text-center text-yellow-500 ${
+                                                                  word && !isValid(word) ? "input-error" : "input-primary"
+                                                            }`}
+                                                            placeholder={`Word ${index + 1}`}
+                                                            autoComplete="off"
+                                                      />
+                                                      <button
+                                                            type="button"
+                                                            onClick={randomizeWord}
+                                                            className="btn btn-xs btn-accent text-white bg-black/60 border-0 shadow-none mt-3"
+                                                            title="Generate random word"
+                                                      >
+                                                            <RefreshCcw />
+                                                      </button>
+                                                </div>
+
+                                                {focusedIndex === index && suggestions.length > 0 && (
+                                                      <ul className="absolute z-20 w-full bg-black border border-gray-600 shadow max-h-40 overflow-y-auto rounded text-sm text-white">
+                                                            {suggestions.map((suggestion) => (
+                                                                  <li
+                                                                        key={suggestion}
+                                                                        onMouseDown={() => updateWord(index, suggestion)}
+                                                                        className="px-3 py-2 hover:bg-gray-200 dark:hover:bg-neutral-700 cursor-pointer"
+                                                                  >
+                                                                        {suggestion}
+                                                                  </li>
+                                                            ))}
+                                                      </ul>
+                                                )}
+                                          </div>
+                                    );
+                              })}
+                        </div>
+                  </div>
+            );
+      }
 
       /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
       //|| EOC

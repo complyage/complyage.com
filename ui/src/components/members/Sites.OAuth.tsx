@@ -132,7 +132,7 @@ export default function OAuthSettingsSection({data, updateField}: OAuthSettingsS
 					<table className="table table-auto w-full">
 						<thead>
 							<tr className="border-b-[1px] border-gray-500">
-								<th className="p-2 w-12" className="text-center">Enable</th>
+								<th className="p-2 w-12 text-center">Enable</th>
 								<th className="p-2">Code</th>
 								<th className="p-2">Description</th>
                                                 <th className="p-2 text-left">Require Approval</th>

@@ -103,3 +103,22 @@ func GetSiteByPublic(publicKey string) *models.Site {
 	}
 	return nil
 }
+
+// ||------------------------------------------------------------------------------------------------||
+// || GetSiteByAgent
+// ||
+// || Looks up a Site by its `site_agent_private` key in the in‑memory cache.
+// || Returns the site and true if found, or nil and false otherwise.
+// ||------------------------------------------------------------------------------------------------||
+
+func GetSiteByAgentKey(agentKey string) *models.Site {
+	sitesMutex.RLock()
+	defer sitesMutex.RUnlock()
+
+	for i := range Sites {
+		if Sites[i].SiteAgentPrivate == agentKey {
+			return &Sites[i]
+		}
+	}
+	return nil
+}

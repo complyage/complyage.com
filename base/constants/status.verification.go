@@ -9,6 +9,7 @@ type VerificationStatus struct {
 	Escalated string
 	Expired   string
 	Cancelled string
+	Missing   string
 }
 
 var VerificationStatuses = VerificationStatus{
@@ -18,6 +19,7 @@ var VerificationStatuses = VerificationStatus{
 	Escalated: "ESCL",
 	Expired:   "EXPD",
 	Cancelled: "CNCL",
+	Missing:   "MISS",
 }
 
 func GetAllVerificationStatuses() []string {

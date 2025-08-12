@@ -1,65 +1,75 @@
-package oauth
+package agent_helpers
 
 import (
-	"base/interfaces"
+	"agent/agent_interfaces"
+	"encoding/json"
+	"fmt"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Create Response
+//|| PublishAgentRequest
 //||------------------------------------------------------------------------------------------------||
 
-func CreateResponse() interfaces.OAuthResponse {
+func PublishAgentRequest(ch *amqp.Channel, queueName string, req agent_interfaces.AgentRequest) error {
+	//||------------------------------------------------------------------------------------------------||
+	//|| PublishAgentRequest
+	//||------------------------------------------------------------------------------------------------||
+
+	fmt.Println("PUBLISH TO AGENT HAS BEEN CALLED!")
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| OAuth User
+	//|| Check The Model
 	//||------------------------------------------------------------------------------------------------||
 
-	user := interfaces.OAuthUser{
-		Status:        "NONE",
-		Username:      "Anonymous",
-		Verifications: []interfaces.OAuthVerification{},
+	body, err := json.Marshal(req)
+	if err != nil {
+		return fmt.Errorf("failed to marshal AgentRequest: %w", err)
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Site
+	//|| Add to the Queue
 	//||------------------------------------------------------------------------------------------------||
 
-	site := interfaces.OAuthSite{
-		Name:        "Unknown Site",
-		URL:         "https://unknown.site",
-		Logo:        "/img/public/logo.missing.png",
-		Description: "Site not found. No description available",
+	_, err = ch.QueueDeclare(
+		queueName,
+		true,  // durable
+		false, // autoDelete
+		false, // exclusive
+		false, // noWait
+		nil,   // args
+	)
+	if err != nil {
+		return fmt.Errorf("queue declare failed: %w", err)
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Zone
+	//|| Publish
 	//||------------------------------------------------------------------------------------------------||
 
-	zone := interfaces.OAuthZone{
-		State:         "Unknown",
-		Country:       "Unknown",
-		IP:            "Unknown",
-		Requirements:  []interfaces.OAuthRequirements{},
-		Description:   "No zone information available",
-		Law:           "No law information available",
-		EffectiveDate: "Unknown",
+	err = ch.Publish(
+		"",
+		queueName,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Return Error
+	//||------------------------------------------------------------------------------------------------||
+
+	if err != nil {
+		return fmt.Errorf("failed to publish AgentRequest: %w", err)
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Response
+	//|| All good
 	//||------------------------------------------------------------------------------------------------||
 
-	response := interfaces.OAuthResponse{
-		Site:         site,
-		User:         user,
-		Zone:         zone,
-		Status:       "FAIL",
-		Requirements: []interfaces.OAuthRequirements{},
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Done
-	//||------------------------------------------------------------------------------------------------||
-
-	return response
+	return nil
 }

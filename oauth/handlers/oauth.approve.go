@@ -54,7 +54,7 @@ func ApproveOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	//|| If we don't have the key or cannot verify it, redirect to /private
 	//||------------------------------------------------------------------------------------------------||
 
-	if session.Private == "" || session.PrivateCheck == "" || helpers.CheckPrivateKey(session.Private, session.PrivateCheck) != nil {
+	if session.Private == "" || session.PrivateHash == "" || helpers.CheckPrivateKey(session.Private, session.PrivateHash) != nil {
 		http.Redirect(w, r, "/v1/private?oauth="+oauth, http.StatusSeeOther)
 		return
 	}
@@ -109,7 +109,7 @@ func ApproveOAuthHandler(w http.ResponseWriter, r *http.Request) {
 
 	access := interfaces.OAuthAccess{
 		AccountID:     session.AccountID,
-		APIKey:        session.APIKey,
+		APIKey:        session.ClientID,
 		AccessKey:     session.AccessKey,
 		State:         session.State,
 		Scope:         session.Scope,

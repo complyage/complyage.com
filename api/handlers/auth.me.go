@@ -5,8 +5,10 @@ package handlers
 //||------------------------------------------------------------------------------------------------||
 
 import (
+	"base/abstract"
 	"base/helpers"
 	"base/responses"
+	"fmt"
 	"net/http"
 )
 
@@ -37,16 +39,30 @@ func AuthMeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Get Live Account Record
+	//||------------------------------------------------------------------------------------------------||
+
+	account, err := abstract.GetAccountByID(fmt.Sprintf("%d", session.ID))
+	if err != nil || account == nil {
+		responses.Error(w, http.StatusInternalServerError, "Could not retrieve account")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Return Responses
 	//||------------------------------------------------------------------------------------------------||
 
 	responses.Success(w, http.StatusOK, map[string]any{
-		"id":       session.ID,
-		"status":   session.Status,
-		"type":     session.Type,
-		"level":    session.Level,
-		"advanced": session.Advanced,
+		"id":       account.IDAccount,
+		"status":   account.AccountStatus,
+		"type":     account.AccountType,
+		"email":    session.Email,
+		"username": account.AccountUsername,
+		"level":    helpers.DerefInt8(account.AccountLevel),
+		"security": account.AccountSecurity,
 		"created":  session.Created,
 		"expires":  session.Expires,
+		"identity": account.AccountIdentity,
 	})
+
 }

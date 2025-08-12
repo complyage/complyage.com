@@ -35,17 +35,17 @@ func SessionCreate(email string, account models.Account) (string, error) {
 	//||------------------------------------------------------------------------------------------------||
 
 	session := interfaces.SessionRecord{
-		Email:        email,
-		Username:     account.AccountUsername,
-		ID:           account.IDAccount,
-		Status:       account.AccountStatus,
-		Type:         account.AccountType,
-		Private:      account.AccountPrivate,
-		PrivateCheck: account.AccountPrivateCheck,
-		Level:        DerefInt8(account.AccountLevel),
-		Advanced:     account.AccountAdvanced != nil && *account.AccountAdvanced == 1,
-		Created:      time.Now().Unix(),
-		Expires:      time.Now().Add(30 * 24 * time.Hour).Unix(),
+		ID:          account.IDAccount,
+		Email:       email,
+		Username:    account.AccountUsername,
+		Status:      account.AccountStatus,
+		Type:        account.AccountType,
+		Private:     account.AccountPrivate,
+		PrivateHash: account.AccountPrivateHash,
+		Level:       DerefInt8(account.AccountLevel),
+		Security:    account.AccountSecurity,
+		Created:     time.Now().Unix(),
+		Expires:     time.Now().Add(30 * 24 * time.Hour).Unix(),
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -130,6 +130,20 @@ func WriteSessionCookie(w http.ResponseWriter, sessionToken string) {
 	fmt.Println("[Session] Setting cookie with token:", sessionToken)
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| UI Cookie
+	//||------------------------------------------------------------------------------------------------||
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_ui",
+		Value:    "1",
+		Path:     "/",
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   86400 * 30,
+		HttpOnly: false,
+	})
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Create and set the cookie
 	//||------------------------------------------------------------------------------------------------||
 
@@ -160,15 +174,25 @@ func DeleteSession(sessionToken string) error {
 //||------------------------------------------------------------------------------------------------||
 
 func ClearSessionCookie(w http.ResponseWriter) {
-	// Create a cookie that is already expired
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Unix(0, 0), // Set expiry to the Unix epoch (already expired)
-		MaxAge:   -1,              // Instructs the browser to delete the cookie immediately
-		HttpOnly: true,
-		Secure:   true, // Should be true in production (HTTPS)
-		SameSite: http.SameSiteLaxMode,
-	})
+
+	// Helper to generate an expired cookie with matching attributes
+	expiredCookie := func(name string, httpOnly bool) *http.Cookie {
+		return &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     "/",             // Must match original Path
+			Domain:   "",              // Set if you explicitly set Domain
+			Expires:  time.Unix(0, 0), // Past date
+			MaxAge:   -1,              // Delete immediately
+			HttpOnly: httpOnly,
+			Secure:   true, // Must match original Secure flag
+			SameSite: http.SameSiteLaxMode,
+		}
+	}
+
+	// Expire both cookies
+	http.SetCookie(w, expiredCookie("session", true))
+	http.SetCookie(w, expiredCookie("session_ui", false))
+
+	fmt.Println("[Session] Cleared session and session_ui cookies")
 }
