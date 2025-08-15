@@ -14,7 +14,7 @@ import React, {useEffect, useRef, useState}                from "react";
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import { VerificationProcessID }                           from "../../../interfaces/verification.process.id";
+import { VerificationProcessID }                           from "../../../interfaces/verify/id/process";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props

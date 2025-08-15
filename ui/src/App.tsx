@@ -43,10 +43,16 @@ import Quit                   from './pages/members/Quit'
 //|| Verification
 //||------------------------------------------------------------------------------------------------||
 
-import CCVerification         from './pages/verification/credit/CCVerification'
+import CCVerification         from './pages/verification/card/CCVerification'
+import CCVerificationVerify   from './pages/verification/card/CCVerification.Verify'
 import IDVerification         from './pages/verification/id/IDVerification'
+import AddressVerification    from './pages/verification/address/AddressVerification'
+import PhoneVerification      from './pages/verification/phone/PhoneVerification'
 import VerificationInit       from "./pages/verification/Init";
 
+//||------------------------------------------------------------------------------------------------||
+//|| Test
+//||------------------------------------------------------------------------------------------------||
 
 import SelfiePage            from './pages/verification/Selfie'
 
@@ -98,6 +104,9 @@ export default function App() {
                   <Route path="/verification/init" element={<VerificationInit />} />
                   <Route path="/verification/id" element={<IDVerification />} />
                   <Route path="/verification/card" element={<CCVerification />} />
+                  <Route path="/verification/card/verify" element={<CCVerificationVerify />} />
+                  <Route path="/verification/phone" element={<PhoneVerification />} />
+                  <Route path="/verification/address" element={<AddressVerification />} />
 		</Routes>
 	);
 }

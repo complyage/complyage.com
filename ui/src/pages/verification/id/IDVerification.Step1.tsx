@@ -16,7 +16,7 @@ import React, {useEffect, useRef, useState}           from "react";
 
 import Camera                                      from "../../../components/dynamic/Camera";
 import Upload                                      from "../../../components/dynamic/Upload";
-import { VerificationProcessID }                   from "../../../interfaces/verification.process.id";
+import { VerificationProcessID }                   from "../../../interfaces/verify/id/process";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props

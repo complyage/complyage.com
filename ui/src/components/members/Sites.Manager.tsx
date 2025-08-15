@@ -13,7 +13,7 @@ import React, { useEffect, useState }           from "react";
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import { Site }                                 from "../../interfaces/model.sites";
+import { ModelSite }                                 from "../../interfaces/models/model.sites";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Hooks
@@ -32,7 +32,7 @@ import { RefreshCcw }                           from "lucide-react";
 //||------------------------------------------------------------------------------------------------||
 
 interface WebsiteManagerSectionProps {
-      data              : Site | null;
+      data              : ModelSite | null;
       onCopy            : (site: Website | null) => void;
       onAddNew          : () => void;
       loadSite          : (id: number) => void;

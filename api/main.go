@@ -2,6 +2,7 @@ package main
 
 import (
 	"api/handlers"
+	"base/adapters"
 	"base/db"
 	"base/helpers"
 	"base/loaders"
@@ -62,6 +63,10 @@ func main() {
 	//|| GORM
 	//||------------------------------------------------------------------------------------------------||
 	db.DB.AutoMigrate(&models.Account{})
+	//||------------------------------------------------------------------------------------------------||
+	//|| Initialize Stripe
+	//||------------------------------------------------------------------------------------------------||
+	adapters.InitStripe()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Open DB Connection
 	//||------------------------------------------------------------------------------------------------||
@@ -128,9 +133,24 @@ func main() {
 	//|| Verify
 	//||------------------------------------------------------------------------------------------------||
 	router.HandleFunc("/v1/api/verify/init", handlers.VerificationInit).Methods("GET")
-	router.HandleFunc("/v1/api/verify/id/process", handlers.VerificationIDProcess).Methods("GET")
+	router.HandleFunc("/v1/api/verify/list", handlers.GetVerificationsList).Methods("GET")
 	router.HandleFunc("/v1/api/verify/upload", handlers.UploadVerificationIDMedia).Methods("POST")
 	router.HandleFunc("/v1/api/verify/qr/generate", handlers.QRCodeGenerate).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify - ID
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/verify/id/process", handlers.VerificationIDProcess).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify - Card
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/verify/card", handlers.CCVerifyInitHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/card/lookup", handlers.CCVerifyInitHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/card/check", handlers.CCVerifyCheckHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/card/success", handlers.CCVerifySuccessHandler).Methods("POST")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Tools
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/currency", handlers.ConvertUSDHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Simple Up Check
 	//||------------------------------------------------------------------------------------------------||

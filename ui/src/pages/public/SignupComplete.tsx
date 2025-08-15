@@ -31,8 +31,8 @@
       //|| Interfaces
       //||------------------------------------------------------------------------------------------------||
 
-      import { BIPList }                                         from "../../interfaces/bip.list";
-      import { SecurityLevel }                                   from "../../interfaces/security.levels";
+      import { BIPList }                                         from "../../interfaces/auth/bip.list";
+      import { SecurityLevel }                                   from "../../interfaces/auth/security.levels";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Default

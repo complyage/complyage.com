@@ -15,7 +15,7 @@ import React, {useEffect, useRef, useState}           from "react";
 //||------------------------------------------------------------------------------------------------||
 
 import Selfie                                      from "../../../components/dynamic/Selfie";
-import { VerificationProcessID }                   from "../../../interfaces/verification.process.id";
+import { VerificationProcessID }                   from "../../../interfaces/verify/id/process";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props

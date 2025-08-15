@@ -61,7 +61,7 @@ func ForgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Create Forgot Password Record
 	//||------------------------------------------------------------------------------------------------||
 
-	record := interfaces.VerificationRecord{
+	record := interfaces.AuthVerification{
 		Code:     code,
 		Key:      key,
 		Email:    email,

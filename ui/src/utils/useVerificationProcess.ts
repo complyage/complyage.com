@@ -4,7 +4,7 @@
 
 import { useEffect, useState }            from "react";
 import { useSearchParams }                from "react-router-dom";
-import type { VerificationProcessID }     from "../interfaces/verification.process.id";
+import type { VerificationProcessID }     from "../interfaces/verify/id/process";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Hook

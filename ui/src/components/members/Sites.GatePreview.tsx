@@ -13,7 +13,7 @@ import { X }                                    from "lucide-react";
 //||------------------------------------------------------------------------------------------------||
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
-import type {Site} from "../../interfaces/model.sites";
+import type {Site} from "../../interfaces/models/model.sites";
 
 interface SiteGatePreviewProps {
 	data: Site;

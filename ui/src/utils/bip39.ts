@@ -1,4 +1,4 @@
-import { BIPList } from "../interfaces/bip.list";
+import { BIPList } from "../interfaces/auth/bip.list";
 
 export function makeBIPList(): BIPList {
       const wordList = bip39();

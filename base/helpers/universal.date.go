@@ -10,7 +10,7 @@ import (
 // --------------------------------------------------------------------------------------------
 
 func UniversalNow() string {
-	return time.Now().UTC().Format("2001-01-02 01:02:03")
+	return time.Now().UTC().Format("2006-01-02 15:04:05")
 }
 
 // --------------------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ func UniversalNow() string {
 // --------------------------------------------------------------------------------------------
 
 func ToUniversalDate(t time.Time) string {
-	return t.UTC().Format("2001-01-02 01:02:03")
+	return t.UTC().Format("2006-01-02 15:04:05")
 }
 
 // --------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ func ToUniversalDate(t time.Time) string {
 // --------------------------------------------------------------------------------------------
 
 func FromUniversalDate(dateStr string) (time.Time, error) {
-	t, err := time.Parse("2001-01-01 01:02:03", dateStr)
+	t, err := time.Parse("2006-01-02 15:04:05", dateStr)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("invalid date format: %w", err)
 	}

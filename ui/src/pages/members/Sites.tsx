@@ -9,7 +9,7 @@ import { useNavigate }              from "react-router-dom";
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import { Site }                     from "../../interfaces/model.sites";
+import { ModelSite }                from "../../interfaces/models/model.sites";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components
@@ -34,7 +34,7 @@ import BasicDataSection             from "../../components/members/Sites.BasicDa
 import ZonesEnforcementSection      from "../../components/members/Sites.Zones";
 import WebsiteManagerSection        from "../../components/members/Sites.Manager";
 import IntegrationSection           from "../../components/members/Sites.Integration";
-import CustomAgeGate               from "../../components/members/Sites.AgeGate";
+import CustomAgeGate                from "../../components/members/Sites.AgeGate";
 import OAuthSettingsSection         from "../../components/members/Sites.OAuth";
 
 //||------------------------------------------------------------------------------------------------||
@@ -47,7 +47,7 @@ export default function Sites() {
       //|| Var
       //||------------------------------------------------------------------------------------------------||
       const currentSite                   = useRef<number | null>(null);
-      const [site, setSite]               = useState<Site | null>(null);
+      const [site, setSite]               = useState<ModelSite | null>(null);
       const [changed, setChanged]         = useState<boolean>(false);
       const [deleting, setDeleting]       = useState<boolean>(false);
       const [cacheBust, setCacheBust]     = useState<string>(Date.now().toString());

@@ -67,7 +67,7 @@ func TwoFactorHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Convert to struct
 	//||------------------------------------------------------------------------------------------------||
 
-	var record interfaces.VerificationRecord
+	var record interfaces.AuthVerification
 	if err := json.Unmarshal([]byte(val), &record); err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Invalid stored record")
 		return

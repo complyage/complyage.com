@@ -34,7 +34,7 @@ type Box = { x: number; y: number; width: number; height: number };
 type FaceDir      = "left" | "center" | "right";
 type FaceVert     = "bottom" | "center" | "top";
 
-import { FaceDirection }                  from "../interfaces/types.face.direction";
+import { FaceDirection }                  from "../interfaces/verify/id/types";
 
 /*||------------------------------------------------------------------------------------------------||
 //|| Detector (lazy singleton)

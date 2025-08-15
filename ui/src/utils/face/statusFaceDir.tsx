@@ -19,7 +19,7 @@
       //|| Interfaces
       //||------------------------------------------------------------------------------------------------||*/
 
-      import { FaceDirection }                              from "../../interfaces/types.face.direction";
+      import { FaceDirection }                              from "../../interfaces/verify/id/types";
 
       /*||------------------------------------------------------------------------------------------------||
       //|| Status

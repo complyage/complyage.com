@@ -39,7 +39,7 @@ var (
 func fetchZonesFromDB() ([]models.Zone, error) {
 	var zones []models.Zone
 	// Use the global DB instance from the base/dbb package
-	result := db.DB.Find(&zones)
+	result := db.DB.Where("id_zone <> ?", 9999).Find(&zones)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to fetch zones from database: %w", result.Error)
 	}

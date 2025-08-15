@@ -31,3 +31,15 @@ func EmailPrivateKeyToUser(email string, privateKey string) error {
 	fmt.Println("=========================")
 	return nil
 }
+
+//||------------------------------------------------------------------------------------------------||
+//|| Text Code to Phone Number
+//||------------------------------------------------------------------------------------------------||
+
+func TextCodeToPhoneNumber(phone string, code string) error {
+	fmt.Println("=== EMAIL PRIVATE KEY ===")
+	fmt.Println("TO:", phone)
+	fmt.Println("KEY:", code)
+	fmt.Println("=========================")
+	return nil
+}

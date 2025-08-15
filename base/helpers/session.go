@@ -42,6 +42,7 @@ func SessionCreate(email string, account models.Account) (string, error) {
 		Type:        account.AccountType,
 		Private:     account.AccountPrivate,
 		PrivateHash: account.AccountPrivateHash,
+		Public:      account.AccountPublic,
 		Level:       DerefInt8(account.AccountLevel),
 		Security:    account.AccountSecurity,
 		Created:     time.Now().Unix(),
@@ -111,6 +112,40 @@ func FetchSession(sessionID string) (interfaces.SessionRecord, error) {
 	//||------------------------------------------------------------------------------------------------||
 
 	return session, nil
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Update the Session
+//||------------------------------------------------------------------------------------------------||
+
+func UpdateSession(sessionToken string, session interfaces.SessionRecord) error {
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Marshal Session Data
+	//||------------------------------------------------------------------------------------------------||
+
+	sessionJSON, err := json.Marshal(session)
+	if err != nil {
+		fmt.Println("[Session] Failed to marshal session:", err)
+		return err
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Save to Redis (overwrite)
+	//||------------------------------------------------------------------------------------------------||
+
+	err = db.Redis.Set(context.Background(), "session::"+sessionToken, sessionJSON, 30*24*time.Hour).Err()
+	if err != nil {
+		fmt.Println("[Session] Failed to update session in Redis:", err)
+		return err
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Done
+	//||------------------------------------------------------------------------------------------------||
+
+	fmt.Println("[Session] Updated session for account:", sessionToken)
+	return nil
 }
 
 //||------------------------------------------------------------------------------------------------||

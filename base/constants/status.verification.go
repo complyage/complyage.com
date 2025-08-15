@@ -3,23 +3,25 @@ package constants
 import "reflect"
 
 type VerificationStatus struct {
-	Pending   string
-	Verified  string
-	Rejected  string
-	Escalated string
-	Expired   string
-	Cancelled string
-	Missing   string
+	Pending             string
+	PendingVerification string
+	Verified            string
+	Rejected            string
+	Escalated           string
+	Expired             string
+	Cancelled           string
+	Missing             string
 }
 
 var VerificationStatuses = VerificationStatus{
-	Pending:   "PEND",
-	Verified:  "VERF",
-	Rejected:  "RJCT",
-	Escalated: "ESCL",
-	Expired:   "EXPD",
-	Cancelled: "CNCL",
-	Missing:   "MISS",
+	Pending:             "PEND",
+	PendingVerification: "PEVF",
+	Verified:            "VERF",
+	Rejected:            "RJCT",
+	Escalated:           "ESCL",
+	Expired:             "EXPD",
+	Cancelled:           "CNCL",
+	Missing:             "MISS",
 }
 
 func GetAllVerificationStatuses() []string {

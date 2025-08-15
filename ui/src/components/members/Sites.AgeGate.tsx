@@ -13,7 +13,7 @@ import React, {useState, useEffect}                   from "react";
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import type { Site }                                  from "../../interfaces/model.sites";
+import type { ModelSite }                                  from "../../interfaces/models/model.sites";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components

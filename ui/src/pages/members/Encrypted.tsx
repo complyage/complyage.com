@@ -4,7 +4,8 @@
 
 import React, { useEffect, useState }                 from "react";
 import MembersLayout                                  from "../../layouts/MembersLayout";
-import { getVerificationKeyFromCode }                 from "../../interfaces/types.verification";
+import { ModelVerification }                          from "../../interfaces/models/model.verification";
+import { getVerificationType }                        from "../../data/getVerificationData";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default Component
@@ -16,7 +17,7 @@ export default function Encrypted() {
       //|| Const
       //||------------------------------------------------------------------------------------------------||
 
-      const [verifications, setVerifications]         = useState<Verification[]>([]);
+      const [verifications, setVerifications]         = useState<ModelVerification[]>([]);
       const [statusFilter, setStatusFilter]           = useState<string>("ALL");
       const [page, setPage]                           = useState<number>(1);
       const [pageSize]                                = useState<number>(10);
@@ -149,7 +150,7 @@ export default function Encrypted() {
                                                       return (                                                            
                                                             <>
                                                                   <tr key={v.id} className="text-xs">
-                                                                        <td className={(!v.complete) ? "opacity-20" : ""}>{ getVerificationKeyFromCode(v.type) }</td>
+                                                                        <td className={(!v.complete) ? "opacity-20" : ""}>{ getVerificationType(v.type) }</td>
                                                                         <td className={(!v.complete) ? "opacity-20" : ""}><pre className="whitespace-pre-wrap text-xs">{v.data}</pre></td>
                                                                         <td className={(!v.complete) ? "opacity-20" : ""}>{v.complete ? "✅ Verified" : "❌ Pending"}</td>
                                                                         <td className="text-right">

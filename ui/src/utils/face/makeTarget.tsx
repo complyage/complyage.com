@@ -9,7 +9,7 @@
 
       import React, { JSX }                                 from "react";
       import { Target, ScanEye }                            from "lucide-react";
-      import { FaceDirection }                              from "../../interfaces/types.face.direction";
+      import { FaceDirection }                              from "../../interfaces/verify/id/types";
 
       /*||------------------------------------------------------------------------------------------------||
       //|| Icons

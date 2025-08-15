@@ -1,5 +1,6 @@
 
 export function useCountryFullName(code: string | undefined | null): string | undefined {
+      if (!code) return undefined;
       const upperCode = code.toUpperCase();
 
       switch (upperCode) {

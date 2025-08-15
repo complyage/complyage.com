@@ -62,7 +62,7 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Create record
 	//||------------------------------------------------------------------------------------------------||
 
-	record := interfaces.VerificationRecord{
+	record := interfaces.AuthVerification{
 		Code:     code,
 		Key:      key,
 		Email:    email,

@@ -13,7 +13,7 @@ import React, {useEffect, useState}       from "react";
 //|| Intefaces
 //||------------------------------------------------------------------------------------------------||
 
-import { Site }                           from "../../interfaces/model.sites";
+import { ModelSite }                      from "../../interfaces/models/model.sites";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Hooks
@@ -37,7 +37,7 @@ interface VerificationType {
 //||------------------------------------------------------------------------------------------------||
 
 interface OAuthSettingsSectionProps {
-	data              : Site;
+	data              : ModelSite;
 	updateField       : (field: string, value: any) => void;
 }
 

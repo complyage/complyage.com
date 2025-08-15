@@ -9,15 +9,15 @@ import React, { useState, useEffect, useRef }               from "react";
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import { Site }                                             from "../../interfaces/model.sites";
-import { getAccountStatus }                                 from "../../interfaces/status.account";      
+import { ModelSite }                                        from "../../interfaces/models/model.sites";
+import { getAccountStatus }                                 from "../../data/getAccountData";      
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
 //||------------------------------------------------------------------------------------------------||
 
 interface BasicDataProps {
-      data        : Site;
+      data        : ModelSite;
       updateField : (field : string, value : string) => void;
       cacheBust   : string;
 }

@@ -1,13 +1,18 @@
 package helpers
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"errors"
+	"io"
+	"strings"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -58,48 +63,127 @@ func CheckPrivateKey(privateKeyPEM string, checkKey string) error {
 //||------------------------------------------------------------------------------------------------||
 
 func EncryptWithPublicKey(data []byte, publicKeyPEM string) ([]byte, error) {
-	block, _ := pem.Decode([]byte(publicKeyPEM))
-	if block == nil || block.Type != "RSA PUBLIC KEY" {
-		return nil, errors.New("invalid public key PEM format")
-	}
 
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Generate AES-256 Key
+	//||------------------------------------------------------------------------------------------------||
+
+	aesKey := make([]byte, 32)
+	if _, err := rand.Read(aesKey); err != nil {
 		return nil, err
 	}
 
+	//||------------------------------------------------------------------------------------------------||
+	//|| Encrypt Data with AES-GCM
+	//||------------------------------------------------------------------------------------------------||
+
+	block, err := aes.NewCipher(aesKey)
+	if err != nil {
+		return nil, err
+	}
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	nonce := make([]byte, aesGCM.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+	cipherData := aesGCM.Seal(nil, nonce, data, nil)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Encrypt AES Key with RSA Public Key
+	//||------------------------------------------------------------------------------------------------||
+
+	pemBlock, _ := pem.Decode([]byte(publicKeyPEM))
+	if pemBlock == nil || pemBlock.Type != "RSA PUBLIC KEY" {
+		return nil, errors.New("invalid public key PEM format")
+	}
+	pub, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
+	if err != nil {
+		return nil, err
+	}
 	publicKey, ok := pub.(*rsa.PublicKey)
 	if !ok {
 		return nil, errors.New("not an RSA public key")
 	}
-
-	encryptedData, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, data)
+	encryptedAESKey, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, aesKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return encryptedData, nil
+	//||------------------------------------------------------------------------------------------------||
+	//|| Join as base64 strings: encryptedAESKey.nonce.cipherData
+	//||------------------------------------------------------------------------------------------------||
+
+	final := base64.StdEncoding.EncodeToString(encryptedAESKey) + "." +
+		base64.StdEncoding.EncodeToString(nonce) + "." +
+		base64.StdEncoding.EncodeToString(cipherData)
+
+	return []byte(final), nil
 }
 
 //||------------------------------------------------------------------------------------------------||
-//|| Decrypts data using RSA private key in PEM format
+//|| HybridDecrypt : Decrypts data encrypted with HybridEncrypt above using RSA private key (PEM)
+//|| Expects base64(encryptedAESKey) + "." + base64(nonce) + "." + base64(encryptedData)
 //||------------------------------------------------------------------------------------------------||
 
 func DecryptWithPrivateKey(ciphertext []byte, privateKeyPEM string) ([]byte, error) {
-	block, _ := pem.Decode([]byte(privateKeyPEM))
-	if block == nil || block.Type != "RSA PRIVATE KEY" {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Split base64 parts
+	//||------------------------------------------------------------------------------------------------||
+
+	parts := strings.SplitN(string(ciphertext), ".", 3)
+	if len(parts) != 3 {
+		return nil, errors.New("invalid ciphertext format for hybrid decrypt")
+	}
+
+	encryptedAESKey, err := base64.StdEncoding.DecodeString(parts[0])
+	if err != nil {
+		return nil, err
+	}
+	nonce, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, err
+	}
+	cipherData, err := base64.StdEncoding.DecodeString(parts[2])
+	if err != nil {
+		return nil, err
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Decrypt AES Key with RSA Private Key
+	//||------------------------------------------------------------------------------------------------||
+
+	pemBlock, _ := pem.Decode([]byte(privateKeyPEM))
+	if pemBlock == nil || pemBlock.Type != "RSA PRIVATE KEY" {
 		return nil, errors.New("invalid private key PEM format")
 	}
-
-	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	aesKey, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, encryptedAESKey)
 	if err != nil {
 		return nil, err
 	}
 
-	plaintext, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, ciphertext)
+	//||------------------------------------------------------------------------------------------------||
+	//|| Decrypt Data with AES-GCM
+	//||------------------------------------------------------------------------------------------------||
+
+	blockAES, err := aes.NewCipher(aesKey)
+	if err != nil {
+		return nil, err
+	}
+	aesGCM, err := cipher.NewGCM(blockAES)
+	if err != nil {
+		return nil, err
+	}
+	plainData, err := aesGCM.Open(nil, nonce, cipherData, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return plaintext, nil
+	return plainData, nil
 }

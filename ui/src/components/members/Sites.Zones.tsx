@@ -19,17 +19,17 @@ import { useEffectOnce }                          from "../../hooks/useEffectOnc
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import { Site }                                   from "../../interfaces/model.sites";
-import { Zone }                                   from "../../interfaces/zones";
-import { ZoneRequirementPlain }                   from "../../interfaces/zoneRequirements";
+import { ModelSite }                              from "../../interfaces/models/model.sites";
+import { ModelZone }                              from "../../interfaces/models/model.zones";
+import { getZoneRequirement }                     from "../../data/getZoneData";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
 //||------------------------------------------------------------------------------------------------||
 
 interface ZonesEnforcementSectionProps {
-      data                    : Site;
-      updateField             : <K extends keyof Site>(field: K, value: Site[K]) => void;
+      data                    : ModelSite;
+      updateField             : <K extends keyof ModelSite>(field: K, value: ModelSite[K]) => void;
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -43,7 +43,7 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
       //||------------------------------------------------------------------------------------------------||
 
       const [mode, setMode]                               = useState<string>(data?.enforcement || "ALLZ");
-      const [zones, setZones]                             = useState<Zone[]>([]);
+      const [zones, setZones]                             = useState<ModelZone[]>([]);
       const [customZones, setCustomZones]                 = useState<Record<number, number>>({});
       const [loading, setLoading]                         = useState<boolean>(true);
 
@@ -70,7 +70,7 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
                                     state       : "All",
                                     country     : "All",
                                     requirements: "none"
-                              } as Zone);
+                              } as ModelZone);
                               setZones(newZones);
                         }
                   } catch (err) {
@@ -187,9 +187,9 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
                                                 </tr>
                                           </thead>
                                           <tbody>
-                                                {zones.map((zone : Zone) => {
+                                                {zones.map((zone : ModelZone) => {
                                                       const requirementsList = !zone.requirements ? (<li>N/A</li>): zone.requirements.split(",").map((req, idx) => (
-                                                            <li className="p-1 text-gray-300 text-xs" key={idx}>{ZoneRequirementPlain(req.trim())}</li>
+                                                            <li className="p-1 text-gray-300 text-xs" key={idx}>{getZoneRequirement(req.trim())}</li>
                                                       ));
                                                       if (zone.id === "9999") {
                                                             return (

@@ -6,9 +6,12 @@
       "scripts": {
             "dev": "vite",
             "build": "vite build",
+            "dev:check": "tsc --noEmit --watch",
             "preview": "vite preview"
       },
       "dependencies": {
+            "@stripe/react-stripe-js": "^3.9.0",
+            "@stripe/stripe-js": "^7.8.0",
             "@tailwindcss/vite": "^4.1.11",
             "bip39": "^3.1.0",
             "glob": "^11.0.3",

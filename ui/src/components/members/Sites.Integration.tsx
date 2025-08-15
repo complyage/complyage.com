@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 //|| Interface
 //||------------------------------------------------------------------------------------------------||
 
-import { Site }                     from "../../interfaces/model.sites";
+import { ModelSite }                     from "../../interfaces/models/model.sites";
 import { integrationCode }          from "../../utils/integration.code";
 
 //||------------------------------------------------------------------------------------------------||
@@ -17,7 +17,7 @@ import { integrationCode }          from "../../utils/integration.code";
 //||------------------------------------------------------------------------------------------------||
 
 interface IntegrationSectionProps {
-      data           : Site;
+      data           : ModelSite;
       updateField    : (field: string, value: string) => void;
 }
 

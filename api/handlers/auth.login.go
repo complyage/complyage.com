@@ -62,10 +62,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		account.AccountLevel = helpers.Int8Ptr(0)
 	}
 
-	fmt.Println("Account Level : ", account.AccountLevel)
-	fmt.Println("Account Email : ", account.AccountEmail)
-	fmt.Println("Account Salt : ", account.AccountSalt)
-
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check the Password
 	//||------------------------------------------------------------------------------------------------||

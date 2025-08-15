@@ -46,7 +46,24 @@ func MaskAddress(street1, city, country string) string {
 //|| Mask CreditCard
 //||------------------------------------------------------------------------------------------------||
 
-func MaskCreditCard(last4 string) string {
+func MaskCreditCard(cardType string, last4 string) string {
+	upperType := strings.ToUpper(cardType)
+	switch upperType {
+	case "AMEX", "AMERICAN EXPRESS", "AMEX_CREDIT":
+		return "AMEX-" + last4
+	case "VISA", "VISA_CREDIT":
+		return "VISA-" + last4
+	case "MASTERCARD", "MASTERCARD_CREDIT":
+		return "MC-" + last4
+	case "DISCOVER", "DISCOVER_CREDIT":
+		return "DISC-" + last4
+	case "DINERS", "DINERS_CREDIT":
+		return "DINERS-" + last4
+	case "JCB", "JCB_CREDIT":
+		return "JCB-" + last4
+	case "UNIONPAY", "UNIONPAY_CREDIT":
+		return "UNIONPAY-" + last4
+	}
 	return "**** **** **** " + last4
 }
 

@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import { SharedItem } from "../../interfaces/sharedItem";
+import { ModelShared } from "../../interfaces/model/model.shared";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Component
@@ -24,7 +24,7 @@ import MembersLayout from "../../layouts/MembersLayout";
 export default function Shared() {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
-    const [sharedItems, setSharedItems] = useState<SharedItem[]>([]);
+    const [sharedItems, setSharedItems] = useState<ModelShared[]>([]);
     const [loading, setLoading] = useState(true);
 
     //||------------------------------------------------------------------------------------------------||
@@ -65,7 +65,7 @@ export default function Shared() {
 
     const groupedBySite = sharedItems
         .filter((item) => item.site_name.toLowerCase().includes(searchQuery.toLowerCase()))
-        .reduce((groups: Record<string, SharedItem[]>, item) => {
+        .reduce((groups: Record<string, ModelShared[]>, item) => {
             const key = `${item.site_name}||${item.site_url}`;
             if (!groups[key]) groups[key] = [];
             groups[key].push(item);

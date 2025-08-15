@@ -201,14 +201,14 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Create the Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	var identity interfaces.Identity
-
-	if email, err := helpers.CreateEmail(session.Email, publicKey); err != nil {
-		identity.Approved = []constants.VerificationType{}
-	} else {
-		identity.Email = &email
-		identity.Approved = []constants.VerificationType{"MAIL"}
+	identity := interfaces.Identity{
+		Email:    helpers.MaskEmail(session.Email),
+		Approved: []constants.VerificationType{"MAIL"},
 	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Create the Account Record
+	//||------------------------------------------------------------------------------------------------||
 
 	identityJSON, err := json.Marshal(identity)
 	if (err != nil) || (identityJSON == nil) {
@@ -248,7 +248,7 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Email Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	dbErr := verification.CreateEmailVerification(account.IDAccount, account.AccountEmail, account.AccountPublic)
+	_, dbErr := verification.CreateVerificationMAIL(account.IDAccount, account.AccountPublic, session.Email)
 	if dbErr != nil {
 		log.Println("Failed to create email verification:", err)
 		responses.Error(w, http.StatusInternalServerError, "Failed to create email verification record: "+dbErr.Error())
