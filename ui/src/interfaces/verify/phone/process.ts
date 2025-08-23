@@ -14,4 +14,3 @@
             phoneNumber?          : string;
             lastSend?             : Date;
       }
-      

@@ -7,8 +7,9 @@
       //|| Import
       //||------------------------------------------------------------------------------------------------||      
 
-      import { VerificationStatuses, VerificationTypes }                            from "../interfaces/models/model.verification";
+      import { VerificationStatuses, VerificationTypes }                            from "../interfaces/models/model.verify";
       import { Mail, Phone, IdCard, MapPin, CreditCard, User, Image as ImageIcon }  from "lucide-react";
+      import { LucideIcon }                                                          from "lucide-react";
 
       //||------------------------------------------------------------------------------------------------||      
       //|| All Types
@@ -21,6 +22,7 @@
             ADDR: "Address",
             CRCD: "Credit Card",
             UNAM: "Username",
+            UNKN: "Unknown"
       };
 
       //||------------------------------------------------------------------------------------------------||      
@@ -50,6 +52,7 @@
             ADDR: MapPin,
             CRCD: CreditCard,
             UNAM: User,
+            UNKN: ImageIcon
       };
 
       //||------------------------------------------------------------------------------------------------||      
@@ -80,7 +83,7 @@
       //|| Get Verification Icon by Type
       //||------------------------------------------------------------------------------------------------||      
 
-      export function getVerificationIcon(type: VerificationTypes): React.ReactNode {
+      export function getVerificationIcon(type: VerificationTypes): LucideIcon | null {
             return VerificationTypeIcons[type] || null;
       }
 

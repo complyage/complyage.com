@@ -14,6 +14,7 @@ type Identity struct {
 	Phone      string                       `json:"phone,omitempty"`
 	Address    string                       `json:"address,omitempty"`
 	CreditCard string                       `json:"creditCard,omitempty"`
+	IDCard     string                       `json:"idCard,omitempty"`
 	Usernames  map[int64]string             `json:"usernames,omitempty"`
 	Approved   []constants.VerificationType `json:"approved,omitempty"`
 }

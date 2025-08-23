@@ -1,0 +1,126 @@
+package verifier
+
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
+
+import (
+	"api/send"
+	"base/helpers"
+	"base/responses"
+	"base/verify"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/ralphferrara/aria/app"
+)
+
+//||------------------------------------------------------------------------------------------------||
+//|| Request / Response
+//||------------------------------------------------------------------------------------------------||
+
+type handlerRequest struct {
+	CountryCode string `json:"countryCode"`
+	Phone       string `json:"phone"`
+}
+
+type handlerResponse struct {
+	Identifier string `json:"identifier"`
+	Status     string `json:"status"`
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Handler
+//||------------------------------------------------------------------------------------------------||
+
+func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Validate Session Cookie
+	//||------------------------------------------------------------------------------------------------||
+
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		return
+	}
+
+	session, err := helpers.FetchSession(cookie.Value)
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, "Invalid session")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Parse JSON
+	//||------------------------------------------------------------------------------------------------||
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		responses.Error(w, http.StatusBadRequest, "Failed to read request body")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Generate verification tuple (amount + 4-digit code)
+	//||------------------------------------------------------------------------------------------------||
+
+	var req handlerRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload"+err.Error())
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verification
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord, err := verify.Init(verify.DataTypePHNE, session.ID, app.Storages["verifications"], app.SQLDB["main"], session.Private, session.Public)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| We are in progress
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord.AddStep(verify.STEPTYPES.StatusChange, verify.STEPTYPES.StatusChange.Description(verifyRecord.Status.Description()))
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Send the Data
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord.SetDataPhone(verify.PhoneNumber{CountryCode: req.CountryCode, Number: req.Phone})
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Send the verification SMS
+	//||------------------------------------------------------------------------------------------------||
+
+	bodyTxt, sendErr := send.SendVerifyText(req.CountryCode+req.Phone, verifyRecord.TwoFactor.Code)
+	if sendErr != nil {
+		fmt.Println("Error sending verification SMS:", sendErr)
+		responses.Error(w, http.StatusInternalServerError, "Failed to send verification SMS")
+		return
+	}
+	fmt.Println("Verification SMS sent successfully:", bodyTxt, verifyRecord.TwoFactor.Code)
+	verifyRecord.AddStep(verify.STEPTYPES.SentSMS, verify.STEPTYPES.SentSMS.Description(verifyRecord.Status.Description()))
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Prepare Response
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord.UpdateStatusPendingVerification()
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Prepare Response
+	//||------------------------------------------------------------------------------------------------||
+
+	responses.Success(w, http.StatusOK, handlerResponse{
+		Identifier: verifyRecord.UUID,
+		Status:     verifyRecord.Status.Code(),
+	})
+
+}

@@ -1,23 +1,25 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 //||------------------------------------------------------------------------------------------------||
 //|| Verification represents a record in the `verifications` table.
 //||------------------------------------------------------------------------------------------------||
 
 type Verification struct {
-	ID         int64     `gorm:"column:id_verification;primaryKey;autoIncrement"`
-	UUID       string    `gorm:"column:verification_uuid;type:varchar(64);uniqueIndex"`
-	FidAccount int64     `gorm:"column:fid_account"`
-	Type       string    `gorm:"column:verification_type;type:varchar(4)"`
-	Display    string    `gorm:"column:verification_display;type:varchar(256)"`
-	Data       []byte    `gorm:"column:verification_data;type:longblob"`
-	Meta       string    `gorm:"column:verification_meta;type:text"`
-	Secret     string    `gorm:"column:verification_secret;type:text"`
-	Status     string    `gorm:"column:verification_status;type:varchar(4)"`
-	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt  time.Time `gorm:"column:updated_at;autoUpdateTime"`
+	ID         int64     `gorm:"column:id_verification;primaryKey;autoIncrement" json:"id"`
+	UUID       string    `gorm:"column:verification_uuid;type:varchar(64);uniqueIndex" json:"uuid"`
+	FidAccount int64     `gorm:"column:fid_account" json:"fidAccount"`
+	Type       string    `gorm:"column:verification_type;type:varchar(4)" json:"type"`
+	Display    string    `gorm:"column:verification_display;type:TEXT" json:"display"`
+	Data       []byte    `gorm:"column:verification_data;type:longblob" json:"data"`
+	Meta       string    `gorm:"column:verification_meta;type:text" json:"meta"`
+	Secret     string    `gorm:"column:verification_secret;type:text" json:"secret"`
+	Status     string    `gorm:"column:verification_status;type:varchar(4)" json:"status"`
+	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime" json:"created"`
+	UpdatedAt  time.Time `gorm:"column:updated_at;autoUpdateTime" json:"updated"`
 }
 
 //||------------------------------------------------------------------------------------------------||

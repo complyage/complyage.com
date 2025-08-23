@@ -86,6 +86,7 @@
                               //||------------------------------------------------------------------------------------------------||
                               //|| Fetch
                               //||------------------------------------------------------------------------------------------------||
+                              console.log("AUTH/me")
                               const res = await fetch("/auth/me", {
                                     method: "GET",
                                     credentials: "include",
@@ -148,17 +149,18 @@
                   //||------------------------------------------------------------------------------------------------||
                   try {
                         setLoading(true);
-
+                        console.log("AUTH/Complete")
                         const res = await fetch("/auth/complete", {
                               method: "POST",
                               headers: {"Content-Type": "application/x-www-form-urlencoded"},
                               body: payload
                         });
                         const json = await res.json();
+                        console.log("RESPONSE", json);
                         //||------------------------------------------------------------------------------------------------||
                         //|| Handle the Response
                         //||------------------------------------------------------------------------------------------------||
-                        const redirectURL = (oauthParam) ? `/complete?oauth=${oauthParam}` : `/complete`;
+                        const redirectURL = (oauthParam) ? `/members/?oauth=${oauthParam}` : `/members/`;
                         if (json.success) return navigate(redirectURL);
                         //||------------------------------------------------------------------------------------------------||
                         //|| Failed

@@ -6,7 +6,8 @@ package interfaces
 
 type VerificationMeta struct {
 	Approval VerificationMetaApproval `json:"approval"`
-	Steps    []VerificationMetaStep   `json:"steps,omitempty"` // Optional, for tracking verification steps
+	Step     int                      `json:"step,omitempty"`
+	Steps    []VerificationMetaStep   `json:"steps,omitempty"`
 }
 
 //||------------------------------------------------------------------------------------------------||

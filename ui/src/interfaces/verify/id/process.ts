@@ -4,37 +4,45 @@
 //||------------------------------------------------------------------------------------------------||
 
       //||------------------------------------------------------------------------------------------------||
+      //|| Base
+      //||------------------------------------------------------------------------------------------------||
+
+      import { Name, DOB }                from "../../../interfaces/base/user";
+      import { Address }                  from "../../../interfaces/base/geo";
+
+      //||------------------------------------------------------------------------------------------------||
       //|| Verification Media
       //||------------------------------------------------------------------------------------------------||
 
       export interface VerificationMedia {
-            type            : "image" | "video";
             section         : "front" | "back" | "selfie";
-            blob            : Blob;
-            mime            : string;
+            blob?           : Blob;
+            mime?           : string;
+            exists          : boolean;
       }
 
       //||------------------------------------------------------------------------------------------------||
       //|| Verification Media
       //||------------------------------------------------------------------------------------------------||
 
-      export interface VerificationProcessID {
-            identifier      : string;
-            status          : "pending" | "approved" | "rejected" | "expired";
-            level           : "basic" | "advanced" | "human";
-            idType          : "passport" | "drivers" | "national" | "other";
-            error           : null | string;
-            front           : VerificationMedia | null;
-            back            : VerificationMedia | null;
-            selfie          : VerificationMedia | null;
-            steps           : {                  
-                  parsedTextFront   : boolean;
-                  parsedTextBack    : boolean;
-                  dataParsed        : boolean;
-                  hasDOB            : boolean;
-                  hasName           : boolean;
-                  hasAddress        : boolean;
-                  faceMatch         : boolean;
-                  verified          : boolean;
-            }
+      export type VerificationID = {
+            step                  : 0 | 1 | 2 | 3 | 4 | 5;
+            //||------------------------------------------------------------------------------------------------||
+            //|| Card
+            //||------------------------------------------------------------------------------------------------||
+            status                 : "PEND" | "INPR" | "PEVF" | "VERF" | "RJCT" | "ESCL" | "EXPD" | "CNCL" | "MISS";
+            idType?                : "passport" | "drivers" | "national" | "other";
+            front?                 : VerificationMedia | null;
+            back?                  : VerificationMedia | null;
+            selfie?                : VerificationMedia | null;
+            //||------------------------------------------------------------------------------------------------||
+            //|| Response
+            //||------------------------------------------------------------------------------------------------||
+            name?                  : Name;
+            dob?                   : DOB;
+            address?               : Address;
+            //||------------------------------------------------------------------------------------------------||
+            //|| UUID
+            //||------------------------------------------------------------------------------------------------||
+            verificationUUID       : string | null;
       }

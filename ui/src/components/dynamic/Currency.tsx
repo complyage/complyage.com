@@ -13,7 +13,7 @@
       //|| Currency Codes
       //||------------------------------------------------------------------------------------------------||
 
-      import { getCurrencyCodes, getCurrencyZeros } from "../../data/getCurrencies";
+      import { getCurrencyCodes, getCurrencyZeros, getCurrencySymbol }        from "../../data/getCurrencies";
       export type CurrencyCode = (typeof CURRENCY_CODES)[number];
 
       //||------------------------------------------------------------------------------------------------||
@@ -50,8 +50,8 @@
                               <option value="">{placeholder}</option>
                               {CURRENCY_CODES.map((code) => (
                                     <option key={code} value={code}>
-                                          {code}
-                                          {includeZeroDecimalNote && ZERO_DECIMAL.has(code as CurrencyCode) ? " (no decimals)" : ""}
+                                          {code} - [{getCurrencySymbol(code)}]
+                                          {includeZeroDecimalNote && ZERO_DECIMAL.has(code as CurrencyCode) ? "" : ""}
                                     </option>
                               ))}
                         </select>

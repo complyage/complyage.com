@@ -61,9 +61,7 @@ export default function TwoFactorVerify() {
 				headers     : { "Content-Type": "application/x-www-form-urlencoded"},
 				body        : new URLSearchParams(payload).toString(),
 			});
-                  console.log("RES", res);
 			const json = await res.json();
-                  console.log("RESPONSE", json);
                   //||------------------------------------------------------------------------------------------------||
                   //|| Handle the Response
                   //||------------------------------------------------------------------------------------------------||
@@ -116,13 +114,8 @@ export default function TwoFactorVerify() {
 								required
 							/>
 
-							<button
-								type="submit"
-								disabled={
-									code.trim().length ===
-										0 || loading
-								}
-								className="btn btn-primary w-full">
+							<button type="submit" disabled={ code.trim().length === 0 || loading }
+								className="btn btn-secondary h-auto w-full text-2xl py-3">
 								{loading
 									? "Verifying..."
 									: "Verify"}

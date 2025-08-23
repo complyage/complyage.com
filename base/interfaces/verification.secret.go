@@ -5,7 +5,7 @@ package interfaces
 //||------------------------------------------------------------------------------------------------||
 
 type VerificationSecret struct {
-	Attempts   int    `json:"attempts"`
-	Expiration string `json:"expiration"`
-	CheckCode  string `json:"checkCode"`
+	Attempts   int    `json:"attempts,omitempty"`
+	Expiration string `json:"expiration,omitempty"`
+	CheckCode  string `json:"checkCode,omitempty"`
 }

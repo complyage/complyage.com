@@ -43,12 +43,18 @@ import Quit                   from './pages/members/Quit'
 //|| Verification
 //||------------------------------------------------------------------------------------------------||
 
-import CCVerification         from './pages/verification/card/CCVerification'
-import CCVerificationVerify   from './pages/verification/card/CCVerification.Verify'
-import IDVerification         from './pages/verification/id/IDVerification'
-import AddressVerification    from './pages/verification/address/AddressVerification'
-import PhoneVerification      from './pages/verification/phone/PhoneVerification'
 import VerificationInit       from "./pages/verification/Init";
+import VerificationCheck      from './pages/verification/check/VerificationCheck'
+import VerificationStatus     from './pages/verification/status/VerificationStatus'
+
+//||------------------------------------------------------------------------------------------------||
+//|| Verification
+//||------------------------------------------------------------------------------------------------||
+
+import CCVerification         from './pages/verification/card/CCVerification'
+import AddressVerification    from './pages/verification/address/AddressVerification'
+import IDVerification         from './pages/verification/id/IDVerification'
+import PhoneVerification      from './pages/verification/phone/PhoneVerification'
 
 //||------------------------------------------------------------------------------------------------||
 //|| Test
@@ -102,11 +108,14 @@ export default function App() {
 			<Route path="/members/quit" element={<Quit />} />
 
                   <Route path="/verification/init" element={<VerificationInit />} />
+                  <Route path="/verification/check" element={<VerificationCheck />} />
+                  <Route path="/verification/status" element={<VerificationStatus />} />
+                  
                   <Route path="/verification/id" element={<IDVerification />} />
                   <Route path="/verification/card" element={<CCVerification />} />
-                  <Route path="/verification/card/verify" element={<CCVerificationVerify />} />
                   <Route path="/verification/phone" element={<PhoneVerification />} />
                   <Route path="/verification/address" element={<AddressVerification />} />
+                  
 		</Routes>
 	);
 }

@@ -4,7 +4,7 @@
 //|| Identity Verification Data
 //||------------------------------------------------------------------------------------------------||
 
-import { VerificationTypes }                                from "../models/model.verification";
+import { VerificationTypes }                                from "../models/model.verify";
 import { CreditCard }                                       from "../base/transaction";
 import { Address }                                          from "../base/geo";
 import { DOB, EmailAddress, PhoneNumber, IDCard, Username}  from "../base/user";

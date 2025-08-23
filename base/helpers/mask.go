@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"base/interfaces"
 	"fmt"
 	"strings"
 )
@@ -73,4 +74,19 @@ func MaskCreditCard(cardType string, last4 string) string {
 
 func MaskUsername(username string, siteID int64) string {
 	return username + fmt.Sprintf(" (site:%d)", siteID)
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Mask Username
+//||------------------------------------------------------------------------------------------------||
+
+func MaskIDCard(idCard interfaces.Identification) string {
+	num := idCard.Number
+	last := ""
+	if len(num) >= 3 {
+		last = num[len(num)-3:]
+	} else {
+		last = num
+	}
+	return fmt.Sprintf("%s - %s, %s - %s", idCard.IDType, idCard.Address.State, idCard.Address.Country, last)
 }

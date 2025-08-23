@@ -41,7 +41,7 @@ func StripeAmount(amount float64, currency string) int64 {
 	if zeroDecimalCurrencies[currency] {
 		return int64(amount)
 	}
-	return int64(amount * 100)
+	return int64(amount)
 }
 
 //||------------------------------------------------------------------------------------------------||

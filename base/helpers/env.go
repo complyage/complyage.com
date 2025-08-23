@@ -9,3 +9,30 @@ import "os"
 func IsProduction() bool {
 	return os.Getenv("ENV_MODE") == "production"
 }
+
+//||------------------------------------------------------------------------------------------------||
+//|| Get Env with Default
+//||------------------------------------------------------------------------------------------------||
+
+func GetEnv(key, def string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		return def
+	}
+	return val
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Check if Boolean Env is True
+//||------------------------------------------------------------------------------------------------||
+
+func GetEnvBool(key string, def bool) bool {
+	val := os.Getenv(key)
+	if val == "true" || val == "1" {
+		return true
+	}
+	if val == "false" || val == "0" {
+		return false
+	}
+	return def
+}

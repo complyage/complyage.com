@@ -4,7 +4,7 @@
 
 import React, {useEffect, useState, ReactNode}        from "react";
 import {useNavigate, Link}                            from "react-router-dom";
-import {Home, User, Settings, CheckCircle, LogOut}    from "lucide-react";
+import type { LucideIcon }                            from "lucide-react";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components
@@ -18,7 +18,7 @@ import HealthBanner                                   from "../components/dynami
 //|| Members Layout
 //||------------------------------------------------------------------------------------------------||
 
-export default function MembersLayout({title, children}: {title : string, children: ReactNode}) {
+export default function MembersLayout({title, icon : Icon, children}: {title? : string, icon? : LucideIcon, children: ReactNode}) {
       return (
             <>
                   <div className="min-h-screen flex bg-gray-700">
@@ -30,9 +30,10 @@ export default function MembersLayout({title, children}: {title : string, childr
                         {/* Main Content pushed right */}
                         <main className="flex flex-col p-5 ml-54 w-full mt-5">
                               <section className="p-10 flex-1 bg-gray-700 w-full">
-                                    <h1 className="text-white text-2xl mb-3 border-b border-white/20 p-3 font-bold">
+                                    {(title || Icon) && (<h1 className="text-white text-2xl mb-3 border-b border-white/20 p-3 font-bold flex items-center">
+                                          {Icon && <Icon className="inline-block mr-2 w-6 h-6" />}
                                           {title}
-                                    </h1>
+                                    </h1>)}
                                     {children}
                               </section>
                         </main>

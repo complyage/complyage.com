@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState }                 from "react";
 import MembersLayout                                  from "../../layouts/MembersLayout";
-import { ModelVerification }                          from "../../interfaces/models/model.verification";
+import { ModelVerification }                          from "../../interfaces/models/model.verify";
 import { getVerificationType }                        from "../../data/getVerificationData";
 
 //||------------------------------------------------------------------------------------------------||

@@ -15,6 +15,7 @@
             if (!API || Number.isNaN(amount)) return null;
             try {
                   const url = `${API}/v1/api/currency?amount=${encodeURIComponent(amount)}&currency=${encodeURIComponent(toCurrency)}`;
+                  console.log("Converting currency with URL:", url);
                   const res = await fetch(url, { method: "GET" });
                   if (!res.ok) return null;
                   const json = await res.json() as {
@@ -23,6 +24,7 @@
                   };
                   const d = json?.data ?? {};
                   if (!d.converted || !d.currency) return null;
+                  console.log(`Converted ${amount} to ${d.converted} in ${d.currency}`);
                   return (d.converted && Number(d.converted) > 0) ? Number(d.converted) : null;
             } catch (err: any) {
                   return null;

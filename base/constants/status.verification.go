@@ -4,6 +4,7 @@ import "reflect"
 
 type VerificationStatus struct {
 	Pending             string
+	InProgress          string
 	PendingVerification string
 	Verified            string
 	Rejected            string
@@ -15,6 +16,7 @@ type VerificationStatus struct {
 
 var VerificationStatuses = VerificationStatus{
 	Pending:             "PEND",
+	InProgress:          "INPR",
 	PendingVerification: "PEVF",
 	Verified:            "VERF",
 	Rejected:            "RJCT",

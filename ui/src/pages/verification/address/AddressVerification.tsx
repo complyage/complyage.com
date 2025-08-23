@@ -1,254 +1,192 @@
 //||------------------------------------------------------------------------------------------------||
-//|| AddressVerification (Container)
-//|| src/components/security/AddressVerification.tsx
+//|| CCVerification (Container)
+//|| src/pages/verification/CCVerification.tsx
 //||------------------------------------------------------------------------------------------------||
 
-import React, {useMemo, useRef, useState}                         from "react";
-import {useNavigate}                                              from "react-router-dom";
-
-//||------------------------------------------------------------------------------------------------||
-//|| Components
-//||------------------------------------------------------------------------------------------------||
-
-import MembersLayout                                              from "../../../layouts/MembersLayout";
-import InlineAlert                                                from "../../../components/base/InlineAlert";
-import ProgressSteps, { ProgessStep }                             from "../../../components/base/ProgressSteps";
-
-//||------------------------------------------------------------------------------------------------||
-//|| Interfaces
-//||------------------------------------------------------------------------------------------------||
-
-import {Address, CardData, Country}                               from "../../../interfaces/verification.location";
-
-//||------------------------------------------------------------------------------------------------||
-//|| Utils
-//||------------------------------------------------------------------------------------------------||
-
-import {isAddressValid}                                           from "../../../utils/validate";
-
-//||------------------------------------------------------------------------------------------------||
-//|| Steps
-//||------------------------------------------------------------------------------------------------||
-
-import Step1 from "./AddressVerification.Step1";
-import Step2 from "./AddressVerification.Step2";
-import Step3 from "./AddressVerification.Step3";
-
-//||------------------------------------------------------------------------------------------------||
-//|| Data
-//||------------------------------------------------------------------------------------------------||
-
-const countries: Country[] = [
-	{code: "US", name: "United States", flag: "🇺🇸"},
-	{code: "CA", name: "Canada", flag: "🇨🇦"},
-	{code: "GB", name: "United Kingdom", flag: "🇬🇧"},
-	{code: "AU", name: "Australia", flag: "🇦🇺"},
-	{code: "DE", name: "Germany", flag: "🇩🇪"},
-];
-
-//||------------------------------------------------------------------------------------------------||
-//|| Component
-//||------------------------------------------------------------------------------------------------||
-
-export default function AddressVerification() {
-
       //||------------------------------------------------------------------------------------------------||
-      //|| Navigate
+      //|| Import
       //||------------------------------------------------------------------------------------------------||
 
-      const navigate          = useNavigate();
-	const currentStep       = useRef<1 | 2 | 3>(1);
+      import React, {useRef, useState, useEffect}           from "react";
+      import {useNavigate, useSearchParams}                 from "react-router-dom";
+      import { Home }                                       from "lucide-react";
+      import {convertCurrency}                              from "../../../utils/convertCurrency";
+      import {getEnv}                                       from "../../../data/getEnv";
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Recieved
+      //|| Components
       //||------------------------------------------------------------------------------------------------||
 
-      const [country, setCountry]               = useState<Country>(countries[0]);
-	const [addr, setAddr]                     = useState<Address>({
-		line1       : "",
-		line2       : "",
-		city        : "",
-		state       : "",
-		postal      : "",
-		country     : countries[0].code,
-	});
+      import MembersLayout                                  from "../../../layouts/MembersLayout";
+      import ProgressSteps, { ProgessStep }                 from "../../../components/base/ProgressSteps";
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Standardized
+      //|| Pages
       //||------------------------------------------------------------------------------------------------||
 
-	const [std, setStd]                       = useState<Address | null>(null);
-	const [notes, setNotes]                   = useState<string>("");
+      import AddressVerificationStep1                       from "./AddressVerification.Step1";
+      import AddressVerificationStep2                       from "./AddressVerification.Step2";
+      import StripeWrapper                                  from "./StripeWrapper";
+      import AddressVerificationStep4                       from "./AddressVerification.Step4";
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Credit Card
+      //|| Interfaces
       //||------------------------------------------------------------------------------------------------||
 
-      const [card, setCard]                     = useState<CardData>({
-		number                  : "",
-		expMonth                : "",
-		expYear                 : "",
-		cvc                     : "",
-		postal                  : "",
-	});
+      import { VerificationAddress }                        from "../../../interfaces/verify/address/process";
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Status
-      //||------------------------------------------------------------------------------------------------||
-	
-      const [busy, setBusy]                     = useState<boolean>(false);
-	const [serverMsg, setServerMsg]           = useState<string>("");
-
-      //||------------------------------------------------------------------------------------------------||
-      //|| Derived
+      //|| Step Props
       //||------------------------------------------------------------------------------------------------||
 
-	const addrOk = useMemo(() => isAddressValid(addr), [addr]);
-	const cardOk = true;
+      export interface StepProps {
+            process           : VerificationAddress;
+            updateProcess     : (process: VerificationAddress) => void;
+      }
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Tick
+      //|| Page
       //||------------------------------------------------------------------------------------------------||
 
-      const [, setTick] = useState(0);
-	const goStep = (s: 1 | 2 | 3) => {
-		currentStep.current = s;
-		setTick((t) => t + 1);
-	};
+      export default function AddressVerification() {
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| Standardize Address
-      //||------------------------------------------------------------------------------------------------||
+            //||------------------------------------------------------------------------------------------------||
+            //|| Verification
+            //||------------------------------------------------------------------------------------------------||
 
-      const handleStandardize = async () => {
-		if (!addrOk) return;
-		setBusy(true);
-		setServerMsg("");
-		try {
-			// TODO: Call your standardization service here:
-			// const resp = await fetch("/v1/api/address/standardize", {...});
-			// const data = await resp.json(); setStd(data.address); setNotes(data.notes ?? "");
+            const [searchParams] = useSearchParams();
+            const verificationId = searchParams.get("verification") || "";
 
-			// Demo normalization:
-			const normalized: Address = {
-				...addr,
-				line1: addr.line1.trim().toUpperCase(),
-				line2: (addr.line2 || "").trim().toUpperCase(),
-				city: addr.city.trim().toUpperCase(),
-				state: addr.state.trim().toUpperCase(),
-				postal: addr.postal.trim().toUpperCase(),
-				country: addr.country,
-			};
-			setStd(normalized);
-			setNotes("Standardized via demo normalizer");
-			goStep(2);
-		} catch {
-			setServerMsg("Failed to standardize address.");
-		} finally {
-			setBusy(false);
-		}
-	};
+            //||------------------------------------------------------------------------------------------------||
+            //|| Navigate
+            //||------------------------------------------------------------------------------------------------||
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| Continue
-      //||------------------------------------------------------------------------------------------------||
+            const navigate                     = useNavigate();
 
-	const handleConfirmAddress = () => {
-		if (!std) return;
-		goStep(3);
-	};
+            //||------------------------------------------------------------------------------------------------||
+            //|| Process
+            //||------------------------------------------------------------------------------------------------||
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| Submit Payment
-      //||------------------------------------------------------------------------------------------------||
+            const [process, setProcess] = useState<VerificationAddress>({
+                  verifyAddress : {
+                        line1: "234 Main",
+                        line2: "",
+                        city: "Phoenix",
+                        state: "AZ",
+                        postal: "85024",
+                        country: "US"
+                  },
+                  step              : 1,
+                  currency          : "USD",
+                  baseAmount        : Number(getEnv("VITE_VERIFICATION_ADDRESS_AMOUNT")) || 99,
+                  donationAmount    : 0,
+                  chargeAmount      : Number(getEnv("VITE_VERIFICATION_ADDRESS_AMOUNT")) || 99,
+            });
 
-	const handleSubmitPayment = async () => {
-		if (!cardOk || !std) return;
-		setBusy(true);
-		setServerMsg("");
-		try {
-			// TODO: Call your $1 verification endpoint here with { addressOriginal: addr, addressConfirmed: std, card }
-			// await fetch("/v1/api/address/verify-payment", {...});
-			await new Promise((r) => setTimeout(r, 400)); // demo
-			navigate("/members/thanks");
-		} catch {
-			setServerMsg("Card verification failed. Please check your details and try again.");
-		} finally {
-			setBusy(false);
-		}
-	};
+            //||------------------------------------------------------------------------------------------------||
+            //|| Set Process
+            //||------------------------------------------------------------------------------------------------||
 
+            const updateProcess = (update: Partial<VerificationAddress>) => {
+                  setProcess((prev) => ({
+                        ...prev,
+                        ...update
+                  }));
+            }
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| Stepper
-      //||------------------------------------------------------------------------------------------------||
+            //||------------------------------------------------------------------------------------------------||
+            //|| Handle Returning
+            //||------------------------------------------------------------------------------------------------||
 
-      const steps: ProgessStep[] = [
-            { label: "Enter Address", description: "Provide your physical address details." },
-            { label: "Confirm Address", description: "Review and confirm your address." },
-            { label: "Card $1 Check", description: "Verify your card for $1." },
-      ]
+            useEffect(() => {
+                  if (!verificationId) return;
+                  (async () => {
+                        try {
+                              const res = await fetch(`/api/v1/verify/card/lookup?verification=${verificationId}`);
+                              if (res.ok) {
+                                    const data = await res.json();
+                                    if (data?.status === "pending") {
+                                          updateProcess({...process, step : 2});
+                                    }
+                              }
+                        } catch {}
+                  })();
+            }, [verificationId]);
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| JSX
-      //||------------------------------------------------------------------------------------------------||
+            //||------------------------------------------------------------------------------------------------||
+            //|| Stepper
+            //||------------------------------------------------------------------------------------------------||
 
-	return (
-		<MembersLayout title="Physical Address Verification">
-			<div className="w-full max-w-2xl mx-auto">
-				{/* Stepper */}
-                        <ProgressSteps steps={ steps } currentStep={ currentStep.current } className="mb-6" />				
+            const steps: ProgessStep[] = [
+                  { label: "How it works",      description: "Provide your physical address details." },
+                  { label: "Verify Address",    description: "Review and confirm your address." },
+                  { label: "Pay Postage",       description: "Pay for the postage to send" },
+            ];    
+            
+            //||------------------------------------------------------------------------------------------------||
+            //|| Update Currency
+            //||------------------------------------------------------------------------------------------------||
+                        
+            useEffect(() => {
+                  const API      = getEnv("VITE_COMPLYAGE_API_URL") as string;
+                  const currency = process.currency;
+                  const baseAmt  = Number(process.baseAmount) || 0;
+                  const donation = Number(process.donationAmount) || 0;
+                  const totalAmt = baseAmt + donation;
 
-				{/* Inline hint on step 1 input */}
-				{currentStep.current === 1 && (addr.line1 || addr.city || addr.state || addr.postal) ? (
-					addrOk ? (
-						<InlineAlert message="Looks good." isError={false} />
-					) : (
-						<InlineAlert message="Please complete all required address fields." isError={true} />
-					)
-				) : null}
+                  if (!API || !currency || Number.isNaN(totalAmt)) return;
 
-                        { /* Step 1. */ }
+                  const ac = new AbortController();
 
-				{currentStep.current === 1 && (
-					<Step1
-						countries={countries}
-						country={country}
-						setCountry={setCountry}
-						addr={addr}
-						setAddr={setAddr}
-						addrOk={addrOk}
-						busy={busy}
-						serverMsg={serverMsg}
-						onStandardize={handleStandardize}
-					/>
-				)}
+                  (async () => {
+                        // convertCurrency(totalAmt, currency) should return the converted number, or null
+                        const converted = await convertCurrency(totalAmt, currency);
+                        if (converted === null) return;
+                        setProcess(prev => ({
+                              ...prev,
+                              chargeAmount: converted,
+                        }));
+                  })();
 
-                        { /* Step 2. */ }
+                  return () => ac.abort();
+            }, [process.donationAmount, process.baseAmount, process.currency]);
 
-				{currentStep.current === 2 && std && (
-					<Step2 addr={addr} std={std} notes={notes} onBack={() => goStep(1)} onConfirm={handleConfirmAddress} />
-				)}
+            //||------------------------------------------------------------------------------------------------||
+            //|| Step
+            //||------------------------------------------------------------------------------------------------||
 
-                        { /* Step 3 . */ }
+            return (
+                  <MembersLayout title="Address Verification" icon={ Home }>
+                        <div className="w-full max-w-2xl mx-auto">                              
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" />
+                              { process.step === 1 && 
+                                    <AddressVerificationStep1 
+                                          process={ process } 
+                                          updateProcess={updateProcess}
+                                    /> 
+                              }    
 
-				{currentStep.current === 3 && (
-					<Step3
-						card={card}
-						setCard={setCard}
-						cardOk={cardOk}
-						busy={busy}
-						serverMsg={serverMsg}
-						onBack={() => goStep(2)}
-						onSubmit={handleSubmitPayment}
-					/>
-				)}
-			</div>
-		</MembersLayout>
-	);
+                              { process.step === 2 &&                               
+                                    <AddressVerificationStep2 
+                                          process={process}
+                                          updateProcess={updateProcess}
+                                    />
+                              }    
+                                    
+                              {process.step === 3 && (
+                                    <StripeWrapper
+                                          process={process}
+                                          updateProcess={updateProcess}
+                                    />
+                              )}                                                                                
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| EOF
-      //||------------------------------------------------------------------------------------------------||
-
-}
+                              {process.step === 4 && (
+                                    <AddressVerificationStep4
+                                          process={process}
+                                          updateProcess={updateProcess}
+                                    />
+                              )}                                                                                
+                        </div>
+                  </MembersLayout>                  
+            );
+      }

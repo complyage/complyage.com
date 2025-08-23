@@ -57,8 +57,10 @@ type Username struct {
 //||------------------------------------------------------------------------------------------------||
 
 type Identification struct {
-	Front   Media   `json:"front"`
-	Back    Media   `json:"back"`
+	IDType  string  `json:"idType,omitempty"`
+	Number  string  `json:"number,omitempty"`
+	Front   Media   `json:"front,omitempty"`
+	Back    Media   `json:"back,omitempty"`
 	Selfie  Media   `json:"selfie,omitempty"`
 	Address Address `json:"address,omitempty"`
 	DOB     *DOB    `json:"dob,omitempty"`

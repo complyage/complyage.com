@@ -7,7 +7,7 @@
       //|| Currency
       //||------------------------------------------------------------------------------------------------||
 
-      import { CurrencyAmount }                 from "../../currency/currency.amount";
+      import { Address }                        from "../../base/geo";
       import { CurrencyCode }                   from "../../../components/dynamic/Currency";
 
       //||------------------------------------------------------------------------------------------------||
@@ -15,19 +15,26 @@
       //||------------------------------------------------------------------------------------------------||
 
       export type VerificationAddress = {
-            baseAmount            : CurrencyAmount;
-            chargeAmount          : CurrencyAmount;
-            donation              : number;
+            step                  : 1 | 2 | 3 | 4;
+            verifyAddress         : Address;
+            //||------------------------------------------------------------------------------------------------||
+            //|| Totals
+            //||------------------------------------------------------------------------------------------------||
+            baseAmount            : number;
+            chargeAmount          : number;
+            donationAmount        : number;
             currency              : CurrencyCode;
-            cardNumber?           : string;
-            expMonth?             : string;
-            expYear?              : string;
-            cvc?                  : string;            
+            //||------------------------------------------------------------------------------------------------||
+            //|| Card
+            //||------------------------------------------------------------------------------------------------||
             billingZip?           : string;
-            //Response Based Ignore
+            //||------------------------------------------------------------------------------------------------||
+            //|| Response
+            //||------------------------------------------------------------------------------------------------||
+            clientSecret?         : string;
             lastFour?             : string;
             cardType?             : string;
             transactionId?        : string;
-            verificationUUID?    : string;
+            verificationUUID?     : string;
       }
       

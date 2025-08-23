@@ -1,7 +1,13 @@
 package main
 
 import (
-	"api/handlers"
+	"api/handlers/auth"
+	"api/handlers/public"
+	"api/handlers/user"
+	"api/handlers/utils"
+	"api/handlers/v1/agent"
+	"api/handlers/v1/sites"
+	"api/handlers/v1/verifier"
 	"base/adapters"
 	"base/db"
 	"base/helpers"
@@ -109,87 +115,82 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	router.Use(LoggerMiddleware)
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get News/Zones Public
+	//|| Auth
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/news", handlers.NewsHandler).Methods("GET")
-	router.HandleFunc("/v1/api/zones", handlers.ZoneHandler).Methods("GET")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Member Sites
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/sites/zones", handlers.SitesZoneHandler).Methods("GET")
-	router.HandleFunc("/v1/api/sites/vtypes", handlers.VerificationTypesListHandler).Methods("GET")
-	router.HandleFunc("/v1/api/sites/list", handlers.SitesListHandler).Methods("GET")
-	router.HandleFunc("/v1/api/sites/load", handlers.SitesLoadHandler).Methods("GET")
-	router.HandleFunc("/v1/api/sites/upload", handlers.UploadHandler).Methods("POST")
-	router.HandleFunc("/v1/api/sites/create", handlers.SitesNewHandler).Methods("POST")
-	router.HandleFunc("/v1/api/sites/copy", handlers.SitesCopyHandler).Methods("GET")
-	router.HandleFunc("/v1/api/sites/update", handlers.SitesUpdateHandler).Methods("POST")
-	router.HandleFunc("/v1/api/sites/delete", handlers.SitesDeleteHandler).Methods("DELETE")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Publc Routes
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/auth/signup", handlers.SignupHandler).Methods("POST")
-	router.HandleFunc("/auth/forgot", handlers.ForgotPasswordHandler).Methods("POST")
-	router.HandleFunc("/auth/twofactor", handlers.TwoFactorHandler).Methods("POST")
-	router.HandleFunc("/auth/me", handlers.AuthMeHandler).Methods("GET")
-	router.HandleFunc("/auth/complete", handlers.CompleteHandler).Methods("POST", "GET")
-	router.HandleFunc("/auth/login", handlers.LoginHandler).Methods("POST")
-	router.HandleFunc("/auth/logout", handlers.LogoutHandler).Methods("GET")
-	router.HandleFunc("/auth/generate", handlers.GenerateKeyPairHandler).Methods("GET")
+	router.HandleFunc("/auth/signup", auth.SignupHandler).Methods("POST")
+	router.HandleFunc("/auth/forgot", auth.ForgotPasswordHandler).Methods("POST")
+	router.HandleFunc("/auth/twofactor", auth.TwoFactorHandler).Methods("POST")
+	router.HandleFunc("/auth/me", auth.AuthMeHandler).Methods("GET")
+	router.HandleFunc("/auth/complete", auth.CompleteHandler).Methods("POST", "GET")
+	router.HandleFunc("/auth/login", auth.LoginHandler).Methods("POST")
+	router.HandleFunc("/auth/logout", auth.LogoutHandler).Methods("GET")
+	router.HandleFunc("/auth/generate", auth.GenerateKeyPairHandler).Methods("GET")
+	router.HandleFunc("/auth/reset", auth.ResetPasswordHandler).Methods("POST")
+	router.HandleFunc("/auth/quit", auth.QuitHandler).Methods("POST")
+	router.HandleFunc("/auth/delete-account", auth.DeleteAccountHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| User Routes
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/user/dashboard", handlers.UserDashboard).Methods("GET")
-	router.HandleFunc("/user/verifications", handlers.UserVerifications).Methods("GET")
-	router.HandleFunc("/user/reset", handlers.ResetPasswordHandler).Methods("POST")
-	router.HandleFunc("/user/quit", handlers.QuitHandler).Methods("POST")
-	router.HandleFunc("/user/delete-account", handlers.DeleteAccountHandler).Methods("POST")
-	router.HandleFunc("/user/shared", handlers.UserSharedHandler).Methods("GET")
+	router.HandleFunc("/user/dashboard", user.UserDashboard).Methods("GET")
+	router.HandleFunc("/user/verifications", user.UserVerifications).Methods("GET")
+	router.HandleFunc("/user/shared", user.UserSharedHandler).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Get News/Zones Public
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/news", public.NewsHandler).Methods("GET")
+	router.HandleFunc("/v1/api/zones", public.ZoneHandler).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Member Sites
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/sites/zones", sites.SitesZoneHandler).Methods("GET")
+	router.HandleFunc("/v1/api/sites/vtypes", sites.VerificationTypesListHandler).Methods("GET")
+	router.HandleFunc("/v1/api/sites/list", sites.SitesListHandler).Methods("GET")
+	router.HandleFunc("/v1/api/sites/load", sites.SitesLoadHandler).Methods("GET")
+	router.HandleFunc("/v1/api/sites/upload", sites.UploadHandler).Methods("POST")
+	router.HandleFunc("/v1/api/sites/create", sites.SitesNewHandler).Methods("POST")
+	router.HandleFunc("/v1/api/sites/copy", sites.SitesCopyHandler).Methods("GET")
+	router.HandleFunc("/v1/api/sites/update", sites.SitesUpdateHandler).Methods("POST")
+	router.HandleFunc("/v1/api/sites/delete", sites.SitesDeleteHandler).Methods("DELETE")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/init", handlers.VerificationInit).Methods("GET")
-	router.HandleFunc("/v1/api/verify/load", handlers.VerificationCodeLoad).Methods("GET")
-	router.HandleFunc("/v1/api/verify/check", handlers.VerificationCheckCodeHandler).Methods("POST")
-	router.HandleFunc("/v1/api/verify/list", handlers.GetVerificationsList).Methods("GET")
-	router.HandleFunc("/v1/api/verify/qr/generate", handlers.QRCodeGenerate).Methods("GET")
+	router.HandleFunc("/v1/api/verify/init", verifier.VerificationInit).Methods("GET")
+	router.HandleFunc("/v1/api/verify/list", verifier.GetVerificationsList).Methods("GET")
+	router.HandleFunc("/v1/api/verify/load", verifier.VerificationCodeLoad).Methods("GET")
+	router.HandleFunc("/v1/api/verify/check", verifier.VerificationCodeCheck).Methods("POST")
+	router.HandleFunc("/v1/api/verify/qr/generate", verifier.QRCodeGenerate).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - ID
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/id/init", handlers.IDVerifyInitHandler).Methods("GET")
-	router.HandleFunc("/v1/api/verify/id/status", handlers.VerifyIDStatusHandler).Methods("GET")
-	router.HandleFunc("/v1/api/verify/id/media/upload", handlers.VerifyIDMediaUpload).Methods("POST")
-	router.HandleFunc("/v1/api/verify/id/media/fetch", handlers.VerifyIDMediaFetch).Methods("GET")
-	router.HandleFunc("/v1/api/verify/id/success", handlers.VerifyIDSuccessHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/id/init", verifier.IDVerifyInitHandler).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/status", verifier.VerifyIDStatusHandler).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/media/upload", verifier.VerifyIDMediaUpload).Methods("POST")
+	router.HandleFunc("/v1/api/verify/id/media/fetch", verifier.VerifyIDMediaFetch).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/success", verifier.VerifyIDSuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - Card
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/phone", handlers.PhoneVerifyInitHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/phone", verifier.PhoneVerifyInitHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - Card
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/card", handlers.CCVerifyInitHandler).Methods("POST")
-	router.HandleFunc("/v1/api/verify/card/check", handlers.CCVerifyCheckHandler).Methods("POST")
-	router.HandleFunc("/v1/api/verify/card/success", handlers.CCVerifySuccessHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/card", verifier.CCVerifyInitHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/card/check", verifier.CCVerifyCheckHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/card/success", verifier.CCVerifySuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - Address
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/address", handlers.AddressVerifyInitHandler).Methods("POST")
-	router.HandleFunc("/v1/api/verify/address/success", handlers.AddressVerifySuccessHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/address", verifier.AddressVerifyInitHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/address/success", verifier.AddressVerifySuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Tools
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/currency", handlers.ConvertUSDHandler).Methods("GET")
-	router.HandleFunc("/v1/api/geo/address", handlers.GoogleAddressVerifyHandler).Methods("POST")
+	router.HandleFunc("/v1/api/currency", utils.ConvertUSDHandler).Methods("GET")
+	router.HandleFunc("/health", utils.HealthHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
-	//|| Status Update - ID Verification
+	//|| Agent
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/internal/verify/id/progress", handlers.VerifyIDProgressHandler).Methods("POST")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Simple Up Check
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/agent/fatal", handlers.AgentFatalHandler).Methods("POST")
-	router.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
+	router.HandleFunc("/v1/api/agent/fatal", agent.AgentFatalHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Cors Middleware - Need to update to handle CORS properly
 	//||------------------------------------------------------------------------------------------------||

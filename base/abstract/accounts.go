@@ -5,6 +5,7 @@ import (
 	"base/models"
 	"fmt"
 
+	"github.com/ralphferrara/aria/app"
 	"gorm.io/gorm"
 )
 
@@ -31,47 +32,23 @@ func GetAccountByID(id string) (*models.Account, error) {
 //||------------------------------------------------------------------------------------------------||
 
 func GetAccountByVerificationUUID(uuid string) (*models.Account, error) {
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Prepare Account
-	//||------------------------------------------------------------------------------------------------||
-
 	var account models.Account
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Query: Join verifications and accounts by fid_account, filter by uuid
-	//||------------------------------------------------------------------------------------------------||
+	// Raw SQL query: join verify and accounts, filter by verify_uuid
+	const q = `
+            SELECT accounts.* FROM accounts
+            INNER JOIN verify ON verify.fid_account = accounts.id_account
+            WHERE verify.verify_uuid = ?
+            LIMIT 1
+      `
 
-	q := `
-		SELECT 
-			A.id_account, 
-			A.account_username,
-			A.account_public,
-			A.account_private,
-			A.account_private_hash
-		FROM accounts A
-		LEFT JOIN verifications V ON A.id_account = V.fid_account
-		WHERE V.verification_uuid = ?
-		LIMIT 1
-	`
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Query DB
-	//||------------------------------------------------------------------------------------------------||
-
-	result := db.DB.Raw(q, uuid).Scan(&account)
+	result := app.SQLDB["main"].DB.Raw(q, uuid).Scan(&account)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	// Not found if zero ID
 	if account.IDAccount == 0 {
-		return nil, nil
+		return nil, nil // Not found
 	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Done
-	//||------------------------------------------------------------------------------------------------||
-
 	return &account, nil
 }
 
