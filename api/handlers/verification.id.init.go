@@ -1,58 +1,61 @@
-//||------------------------------------------------------------------------------------------------||
-//|| GET /v1/api/verification/id/process
-//||------------------------------------------------------------------------------------------------||
-
 package handlers
 
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
+
 import (
-	"base/db"
+	"api/verification"
+	"base/helpers"
 	"base/interfaces"
 	"base/responses"
-	"context"
-	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Verification ID Process
+//|| Handler
 //||------------------------------------------------------------------------------------------------||
 
-func VerificationIDProcess(w http.ResponseWriter, r *http.Request) {
+func IDVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get Query Parameter
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	identifier := r.URL.Query().Get("identifier")
-	if identifier == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing identifier")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Load from Redis
-	//||------------------------------------------------------------------------------------------------||
-
-	key := "verify::iden::" + identifier
-	raw, err := db.Redis.Get(context.Background(), key).Bytes()
+	cookie, err := r.Cookie("session")
 	if err != nil {
-		responses.Error(w, http.StatusNotFound, "Verification process not found")
+		responses.Error(w, http.StatusUnauthorized, "No session cookie")
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Load from Redis
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	var process interfaces.VerificationProcessID
-	if err := json.Unmarshal(raw, &process); err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to decode verification process")
+	session, err := helpers.FetchSession(cookie.Value)
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Return success
+	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	responses.Success(w, http.StatusOK, process)
+	verificationUUID, iErr := verification.CreateVerificationIDEN(session.ID, session.Public)
+	if iErr != nil {
+		fmt.Println("Error creating card verification:", iErr)
+		responses.Error(w, http.StatusInternalServerError, "Failed to create verification record")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Prepare Response
+	//||------------------------------------------------------------------------------------------------||
+
+	responses.Success(w, http.StatusOK, interfaces.VerificationBasicInitialResponse{
+		UUID: verificationUUID,
+	})
+
 }

@@ -13,8 +13,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/ralphferrara/aria/storage"
+
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -47,6 +50,19 @@ func main() {
 		fmt.Println("Running in development mode, using DB")
 		UseInMemory = false
 	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Starting switch-over to aria
+	//||------------------------------------------------------------------------------------------------||
+	if err := app.Init("config.json"); err != nil {
+		app.Log.Error("main", "Startup failed: %v", err)
+		os.Exit(1)
+	}
+	app.Log.Info("main", "API started")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Connect to Storage
+	//||------------------------------------------------------------------------------------------------||
+	var Store storage.Storage
+	Store.Init()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Open DB Connection
 	//||------------------------------------------------------------------------------------------------||
@@ -133,27 +149,46 @@ func main() {
 	//|| Verify
 	//||------------------------------------------------------------------------------------------------||
 	router.HandleFunc("/v1/api/verify/init", handlers.VerificationInit).Methods("GET")
+	router.HandleFunc("/v1/api/verify/load", handlers.VerificationCodeLoad).Methods("GET")
+	router.HandleFunc("/v1/api/verify/check", handlers.VerificationCheckCodeHandler).Methods("POST")
 	router.HandleFunc("/v1/api/verify/list", handlers.GetVerificationsList).Methods("GET")
-	router.HandleFunc("/v1/api/verify/upload", handlers.UploadVerificationIDMedia).Methods("POST")
 	router.HandleFunc("/v1/api/verify/qr/generate", handlers.QRCodeGenerate).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - ID
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/id/process", handlers.VerificationIDProcess).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/init", handlers.IDVerifyInitHandler).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/status", handlers.VerifyIDStatusHandler).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/media/upload", handlers.VerifyIDMediaUpload).Methods("POST")
+	router.HandleFunc("/v1/api/verify/id/media/fetch", handlers.VerifyIDMediaFetch).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/success", handlers.VerifyIDSuccessHandler).Methods("POST")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify - Card
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/verify/phone", handlers.PhoneVerifyInitHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - Card
 	//||------------------------------------------------------------------------------------------------||
 	router.HandleFunc("/v1/api/verify/card", handlers.CCVerifyInitHandler).Methods("POST")
-	router.HandleFunc("/v1/api/verify/card/lookup", handlers.CCVerifyInitHandler).Methods("POST")
 	router.HandleFunc("/v1/api/verify/card/check", handlers.CCVerifyCheckHandler).Methods("POST")
 	router.HandleFunc("/v1/api/verify/card/success", handlers.CCVerifySuccessHandler).Methods("POST")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify - Address
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/verify/address", handlers.AddressVerifyInitHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/address/success", handlers.AddressVerifySuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Tools
 	//||------------------------------------------------------------------------------------------------||
 	router.HandleFunc("/v1/api/currency", handlers.ConvertUSDHandler).Methods("GET")
+	router.HandleFunc("/v1/api/geo/address", handlers.GoogleAddressVerifyHandler).Methods("POST")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Status Update - ID Verification
+	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/internal/verify/id/progress", handlers.VerifyIDProgressHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Simple Up Check
 	//||------------------------------------------------------------------------------------------------||
+	router.HandleFunc("/v1/api/agent/fatal", handlers.AgentFatalHandler).Methods("POST")
 	router.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Cors Middleware - Need to update to handle CORS properly

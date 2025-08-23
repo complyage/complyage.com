@@ -5,8 +5,8 @@ package handlers
 //||------------------------------------------------------------------------------------------------||
 
 import (
+	"api/send"
 	"api/verification"
-	"base/adapters"
 	"base/helpers"
 	"base/interfaces"
 	"base/responses"
@@ -14,14 +14,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 //||------------------------------------------------------------------------------------------------||
 //|| Handler
 //||------------------------------------------------------------------------------------------------||
 
-func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
+func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
@@ -53,14 +52,14 @@ func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Generate verification tuple (amount + 4-digit code)
 	//||------------------------------------------------------------------------------------------------||
 
-	var req interfaces.VerificationCardInitialRequest
+	var req interfaces.VerificationPhoneInitialRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload"+err.Error())
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Generate verification tuple (amount + 4-digit code)
+	//|| Generate verification code
 	//||------------------------------------------------------------------------------------------------||
 
 	code, err := helpers.Generate6DigitCode()
@@ -70,41 +69,43 @@ func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Phone Structure
+	//||------------------------------------------------------------------------------------------------||
+
+	phone := interfaces.PhoneNumber{
+		CountryCode: req.CountryCode,
+		Number:      req.Phone,
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	verificationUUID, iErr := verification.CreateVerificationCRCD(session.ID, session.Public, code)
+	verificationUUID, iErr := verification.CreateVerificationPHNE(session.ID, session.Public, phone, code)
 	if iErr != nil {
-		fmt.Println("Error creating card verification:", iErr)
+		fmt.Println("Error creating phone verification:", iErr)
 		responses.Error(w, http.StatusInternalServerError, "Failed to create verification record")
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Verification
+	//|| Send the verification SMS
 	//||------------------------------------------------------------------------------------------------||
 
-	intent, err := adapters.StripeIntent(verificationUUID, req.Amount, req.Currency, code)
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to create payment intent")
+	bodyTxt, sendErr := send.SendVerifyText(phone.CountryCode+phone.Number, code)
+	if sendErr != nil {
+		fmt.Println("Error sending verification SMS:", sendErr)
+		responses.Error(w, http.StatusInternalServerError, "Failed to send verification SMS")
 		return
 	}
+	fmt.Println("Verification SMS sent successfully:", bodyTxt)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
-	responses.Success(w, http.StatusOK, interfaces.VerificationCardInitialResponse{
-		UUID:         verificationUUID,
-		Amount:       intent.Amount,
-		Currency:     string(intent.Currency),
-		ClientSecret: intent.ClientSecret,
+	responses.Success(w, http.StatusOK, interfaces.VerificationBasicInitialResponse{
+		UUID: verificationUUID,
 	})
 
 }
-
-//||------------------------------------------------------------------------------------------------||
-//|| (Optional) Trim utility for local use
-//||------------------------------------------------------------------------------------------------||
-
-func trim(s string) string { return strings.TrimSpace(s) }

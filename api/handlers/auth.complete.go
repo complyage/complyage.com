@@ -4,19 +4,19 @@ package handlers
 //|| Import
 //||------------------------------------------------------------------------------------------------||
 import (
-	"api/verification"
 	"base/abstract"
 	"base/constants"
-	"base/db"
 	"base/helpers"
 	"base/interfaces"
 	"base/models"
 	"base/responses"
+	"base/verify"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -248,19 +248,47 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Email Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	_, dbErr := verification.CreateVerificationMAIL(account.IDAccount, account.AccountPublic, session.Email)
-	if dbErr != nil {
-		log.Println("Failed to create email verification:", err)
-		responses.Error(w, http.StatusInternalServerError, "Failed to create email verification record: "+dbErr.Error())
+	verifyRecord, err := verify.Init(verify.DataTypeMAIL, app.Storages["verifications"], privateKey, publicKey)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
+		return
+	}
+
+	verifyRecord.FidAccount = dbAccount.IDAccount
+	verifyRecord.Display = "Email Verification"
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Refetch the User Data
+	//||------------------------------------------------------------------------------------------------||
+
+	updatedAccount, err := abstract.GetAccountByID(fmt.Sprintf("%d", account.IDAccount))
+	if err != nil || updatedAccount == nil {
+		responses.Error(w, http.StatusInternalServerError, "Could not re-fetch account after update")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Update the Database Record
+	//|| Create the Session
 	//||------------------------------------------------------------------------------------------------||
 
-	if err := db.DB.Save(&account).Error; err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Could not update account")
+	sessionToken, err := helpers.SessionCreate(updatedAccount.AccountEmail, *updatedAccount)
+	if err != nil || sessionToken == "" {
+		responses.Error(w, http.StatusInternalServerError, "Failed to create session: "+err.Error())
 		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Write the Session Cookie
+	//||------------------------------------------------------------------------------------------------||
+
+	helpers.WriteSessionCookie(w, sessionToken)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Delete the Old Session Cookie
+	//||------------------------------------------------------------------------------------------------||
+
+	if cookie.Value != "" && cookie.Value != sessionToken {
+		_ = helpers.DeleteSession(cookie.Value)
 	}
 
 	//||------------------------------------------------------------------------------------------------||

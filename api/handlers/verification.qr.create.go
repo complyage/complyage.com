@@ -61,7 +61,7 @@ func QRCodeGenerate(w http.ResponseWriter, r *http.Request) {
 	//|| Construct URL
 	//||------------------------------------------------------------------------------------------------||
 
-	targetURL := fmt.Sprintf("%s/verify/%s/?identifier=%s", base, uType, identifier)
+	targetURL := fmt.Sprintf("%s/verification/%s/?identifier=%s", base, uType, identifier)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Generate QR

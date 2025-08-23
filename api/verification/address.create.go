@@ -16,25 +16,14 @@ import (
 //|| Create CRCD
 //||------------------------------------------------------------------------------------------------||
 
-func CreateVerificationCRCD(accountId int64, publicKey string, checkCode string) (string, error) {
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Credit Card Data
-	//||------------------------------------------------------------------------------------------------||
-
-	creditCard := interfaces.CreditCard{
-		LastFour:      "",
-		CardType:      "",
-		Address:       interfaces.Address{},
-		TransactionId: "",
-	}
+func CreateVerificationADDR(accountId int64, publicKey string, address interfaces.Address, checkCode string) (string, error) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create the Verification Data
 	//||------------------------------------------------------------------------------------------------||
 
 	var data interfaces.VerificationData
-	data.CRCD = creditCard
+	data.ADDR = address
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create the Meta Steps
@@ -43,7 +32,7 @@ func CreateVerificationCRCD(accountId int64, publicKey string, checkCode string)
 	step := interfaces.VerificationMetaStep{
 		StepName:      "INIT",
 		StepStatus:    "INIT",
-		StepDetails:   "Credit Card Verification Initiated",
+		StepDetails:   "Address Verification Initiated",
 		StepTimestamp: helpers.UniversalNow(),
 	}
 
@@ -81,15 +70,15 @@ func CreateVerificationCRCD(accountId int64, publicKey string, checkCode string)
 	fmt.Printf("DEBUG ToUniversalDate: %s\n", helpers.ToUniversalDate(expiration))
 
 	//||------------------------------------------------------------------------------------------------||
-	//||
+	//|| Display
 	//||------------------------------------------------------------------------------------------------||
 
-	displayName := helpers.MaskCreditCard("PENDING", "0000")
+	displayName := helpers.MaskAddress(address.Line1, address.City, address.Country)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create the Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	return CreateVerification(accountId, publicKey, constants.VerificationCreditCard, constants.VerificationStatuses.Pending, displayName, data, meta, secret)
+	return CreateVerification(accountId, publicKey, constants.VerificationAddress, constants.VerificationStatuses.Pending, displayName, data, meta, secret)
 
 }

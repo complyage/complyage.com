@@ -19,7 +19,7 @@ import (
 //|| VerificationCardCodeRequest
 //||------------------------------------------------------------------------------------------------||
 
-type VerificationCardCodeRequest struct {
+type VerificationCheckCodeRequest struct {
 	UUID string `json:"uuid"`
 	Code string `json:"code"`
 }
@@ -28,13 +28,13 @@ type VerificationCardCodeRequest struct {
 //|| Handler: Card Code Verification Attempt
 //||------------------------------------------------------------------------------------------------||
 
-func CCVerifyCheckHandler(w http.ResponseWriter, r *http.Request) {
+func VerificationCheckCodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Request
 	//||------------------------------------------------------------------------------------------------||
 
-	var req VerificationCardCodeRequest
+	var req VerificationCheckCodeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload: "+err.Error())
 		return
@@ -75,6 +75,7 @@ func CCVerifyCheckHandler(w http.ResponseWriter, r *http.Request) {
 		responses.Error(w, http.StatusInternalServerError, "Failed to decode secret: "+err.Error())
 		return
 	}
+
 	var dbMeta interfaces.VerificationMeta
 	if err := json.Unmarshal([]byte(verificationRecord.Meta), &dbMeta); err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to decode meta: "+err.Error())
@@ -107,10 +108,12 @@ func CCVerifyCheckHandler(w http.ResponseWriter, r *http.Request) {
 			account.IDAccount, account.AccountPublic, req.UUID, verificationRecord.Display,
 			interfaces.VerificationData{}, meta, secret, constants.VerificationStatuses.Rejected,
 		)
+
 		if saveErr != nil {
 			responses.Error(w, http.StatusInternalServerError, "Failed to update attempts: "+saveErr.Error())
 			return
 		}
+
 		responses.Error(w, http.StatusBadRequest, "Verification code expired")
 		return
 	}
@@ -179,12 +182,45 @@ func CCVerifyCheckHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Update Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	idErr := verification.IdentityUpdateCreditCard(account.IDAccount, verificationRecord.Display)
-	if idErr != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to update identity: "+idErr.Error())
-		return
+	switch verificationRecord.Type {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Credit Card
+	//||------------------------------------------------------------------------------------------------||
+	case string(constants.VerificationCreditCard):
+		idErr := verification.IdentityUpdateCreditCard(account.IDAccount, verificationRecord.Display)
+		if idErr != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to update identity: "+idErr.Error())
+			return
+		}
+		break
+	//||------------------------------------------------------------------------------------------------||
+	//|| Email
+	//||------------------------------------------------------------------------------------------------||
+	case string(constants.VerificationEmail):
+		idErr := verification.IdentityUpdateEmail(account.IDAccount, verificationRecord.Display)
+		if idErr != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to update identity: "+idErr.Error())
+			return
+		}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Phone
+	//||------------------------------------------------------------------------------------------------||
+	case string(constants.VerificationPhone):
+		idErr := verification.IdentityUpdatePhone(account.IDAccount, verificationRecord.Display)
+		if idErr != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to update identity: "+idErr.Error())
+			return
+		}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Address
+	//||------------------------------------------------------------------------------------------------||
+	case string(constants.VerificationAddress):
+		idErr := verification.IdentityUpdateAddress(account.IDAccount, verificationRecord.Display)
+		if idErr != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to update identity: "+idErr.Error())
+			return
+		}
 	}
-
 	//||------------------------------------------------------------------------------------------------||
 	//|| Success
 	//||------------------------------------------------------------------------------------------------||

@@ -1,101 +1,105 @@
-package verification
+package handlers
 
 //||------------------------------------------------------------------------------------------------||
-//|| CreateEmailVerification inserts a new email verification record
+//|| Import
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/constants"
-	"base/db"
+	"api/verification"
+	"base/adapters"
 	"base/helpers"
 	"base/interfaces"
-	"base/models"
+	"base/responses"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"time"
+	"io"
+	"net/http"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| CreateEmailVerification inserts a new email verification record
+//|| Handler
 //||------------------------------------------------------------------------------------------------||
 
-func CreateVerification(accountId int64, publicKey string, vType constants.VerificationType, vStatus string, displayName string, data interfaces.VerificationData, meta interfaces.VerificationMeta, secret interfaces.VerificationSecret) (string, error) {
+func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Build meta JSON
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	dataJSON, err := json.Marshal(data)
+	cookie, err := r.Cookie("session")
 	if err != nil {
-		return "", errors.New("Failed to marshal data: " + err.Error())
+		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		return
 	}
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Build meta JSON
-	//||------------------------------------------------------------------------------------------------||
-
-	metaJSON, err := json.Marshal(meta)
+	session, err := helpers.FetchSession(cookie.Value)
 	if err != nil {
-		return "", errors.New("Failed to marshal meta: " + err.Error())
+		responses.Error(w, http.StatusUnauthorized, "Invalid session")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Build secret JSON
+	//|| Parse JSON
 	//||------------------------------------------------------------------------------------------------||
 
-	secretJSON, err := json.Marshal(secret)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return "", errors.New("Failed to marshal secret: " + err.Error())
+		responses.Error(w, http.StatusBadRequest, "Failed to read request body")
+		return
 	}
-	fmt.Printf("DEBUG secretJSON: %s\n", secretJSON)
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Encrypt the email address
+	//|| Generate verification tuple (amount + 4-digit code)
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("DEBUG publicKey:", publicKey)
-	encrypted, err := helpers.EncryptWithPublicKey(dataJSON, publicKey)
+	var req verification.VerificationAddressInitialRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload"+err.Error())
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Generate verification tuple (amount + 4-digit code)
+	//||------------------------------------------------------------------------------------------------||
+
+	code, err := helpers.Generate6DigitCode()
 	if err != nil {
-		return "", errors.New("Failed to encrypt data: " + err.Error())
+		responses.Error(w, http.StatusInternalServerError, "Failed to generate code")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| UUID
+	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	uuid := helpers.GenerateUUID()
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Create Model
-	//||------------------------------------------------------------------------------------------------||
-
-	verification := models.Verification{
-		UUID:       uuid,
-		FidAccount: accountId,
-		Display:    displayName,
-		Type:       string(vType),
-		Data:       encrypted,
-		Meta:       string(metaJSON),
-		Secret:     string(secretJSON),
-		Status:     vStatus,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+	verificationUUID, iErr := verification.CreateVerificationADDR(session.ID, session.Public, req.Address, code)
+	if iErr != nil {
+		fmt.Println("Error creating card verification:", iErr)
+		responses.Error(w, http.StatusInternalServerError, "Failed to create verification record")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Insert
+	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	dbResult := db.DB.Debug().Create(&verification)
-	if dbResult.Error != nil {
-		return "", errors.New("Failed to create verification record: " + dbResult.Error.Error())
+	fmt.Println("INPUT AMOUNT:", req.Amount)
+	intent, err := adapters.StripeIntent(verificationUUID, req.Amount, req.Currency, code)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to create payment intent")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Return
+	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
-	return uuid, nil
+	fmt.Println("OUTPUT AMOUNT:", intent.Amount)
+	responses.Success(w, http.StatusOK, interfaces.VerificationCardInitialResponse{
+		UUID:         verificationUUID,
+		Amount:       intent.Amount,
+		Currency:     string(intent.Currency),
+		ClientSecret: intent.ClientSecret,
+	})
 
 }

@@ -1,0 +1,6 @@
+
+Your ComplyAge verification code is: [%%VERIFY_CODE%%]
+
+Please enter this code on our site to complete your verification. If you did not request this, ignore this message.
+
+Thank you!

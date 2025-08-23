@@ -76,6 +76,7 @@ func CreateVerificationMAIL(accountId int64, publicKey string, email string) (st
 		publicKey,
 		constants.VerificationEmail,
 		"APPR",
+		helpers.MaskEmail(email),
 		data,
 		meta,
 		secret,

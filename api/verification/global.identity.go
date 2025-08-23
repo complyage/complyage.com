@@ -7,6 +7,7 @@ import (
 	"base/models"
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -28,11 +29,42 @@ func IdentityUpdateEmail(accountId int64, display string) error {
 //||------------------------------------------------------------------------------------------------||
 
 func IdentityUpdateCreditCard(accountId int64, display string) error {
+	fmt.Println(`--------------------| Identity Update | -------------------`)
 	return IdentityUpdateField(
 		accountId,
 		constants.VerificationCreditCard,
 		func(identity *interfaces.Identity) {
 			identity.CreditCard = display
+		},
+	)
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Update Phone by Account ID
+//||------------------------------------------------------------------------------------------------||
+
+func IdentityUpdateAddress(accountId int64, display string) error {
+	fmt.Println(`--------------------| Identity Update | -------------------`)
+	return IdentityUpdateField(
+		accountId,
+		constants.VerificationAddress,
+		func(identity *interfaces.Identity) {
+			identity.Phone = display
+		},
+	)
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Update Phone by Account ID
+//||------------------------------------------------------------------------------------------------||
+
+func IdentityUpdatePhone(accountId int64, display string) error {
+	fmt.Println(`--------------------| Identity Update | -------------------`)
+	return IdentityUpdateField(
+		accountId,
+		constants.VerificationPhone,
+		func(identity *interfaces.Identity) {
+			identity.Phone = display
 		},
 	)
 }
@@ -81,14 +113,13 @@ func IdentityUpdate(accountId int64, identity interfaces.Identity) error {
 //||------------------------------------------------------------------------------------------------||
 
 func IdentityUpdateField(accountId int64, fieldType constants.VerificationType, setField func(*interfaces.Identity)) error {
-
 	identity, fetchErr := IdentityFetch(accountId)
 	if fetchErr != nil {
 		return fetchErr
 	}
-
+	fmt.Println("Updating field:", fieldType, "for account ID:", accountId)
 	setField(&identity)
-
+	fmt.Println("Set field:", fieldType, "for account ID:", accountId)
 	already := false
 	for _, v := range identity.Approved {
 		if v == fieldType {

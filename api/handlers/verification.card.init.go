@@ -1,95 +1,103 @@
-package verification
+package handlers
 
 //||------------------------------------------------------------------------------------------------||
-//|| Create CRCD
+//|| Import
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/constants"
+	"api/verification"
+	"base/adapters"
 	"base/helpers"
 	"base/interfaces"
+	"base/responses"
+	"encoding/json"
 	"fmt"
-	"time"
+	"io"
+	"net/http"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Create CRCD
+//|| Handler
 //||------------------------------------------------------------------------------------------------||
 
-func CreateVerificationCRCD(accountId int64, publicKey string, checkCode string) (string, error) {
+func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Credit Card Data
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	creditCard := interfaces.CreditCard{
-		LastFour:      "",
-		CardType:      "",
-		Address:       interfaces.Address{},
-		TransactionId: "",
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		return
+	}
+
+	session, err := helpers.FetchSession(cookie.Value)
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, "Invalid session")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Verification Data
+	//|| Parse JSON
 	//||------------------------------------------------------------------------------------------------||
 
-	var data interfaces.VerificationData
-	data.CRCD = creditCard
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta Steps
-	//||------------------------------------------------------------------------------------------------||
-
-	step := interfaces.VerificationMetaStep{
-		StepName:      "INIT",
-		StepStatus:    "INIT",
-		StepDetails:   "Credit Card Verification Initiated",
-		StepTimestamp: helpers.UniversalNow(),
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		responses.Error(w, http.StatusBadRequest, "Failed to read request body")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta Approval
+	//|| Generate verification tuple (amount + 4-digit code)
 	//||------------------------------------------------------------------------------------------------||
 
-	approval := interfaces.VerificationMetaApproval{
-		ApprovedBy:     "",
-		ApprovedAt:     "",
-		ApprovedMethod: "",
+	var req interfaces.VerificationCardInitialRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload"+err.Error())
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta
+	//|| Generate verification tuple (amount + 4-digit code)
 	//||------------------------------------------------------------------------------------------------||
 
-	meta := interfaces.VerificationMeta{
-		Approval: approval,
-		Steps:    []interfaces.VerificationMetaStep{step},
+	code, err := helpers.Generate6DigitCode()
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to generate code")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Secret
+	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	expiration := time.Now().Add(72 * time.Hour)
-	secret := interfaces.VerificationSecret{
-		CheckCode:  checkCode,
-		Attempts:   0,
-		Expiration: helpers.ToUniversalDate(expiration),
+	verificationUUID, iErr := verification.CreateVerificationCRCD(session.ID, session.Public, code)
+	if iErr != nil {
+		fmt.Println("Error creating card verification:", iErr)
+		responses.Error(w, http.StatusInternalServerError, "Failed to create verification record")
+		return
 	}
-	fmt.Printf("DEBUG expiration: %s\n", expiration)
-	fmt.Printf("DEBUG secret: %+v\n", secret)
-	fmt.Printf("DEBUG ToUniversalDate: %s\n", helpers.ToUniversalDate(expiration))
 
 	//||------------------------------------------------------------------------------------------------||
-	//||
+	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	displayName := helpers.MaskCreditCard("PENDING", "0000")
+	intent, err := adapters.StripeIntent(verificationUUID, req.Amount, req.Currency, code)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to create payment intent")
+		return
+	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Verification
+	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
-	return CreateVerification(accountId, publicKey, constants.VerificationCreditCard, constants.VerificationStatuses.Pending, displayName, data, meta, secret)
+	responses.Success(w, http.StatusOK, interfaces.VerificationCardInitialResponse{
+		UUID:         verificationUUID,
+		Amount:       intent.Amount,
+		Currency:     string(intent.Currency),
+		ClientSecret: intent.ClientSecret,
+	})
 
 }

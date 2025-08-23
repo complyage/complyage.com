@@ -1,95 +1,100 @@
-package verification
+package handlers
 
 //||------------------------------------------------------------------------------------------------||
-//|| Create CRCD
+//|| Import
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/constants"
+	"api/verification"
+	"base/abstract"
 	"base/helpers"
-	"base/interfaces"
+	"base/responses"
 	"fmt"
-	"time"
+	"net/http"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Create CRCD
+//|| Handler: VerifyIDStatusHandler
+//|| Endpoint: GET /api/verification/status?identifier=...
 //||------------------------------------------------------------------------------------------------||
 
-func CreateVerificationCRCD(accountId int64, publicKey string, checkCode string) (string, error) {
+func VerifyIDStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Credit Card Data
+	//|| Parse Query Params
 	//||------------------------------------------------------------------------------------------------||
 
-	creditCard := interfaces.CreditCard{
-		LastFour:      "",
-		CardType:      "",
-		Address:       interfaces.Address{},
-		TransactionId: "",
+	identifier := r.URL.Query().Get("identifier")
+	if identifier == "" {
+		responses.Error(w, http.StatusBadRequest, "Missing identifier param")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Verification Data
+	//|| Find Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	var data interfaces.VerificationData
-	data.CRCD = creditCard
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta Steps
-	//||------------------------------------------------------------------------------------------------||
-
-	step := interfaces.VerificationMetaStep{
-		StepName:      "INIT",
-		StepStatus:    "INIT",
-		StepDetails:   "Credit Card Verification Initiated",
-		StepTimestamp: helpers.UniversalNow(),
+	verificationRecord, err := verification.LoadVerificationRecordByUUID(identifier)
+	if err != nil || verificationRecord == nil {
+		fmt.Println("Error loading verification record:", err)
+		responses.Error(w, http.StatusNotFound, "Verification record not found")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta Approval
+	//|| Get Account for Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	approval := interfaces.VerificationMetaApproval{
-		ApprovedBy:     "",
-		ApprovedAt:     "",
-		ApprovedMethod: "",
+	account, err := abstract.GetAccountByVerificationUUID(identifier)
+	if err != nil || account == nil {
+		responses.Error(w, http.StatusNotFound, "Account not found for verification")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta
+	//|| Get Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	meta := interfaces.VerificationMeta{
-		Approval: approval,
-		Steps:    []interfaces.VerificationMetaStep{step},
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, "Please login to continue")
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Secret
+	//|| Validate Session
 	//||------------------------------------------------------------------------------------------------||
 
-	expiration := time.Now().Add(72 * time.Hour)
-	secret := interfaces.VerificationSecret{
-		CheckCode:  checkCode,
-		Attempts:   0,
-		Expiration: helpers.ToUniversalDate(expiration),
+	session, err := helpers.FetchSession(cookie.Value)
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, "Invalid session")
+		return
 	}
-	fmt.Printf("DEBUG expiration: %s\n", expiration)
-	fmt.Printf("DEBUG secret: %+v\n", secret)
-	fmt.Printf("DEBUG ToUniversalDate: %s\n", helpers.ToUniversalDate(expiration))
 
 	//||------------------------------------------------------------------------------------------------||
-	//||
+	//|| Check Session Account Match
 	//||------------------------------------------------------------------------------------------------||
 
-	displayName := helpers.MaskCreditCard("PENDING", "0000")
+	if session.ID != account.IDAccount {
+		responses.Error(w, http.StatusForbidden, "Session does not match verification record")
+		return
+	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Verification
+	//|| Return Minimal Status Object
 	//||------------------------------------------------------------------------------------------------||
 
-	return CreateVerification(accountId, publicKey, constants.VerificationCreditCard, constants.VerificationStatuses.Pending, displayName, data, meta, secret)
+	resp := verification.VerificationIDStatusProcess{
+		UUID:   identifier,
+		Status: verificationRecord.Status,
+		Type:   verificationRecord.Type,
+		Step:   verificationRecord.Meta.Step,
+		Steps:  verificationRecord.Meta.Steps,
+	}
 
+	//||------------------------------------------------------------------------------------------------||
+	//|| Return Response
+	//||------------------------------------------------------------------------------------------------||
+
+	responses.Success(w, http.StatusOK, resp)
 }

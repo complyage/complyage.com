@@ -1,95 +1,84 @@
 package verification
 
 //||------------------------------------------------------------------------------------------------||
-//|| Create CRCD
+//|| Update CRCD Verification Record
 //||------------------------------------------------------------------------------------------------||
 
 import (
+	"base/abstract"
 	"base/constants"
 	"base/helpers"
 	"base/interfaces"
-	"fmt"
-	"time"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Create CRCD
+//|| UpdateVerificationCRCD
+//|| Updates a credit card verification record by UUID
 //||------------------------------------------------------------------------------------------------||
 
-func CreateVerificationCRCD(accountId int64, publicKey string, checkCode string) (string, error) {
+func UpdateStatusIDENPendingVerification(uuid string) error {
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Credit Card Data
+	//|| Get Account
 	//||------------------------------------------------------------------------------------------------||
 
-	creditCard := interfaces.CreditCard{
-		LastFour:      "",
-		CardType:      "",
-		Address:       interfaces.Address{},
-		TransactionId: "",
+	account, err := abstract.GetAccountByVerificationUUID(uuid)
+	if err != nil {
+		return err
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Verification Data
+	//|| Verification Data
 	//||------------------------------------------------------------------------------------------------||
 
 	var data interfaces.VerificationData
-	data.CRCD = creditCard
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta Steps
+	//|| Meta Step (to append)
 	//||------------------------------------------------------------------------------------------------||
 
 	step := interfaces.VerificationMetaStep{
-		StepName:      "INIT",
-		StepStatus:    "INIT",
-		StepDetails:   "Credit Card Verification Initiated",
+		StepName:      constants.VerificationStatuses.PendingVerification,
+		StepStatus:    constants.VerificationStatuses.PendingVerification,
+		StepDetails:   "Placed in AI-Agent Queue for verification",
 		StepTimestamp: helpers.UniversalNow(),
 	}
+	steps := []interfaces.VerificationMetaStep{step}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta Approval
+	//|| Meta Approval (to replace)
 	//||------------------------------------------------------------------------------------------------||
 
-	approval := interfaces.VerificationMetaApproval{
-		ApprovedBy:     "",
-		ApprovedAt:     "",
-		ApprovedMethod: "",
-	}
+	approval := interfaces.VerificationMetaApproval{}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Meta
+	//|| Meta
 	//||------------------------------------------------------------------------------------------------||
 
 	meta := interfaces.VerificationMeta{
+		Steps:    steps,
+		Step:     1,
 		Approval: approval,
-		Steps:    []interfaces.VerificationMetaStep{step},
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Secret
+	//|| Secret (only updated if provided)
 	//||------------------------------------------------------------------------------------------------||
 
-	expiration := time.Now().Add(72 * time.Hour)
-	secret := interfaces.VerificationSecret{
-		CheckCode:  checkCode,
-		Attempts:   0,
-		Expiration: helpers.ToUniversalDate(expiration),
-	}
-	fmt.Printf("DEBUG expiration: %s\n", expiration)
-	fmt.Printf("DEBUG secret: %+v\n", secret)
-	fmt.Printf("DEBUG ToUniversalDate: %s\n", helpers.ToUniversalDate(expiration))
+	secret := interfaces.VerificationSecret{}
 
 	//||------------------------------------------------------------------------------------------------||
-	//||
+	//|| Call UpdateVerification
 	//||------------------------------------------------------------------------------------------------||
 
-	displayName := helpers.MaskCreditCard("PENDING", "0000")
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Create the Verification
-	//||------------------------------------------------------------------------------------------------||
-
-	return CreateVerification(accountId, publicKey, constants.VerificationCreditCard, constants.VerificationStatuses.Pending, displayName, data, meta, secret)
-
+	return UpdateVerification(
+		account.IDAccount,
+		account.AccountPublic,
+		uuid,
+		"ID Uploaded",
+		data,
+		meta,
+		secret,
+		constants.VerificationStatuses.PendingVerification,
+	)
 }
