@@ -5,12 +5,13 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
+	"base/abstract"
 	"base/adapters"
 	"base/helpers"
 	"base/responses"
 	"base/verify"
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 
 	"github.com/ralphferrara/aria/app"
@@ -21,14 +22,16 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type cardInitRequest struct {
-	Amount   float64 `json:"amount"`
+	Base     float64 `json:"baseAmount"`
+	Donation float64 `json:"donationAmount"`
+	Total    float64 `json:"totalAmount"`
 	Currency string  `json:"currency"`
 }
 
 type cardInitResponse struct {
+	Identifier   string `json:"identifier"`
 	Amount       int64  `json:"amount"`
 	Currency     string `json:"currency"`
-	UUID         string `json:"uuid"`
 	ClientSecret string `json:"clientSecret"`
 }
 
@@ -37,6 +40,18 @@ type cardInitResponse struct {
 //||------------------------------------------------------------------------------------------------||
 
 func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
+
+	verify.LogInfo("CCVerifyInitHandler")
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Parse Request
+	//||------------------------------------------------------------------------------------------------||
+
+	var updateRequest cardInitRequest
+	if err := json.NewDecoder(r.Body).Decode(&updateRequest); err != nil {
+		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload: "+err.Error())
+		return
+	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
@@ -48,6 +63,10 @@ func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//||------------------------------------------------------------------------------------------------||
+	//|| Check Session
+	//||------------------------------------------------------------------------------------------------||
+
 	session, err := helpers.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
@@ -55,30 +74,20 @@ func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Parse JSON
+	//|| Account
 	//||------------------------------------------------------------------------------------------------||
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Failed to read request body")
+	account, err := abstract.GetAccountByID(fmt.Sprintf("%d", session.ID))
+	if err != nil || account == nil {
+		responses.Error(w, http.StatusBadRequest, "Account not found for session")
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Generate verification tuple (amount + 4-digit code)
+	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	var req cardInitRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload"+err.Error())
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Init(verify.DataTypeADDR, session.ID, app.Storages["verifications"], app.SQLDB["main"], session.Private, session.Public)
+	verifyRecord, err := verify.Init(verify.DataTypeCRCD, account.IDAccount, app.Storages["verifications"], app.SQLDB["main"], account.AccountPrivate, account.AccountPublic)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return
@@ -88,7 +97,7 @@ func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	intent, err := adapters.StripeIntent(verifyRecord.UUID, req.Amount, req.Currency, verifyRecord.TwoFactor.Code)
+	intent, err := adapters.StripeIntent(verifyRecord.UUID, updateRequest.Total, updateRequest.Currency, verifyRecord.TwoFactor.Code)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to create payment intent")
 		return
@@ -99,7 +108,7 @@ func CCVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	responses.Success(w, http.StatusOK, cardInitResponse{
-		UUID:         verifyRecord.UUID,
+		Identifier:   verifyRecord.UUID,
 		Amount:       intent.Amount,
 		Currency:     string(intent.Currency),
 		ClientSecret: intent.ClientSecret,

@@ -51,8 +51,8 @@
                   //||------------------------------------------------------------------------------------------------||
                   let amount = 0;
                   try { 
-                        amount += process.baseAmount.amount || import.meta.env.VITE_VERIFICATION_CARD_AMOUNT;
-                        amount += process.donation || 0;
+                        amount += process.baseAmount || import.meta.env.VITE_VERIFICATION_CARD_AMOUNT;
+                        amount += process.donationAmount || 0;
                   } catch (e) {
                         console.error("Error calculating amount:", e);
                         return "Invalid amount calculation.";
@@ -61,13 +61,18 @@
                   //||------------------------------------------------------------------------------------------------||
                   //|| Create the Payload
                   //||------------------------------------------------------------------------------------------------||
-                  const processJSON = JSON.stringify({ "amount": Number(amount), "currency": process.currency });
-                  console.log("Calling API with data:", processJSON);
+                  const processJSON = JSON.stringify({ 
+                        "baseAmount"      : Number(process.baseAmount || 0), 
+                        "donationAmount"  : Number(process.donationAmount || 0),
+                        "totalAmount"     : Number(amount),
+                        "currency"        : process.currency 
+                  });
+                  console.log("Calling Init with data:", "/v1/api/verify/card/init", processJSON);
                   //||------------------------------------------------------------------------------------------------||
                   //|| Create the Payload
                   //||------------------------------------------------------------------------------------------------||
                   try {
-                        const response = await fetch("/v1/api/verify/card", {
+                        const resp = await fetch("/v1/api/verify/card/init", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: processJSON
@@ -75,22 +80,22 @@
                         //||------------------------------------------------------------------------------------------------||
                         //|| Error
                         //||------------------------------------------------------------------------------------------------||
-                        if (!response.ok) {
-                              const errorText = await response.text();
+                        if (!resp.ok) {
+                              const errorText = await resp.text();
                               return errorText || "API call failed with an unknown error.";
                         }
                         //||------------------------------------------------------------------------------------------------||
                         //|| Got it. Update the Process
                         //||------------------------------------------------------------------------------------------------||
-                        const data = await response.json();
-                        console.log(data.data);
+                        const response = await resp.json();
                         const update: Partial<VerificationCard> = {
-                              clientSecret: data.data.clientSecret,
-                              step: 2,
-                              currency          : process.currency,
-                              chargeAmount      : data.data.amount || 99,
-                              verificationUUID  : data.data.uuid
+                              step              : 2,
+                              clientSecret      : response.data.clientSecret,
+                              currency          : response.data.currency,
+                              chargeAmount      : response.data.amount || 99,
+                              verificationUUID  : response.data.identifier
                         };
+                        console.log("API Init","/v1/api/verify/card/init", update);
                         updateProcess({ ...process, ...update });
                         return null
                   } catch (error) {

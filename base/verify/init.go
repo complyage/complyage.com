@@ -19,7 +19,7 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func Init(dataType DataType, fidAccount int64, s *storage.Storage, d *db.GormWrapper, privateKey string, publicKey string) (Verification, error) {
-	logInfo("Verify: Init Verification")
+	LogInfo("Verify: Init Verification")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Start a Verification
 	//||------------------------------------------------------------------------------------------------||
@@ -64,6 +64,12 @@ func Init(dataType DataType, fidAccount int64, s *storage.Storage, d *db.GormWra
 	//|| Create the Encrypted Data
 	//||------------------------------------------------------------------------------------------------||
 	verification.EncryptedInit()
+	//||------------------------------------------------------------------------------------------------||
+	//|| Create a Verification
+	//||------------------------------------------------------------------------------------------------||
+	verification.DatabaseSaveInsert()
+	verification.Save(false)
+	verification.SaveEncrypted()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create a Verification
 	//||------------------------------------------------------------------------------------------------||

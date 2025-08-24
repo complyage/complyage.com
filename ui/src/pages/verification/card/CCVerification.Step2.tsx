@@ -68,6 +68,7 @@
                   //|| Payload
                   //||------------------------------------------------------------------------------------------------||
                   const payload : {
+                        identifier    : string;
                         amount        : number;
                         currency      : string;
                         uuid          : string;
@@ -76,6 +77,7 @@
                         transactionId?: string;
                         address       : Address;
                   } = {
+                        identifier    : process.verificationUUID || "",
                         amount        : process.chargeAmount,
                         billingZip    : process.billingZip || "",
                         currency      : process.currency,
@@ -88,6 +90,7 @@
                   //|| Pull
                   //||------------------------------------------------------------------------------------------------||
                   try {
+                        console.log("Payment success","/v1/api/verify/card/success", payload);
                         const res = await fetch("/v1/api/verify/card/success", {
                               method      : "POST",
                               headers     : { "Content-Type": "application/json" },
@@ -100,7 +103,9 @@
                               setBusy(false);
                               return;
                         }
+                        const response = await res.json();
                         setBusy(false);
+                        console.log("Payment success complete", response);
                   } catch (err: any) {
                         console.error("Error during payment success:", err);
                         setBusy(false);

@@ -41,7 +41,7 @@
 
       export interface StepProps {
             process           : VerificationAddress;
-            updateProcess     : (process: VerificationAddress) => void;
+            updateProcess     : (process: VerificationAddress) => void;            
       }
 
       //||------------------------------------------------------------------------------------------------||
@@ -92,6 +92,7 @@
                         ...prev,
                         ...update
                   }));
+                  console.log("Process Updated:", { ...process, ...update });
             }
 
             //||------------------------------------------------------------------------------------------------||

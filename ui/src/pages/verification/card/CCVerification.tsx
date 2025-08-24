@@ -73,24 +73,6 @@
                   currency          : "USD"
             }); 
 
-            //||------------------------------------------------------------------------------------------------||
-            //|| Handle Returning
-            //||------------------------------------------------------------------------------------------------||
-
-            useEffect(() => {
-                  if (!verificationId) return;
-                  (async () => {
-                        try {
-                              const res = await fetch(`/api/v1/verify/card/lookup?verification=${verificationId}`);
-                              if (res.ok) {
-                                    const data = await res.json();
-                                    if (data?.status === "pending") {
-                                          updateProcess({...process, step : 2});
-                                    }
-                              }
-                        } catch {}
-                  })();
-            }, [verificationId]);
 
             //||------------------------------------------------------------------------------------------------||
             //|| Stepper

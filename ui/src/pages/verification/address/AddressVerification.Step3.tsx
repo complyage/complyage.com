@@ -69,18 +69,18 @@
                   //|| Payload
                   //||------------------------------------------------------------------------------------------------||
                   const payload : {
+                        identifier    : string;
                         amount        : number;
                         currency      : string;
-                        uuid          : string;
                         billingZip?   : string;
                         clientSecret  : string;
                         transactionId?: string;
                         address       : Address;
                   } = {
+                        identifier    : process.verificationUUID || "",
                         amount        : process.chargeAmount,
                         billingZip    : process.billingZip || "",
                         currency      : process.currency,
-                        uuid          : process.verificationUUID || "",
                         clientSecret  : process.clientSecret || "",
                         transactionId : transactionId,
                         address       : process.verifyAddress
@@ -89,6 +89,7 @@
                   //|| Pull
                   //||------------------------------------------------------------------------------------------------||
                   try {
+                        console.log("Calling /v1/api/verify/address/success", payload);                        
                         const res = await fetch("/v1/api/verify/address/success", {
                               method      : "POST",
                               headers     : { "Content-Type": "application/json" },
@@ -101,8 +102,11 @@
                               setBusy(false);
                               return;
                         }
+                        const data = await res.json();
+                        console.log("Address verification success response:", data);
                         setBusy(false);
                   } catch (err: any) {
+                        setProcessError("Error during payment success: " + err.message || err.toString());
                         console.error("Error during payment success:", err);
                         setBusy(false);
                   }

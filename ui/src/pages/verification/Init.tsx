@@ -158,8 +158,8 @@
                         case "MAIL": return { icon: CheckCircle, title: "Email Verification" };
                         case "IDEN": return { icon: IdCard, title: "Identification Verification" };
                         case "PHNE": return { icon: Phone, title: "Phone Verification" };
-                        case "CRCD": return { icon: CreditCard, title: "Address Verification" };
-                        case "USER": return { icon: User, title: "Address Verification" };
+                        case "CRCD": return { icon: CreditCard, title: "Credit Card Verification" };
+                        case "USER": return { icon: User, title: "Username Verification" };
                         default: return { icon: CheckCircle, title: "Verification" };
                   }
             };

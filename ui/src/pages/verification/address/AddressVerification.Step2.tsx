@@ -67,13 +67,21 @@
                   //||------------------------------------------------------------------------------------------------||
                   //|| Create the Payload
                   //||------------------------------------------------------------------------------------------------||
-                  const processJSON = JSON.stringify({ "amount": amount, "currency": process.currency });
+                  const processJSON = JSON.stringify({ 
+                        "baseAmount"            : process.baseAmount, 
+                        "donationAmount"        : process.donationAmount || 0,
+                        "totalAmount"           : amount,
+                        "currency"              : process.currency,
+                        "address"               : process.verifyAddress || {},
+
+                  });
                   console.log("Calling API with data:", processJSON);
                   //||------------------------------------------------------------------------------------------------||
                   //|| Create the Payload
                   //||------------------------------------------------------------------------------------------------||
                   try {
-                        const response = await fetch("/v1/api/verify/address", {
+                        console.log("Calling /v1/api/verify/address/init", processJSON);
+                        const response = await fetch("/v1/api/verify/address/init", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: processJSON
@@ -95,7 +103,7 @@
                               step              : 3,
                               chargeAmount      : data.data.amount || 99,
                               currency          : process.currency,
-                              verificationUUID  : data.data.uuid
+                              verificationUUID  : data.data.identifier,
                         };
                         updateProcess({ ...process, ...update });
                         return null

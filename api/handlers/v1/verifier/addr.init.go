@@ -5,22 +5,54 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"api/verification"
+	"base/abstract"
 	"base/adapters"
 	"base/helpers"
-	"base/interfaces"
 	"base/responses"
+	"base/verify"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+
+	"github.com/ralphferrara/aria/app"
 )
+
+//||------------------------------------------------------------------------------------------------||
+//|| Request
+//||------------------------------------------------------------------------------------------------||
+
+type addressInitRequest struct {
+	Base     float64        `json:"baseAmount"`
+	Donation float64        `json:"donationAmount"`
+	Total    float64        `json:"totalAmount"`
+	Currency string         `json:"currency"`
+	Address  verify.Address `json:"address"`
+}
+
+type addressInitResponse struct {
+	Identifier   string `json:"identifier"`
+	Amount       int64  `json:"amount"`
+	Currency     string `json:"currency"`
+	ClientSecret string `json:"clientSecret"`
+}
 
 //||------------------------------------------------------------------------------------------------||
 //|| Handler
 //||------------------------------------------------------------------------------------------------||
 
 func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
+
+	verify.LogInfo("CCVerifyInitHandler")
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Parse Request
+	//||------------------------------------------------------------------------------------------------||
+
+	var updateRequest addressInitRequest
+	if err := json.NewDecoder(r.Body).Decode(&updateRequest); err != nil {
+		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload: "+err.Error())
+		return
+	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
@@ -32,6 +64,10 @@ func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//||------------------------------------------------------------------------------------------------||
+	//|| Check Session
+	//||------------------------------------------------------------------------------------------------||
+
 	session, err := helpers.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
@@ -39,52 +75,38 @@ func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Parse JSON
+	//|| Account
 	//||------------------------------------------------------------------------------------------------||
 
-	body, err := io.ReadAll(r.Body)
+	account, err := abstract.GetAccountByID(fmt.Sprintf("%d", session.ID))
+	if err != nil || account == nil {
+		responses.Error(w, http.StatusBadRequest, "Account not found for session")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verification Record matches Account
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord, err := verify.Init(verify.DataTypeADDR, account.IDAccount, app.Storages["verifications"], app.SQLDB["main"], account.AccountPrivate, account.AccountPublic)
 	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Failed to read request body")
+		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Generate verification tuple (amount + 4-digit code)
+	//|| Address
 	//||------------------------------------------------------------------------------------------------||
 
-	var req verification.VerificationAddressInitialRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload"+err.Error())
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Generate verification tuple (amount + 4-digit code)
-	//||------------------------------------------------------------------------------------------------||
-
-	code, err := helpers.Generate6DigitCode()
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to generate code")
-		return
-	}
+	verifyRecord.SetDataADDR(updateRequest.Address)
+	verifyRecord.Save(false)
+	verifyRecord.DatabaseUpdate()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	verificationUUID, iErr := verification.CreateVerificationADDR(session.ID, session.Public, req.Address, code)
-	if iErr != nil {
-		fmt.Println("Error creating card verification:", iErr)
-		responses.Error(w, http.StatusInternalServerError, "Failed to create verification record")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification
-	//||------------------------------------------------------------------------------------------------||
-
-	fmt.Println("INPUT AMOUNT:", req.Amount)
-	intent, err := adapters.StripeIntent(verificationUUID, req.Amount, req.Currency, code)
+	intent, err := adapters.StripeIntent(verifyRecord.UUID, updateRequest.Total, updateRequest.Currency, "") //No code for address verifications
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to create payment intent")
 		return
@@ -94,9 +116,8 @@ func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("OUTPUT AMOUNT:", intent.Amount)
-	responses.Success(w, http.StatusOK, interfaces.VerificationCardInitialResponse{
-		UUID:         verificationUUID,
+	responses.Success(w, http.StatusOK, addressInitResponse{
+		Identifier:   verifyRecord.UUID,
 		Amount:       intent.Amount,
 		Currency:     string(intent.Currency),
 		ClientSecret: intent.ClientSecret,

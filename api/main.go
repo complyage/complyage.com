@@ -174,13 +174,12 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - Card
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/card", verifier.CCVerifyInitHandler).Methods("POST")
-	router.HandleFunc("/v1/api/verify/card/check", verifier.CCVerifyCheckHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/card/init", verifier.CCVerifyInitHandler).Methods("POST")
 	router.HandleFunc("/v1/api/verify/card/success", verifier.CCVerifySuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - Address
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/address", verifier.AddressVerifyInitHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/address/init", verifier.AddressVerifyInitHandler).Methods("POST")
 	router.HandleFunc("/v1/api/verify/address/success", verifier.AddressVerifySuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Tools

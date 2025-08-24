@@ -25,7 +25,7 @@ func (v *Verification) TwoFactorInit() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check
 	//||------------------------------------------------------------------------------------------------||
-	if v.Type != DataTypeMAIL && v.Type != DataTypePHNE && v.Type != DataTypeMAIL {
+	if v.Type != DataTypeCRCD && v.Type != DataTypePHNE && v.Type != DataTypeADDR && v.Type != DataTypeMAIL {
 		fmt.Println("TwoFactorInit: Not a type that requires two-factor:", v.Type)
 		return nil
 	}
@@ -63,10 +63,11 @@ func (v *Verification) TwoFactorInit() error {
 //||------------------------------------------------------------------------------------------------||
 
 func (v *Verification) TwoFactorVerify(code string) error {
+	LogInfo("TwoFactor Verify Attempt")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check
 	//||------------------------------------------------------------------------------------------------||
-	if v.Type != DataTypeMAIL && v.Type != DataTypePHNE && v.Type != DataTypeMAIL {
+	if v.Type != DataTypeCRCD && v.Type != DataTypePHNE && v.Type != DataTypeADDR && v.Type != DataTypeMAIL {
 		return nil
 	}
 	//||------------------------------------------------------------------------------------------------||

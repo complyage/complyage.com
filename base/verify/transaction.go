@@ -79,6 +79,7 @@ func (e *Encrypted) TransactionPrivateInit() {
 //||------------------------------------------------------------------------------------------------||
 
 func (v *Verification) TransactionApproved(transactionType TransactionType, base int64, donation int64, currency string, cardType string, lastFour string, clientSecret string, billing Address, shipping Address) {
+	LogInfo("Verify: Transaction Approval")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Only add for Credit Card and Address
 	//||------------------------------------------------------------------------------------------------||
@@ -93,7 +94,7 @@ func (v *Verification) TransactionApproved(transactionType TransactionType, base
 	//|| Add Public Transaction
 	//||------------------------------------------------------------------------------------------------||
 	v.Transaction = TransactionPublic{
-		Display:  CreditCard{LastFour: lastFour, CardType: cardType}.Mask(),
+		Display:  "CC-" + CreditCard{LastFour: lastFour, CardType: cardType}.Mask(),
 		Type:     transactionType,
 		Status:   TransactionApproved,
 		Amount:   total,

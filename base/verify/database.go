@@ -11,7 +11,7 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func (v *Verification) DatabaseUpdate() error {
-	logInfo("DATABASE :: UPDATE DATABASE")
+	LogInfo("DATABASE :: UPDATE DATABASE")
 	err := v.DatabaseSaveVerify()
 	if err != nil {
 		fmt.Println("Failed to update verification:", err)
@@ -30,18 +30,18 @@ func (v *Verification) DatabaseUpdate() error {
 //||------------------------------------------------------------------------------------------------||
 
 func (v *Verification) DatabaseLoadIdentity() error {
-	logInfo("DATABASE :: LOAD IDENTITY")
+	LogInfo("DATABASE :: LOAD IDENTITY")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Pull from DB
 	//||------------------------------------------------------------------------------------------------||
 	var identityJSON string
 	result := v.Database.DB.Raw("SELECT account_identity FROM accounts WHERE id_account = ?", v.FidAccount).Scan(&identityJSON)
 	if result.Error != nil {
-		logInfo("Verify: Failed to load identity from database, resetting to empty")
+		LogInfo("Verify: Failed to load identity from database, resetting to empty")
 		return result.Error
 	}
 	if identityJSON == "" {
-		logInfo("Verify: No identity found, resetting to empty")
+		LogInfo("Verify: No identity found, resetting to empty")
 		v.Identity = Identity{}
 		return nil
 	}
@@ -50,7 +50,7 @@ func (v *Verification) DatabaseLoadIdentity() error {
 	//||------------------------------------------------------------------------------------------------||
 	err := json.Unmarshal([]byte(identityJSON), &v.Identity)
 	if err != nil {
-		logInfo("Verify: Identity is invalid JSON, resetting to empty")
+		LogInfo("Verify: Identity is invalid JSON, resetting to empty")
 		v.Identity = Identity{}
 		return err
 	}
@@ -65,10 +65,10 @@ func (v *Verification) DatabaseLoadIdentity() error {
 //||------------------------------------------------------------------------------------------------||
 
 func (v *Verification) DatabaseSaveIdentity() error {
-	logInfo("DATABASE :: SAVE IDENTITY")
+	LogInfo("DATABASE :: SAVE IDENTITY")
 	bytes, err := json.Marshal(v.Identity)
 	if err != nil {
-		logInfo("Failed to marshal identity:", err)
+		LogInfo("Failed to marshal identity")
 		return err
 	}
 	return v.Database.DB.Exec(
@@ -78,11 +78,11 @@ func (v *Verification) DatabaseSaveIdentity() error {
 }
 
 //||------------------------------------------------------------------------------------------------||
-//|| Database
+//|| Insert
 //||------------------------------------------------------------------------------------------------||
 
-func (v *Verification) DatabaseSaveVerify() error {
-	logInfo("DATABASE :: SAVE VERIFY :: COMPLETE")
+func (v *Verification) DatabaseSaveInsert() error {
+	LogInfo("DATABASE :: INSERT VERIFY :: COMPLETE")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create the database model
 	//||------------------------------------------------------------------------------------------------||
@@ -98,4 +98,27 @@ func (v *Verification) DatabaseSaveVerify() error {
 	//|| Done
 	//||------------------------------------------------------------------------------------------------||
 	return v.Database.DB.Save(&model).Where("verify_uuid = ?", v.UUID).Error
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Database
+//||------------------------------------------------------------------------------------------------||
+
+func (v *Verification) DatabaseSaveVerify() error {
+	LogInfo("DATABASE :: SAVE VERIFY :: COMPLETE")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Create the database model
+	//||------------------------------------------------------------------------------------------------||
+	model := models.Verify{
+		UUID:       v.UUID,
+		Type:       v.Type.String(),
+		Display:    v.Display,
+		FidAccount: v.FidAccount,
+		Status:     v.Status.String(),
+		UpdatedAt:  v.UpdatedAt,
+	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Done
+	//||------------------------------------------------------------------------------------------------||
+	return v.Database.DB.Model(&models.Verify{}).Where("verify_uuid = ?", v.UUID).Updates(model).Error
 }
