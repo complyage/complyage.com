@@ -79,8 +79,8 @@
       const steps: ProgessStep[] = [
             { label: "Awaiting Agent",          description: "Awaiting Agent" },
             { label: "Parsing ID Data",         description: "Parsing ID Data" },
+            { label: "Verifying DOB",           description: "Verifying DOB" },
             { label: "Verifying Photo",         description: "Upload the back of your ID" },
-            { label: "Verifying Back ID",       description: "Verify the Back of your ID" },
             { label: "Matching Photo",          description: "Matching ID to Selfie" },
             { label: "Encrypting Data",         description: "Encrypting your photos" },
       ];
@@ -99,21 +99,40 @@
             const verificationId = searchParams.get("identifier") || "";
 
             //||----------------------------------------------------------------------------------------||
+            //|| State
+            //||----------------------------------------------------------------------------------------||
+
+            const [loading, setLoading]   = useState<boolean>(true);
+            const [reload, setReload]     = useState<boolean>(false);
+            const [error , setError]      = useState<string | null>(null);
+            const [process, setProcess]   = useState<VerificationIDStatusProcess>({
+                  status            : "UNKN" as VerificationStatuses,
+                  step              : 0,
+                  verificationUUID  : verificationId,
+                  steps             : [],
+            });
+
+            //||----------------------------------------------------------------------------------------||
             //|| Data
             //||----------------------------------------------------------------------------------------||
 
             const fetchStatus = () => {
-                  fetch(`/v1/api/verify/id/status?identifier=${verificationId}`).then(response => {
-                        if (!response.ok) {
+                  fetch(`/v1/api/verify/status?identifier=${verificationId}`).then(resp => {
+                        if (!resp.ok) {
                               throw new Error("Failed to fetch verification status.");
                         }
-                        return response.json();
-                  }).then(data => {
-                        console.log("Verification Status Data:", data);
-                        if (data.success !== true) {
-                              throw new Error(data.message || "Unknown error fetching verification status.");
+                        return resp.json();
+                  }).then(response => {
+                        console.log("Verification Status Data:", response);
+                        if (response.success !== true) {
+                              throw new Error(response.message || "Unknown error fetching verification status.");
                         }
-                        setProcess(data.data as VerificationIDStatusProcess);
+                        setProcess({
+                              status            : response.data.status,
+                              step              : response.data.step,
+                              steps             : response.data.steps,
+                              verificationUUID  : response.data.verificationUUID,
+                        } as VerificationIDStatusProcess);
                         setLoading(false);
                         window.setTimeout(() => setReload(false), 2000);
                   }).catch(err => {
@@ -124,18 +143,23 @@
             }
 
             //||----------------------------------------------------------------------------------------||
-            //|| State
+            //|| Data
             //||----------------------------------------------------------------------------------------||
 
-            const [loading, setLoading]   = useState<boolean>(true);
-            const [reload, setReload] = useState<boolean>(false);
-            const [error , setError]      = useState<string | null>(null);
-            const [process, setProcess]   = useState<VerificationIDStatusProcess>({
-                  status            : "MISS",
-                  step              : 0,
-                  verificationUUID  : verificationId,
-                  steps             : [],
-            });
+            const testReset = () => {
+                  //	router.HandleFunc("/v1/api/verify/id/reset", verifier.TestingResetVerification).Methods("POST")
+
+                  fetch(`/v1/api/verify/id/reset?identifier=${verificationId}`).then(resp => {
+                        if (!resp.ok) {
+                              alert("Failed to reset verification status.");
+                        }
+                        return resp.json();
+                  }).then(response => {
+                        console.log("Verification Status Data:", response);
+                  }).catch(err => {
+                        alert(err.message);
+                  });
+            }            
 
             //||----------------------------------------------------------------------------------------||
             //|| Poll Status Every 5 Seconds
@@ -146,7 +170,7 @@
 			const interval = setInterval(() => { 
                         setReload(true); 
                         fetchStatus(); 
-                  }, 5000);
+                  }, 500);
 			fetchStatus();
 			return () => clearInterval(interval);
 		}, [verificationId]);
@@ -186,23 +210,23 @@
             //|| Loading
             //||----------------------------------------------------------------------------------------||
 
-            if (error !== null) {
-                  return (
-                        <MembersLayout>
-                              <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center p-8 bg-black/20 rounded-xl mt-10">
-                                    <InlineAlert message={error} isError />
-                                    <div className="flex justify-center mt-10">
-                                          <button
-                                                className="btn btn-primary text-lg px-10 py-2"
-                                                onClick={() => { window.location.href = "/members"; }}
-                                          >
-                                                Go Home
-                                          </button>
-                                    </div>                                    
-                              </div>
-                        </MembersLayout>
-                  );
-            }
+            // if (error !== null) {
+            //       return (
+            //             <MembersLayout>
+            //                   <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center p-8 bg-black/20 rounded-xl mt-10">
+            //                         <InlineAlert message={error} isError />
+            //                         <div className="flex justify-center mt-10">
+            //                               <button
+            //                                     className="btn btn-primary text-lg px-10 py-2"
+            //                                     onClick={() => { window.location.href = "/members"; }}
+            //                               >
+            //                                     Go Home
+            //                               </button>
+            //                         </div>                                    
+            //                   </div>
+            //             </MembersLayout>
+            //       );
+            // }
 
             //||----------------------------------------------------------------------------------------||
             //|| Loading
@@ -229,6 +253,8 @@
 
 
                               <div className="w-full mb-8">
+                                    { process.step } 
+                                    <textarea defaultValue={JSON.stringify(process)} className="w-full h-24 bg-black/20 text-xs p-2 rounded-lg text-gray-400 font-mono" readOnly />
                                     <ProgressSteps steps={steps} currentStep={process.step || 1} />
                               </div>
 
@@ -238,6 +264,7 @@
                                     </div>
 
                                     <div className="flex flex-col items-center mb-5">
+                                          <button className="btn btn-sm btn-secondary absolute top-3 left-5" onClick={testReset}>Reset (Test Only)</button>
                                           <Icon className={`w-24 h-24 ${color} mx-auto`} />
                                     </div>
                                     
@@ -255,19 +282,23 @@
                                                             <th className="w-1/3  text-right">Timestamp</th>
                                                       </tr>
                                                 </thead>
-                                                {process.steps.map((step, index) => (
+                                                <tbody>
+                                                {process.steps.map((step, index) => {
+                                                      console.log("Rendering step:", step);
+                                                      return (
                                                       <tr key={index}>
                                                             <td className={`text-xs text-gray-400"}`}>
-                                                                  {step.stepName}
+                                                                  {step.type}
                                                             </td>
                                                             <td className={`text-xs text-gray-200"}`}>
-                                                                  {step.stepDetails}
+                                                                  {step.details}
                                                             </td>
                                                             <td className="text-xs text-yellow-400 text-right">
-                                                                  {new Date(step.stepTimestamp).toLocaleString()}
+                                                                  {new Date(step.timestamp).toLocaleString()}
                                                             </td>
                                                       </tr>
-                                                ))}
+                                                )})}
+                                                </tbody>
                                           </table>
                                     )}
                                     </div>
@@ -290,7 +321,7 @@
                               )}
 
                               {/* Final Statuses */}
-                              {isFinal && onTryAgain && (
+                              {isFinal && (
                                     <div className="mt-6 flex flex-col items-center">
                                           <div className="mb-2 text-lg font-semibold">
                                                 {status === "VERF" && (
@@ -308,7 +339,6 @@
                                           </div>
                                           <button
                                                 className="btn btn-secondary text-lg px-10 py-2 mt-4"
-                                                onClick={onTryAgain}
                                           >
                                                 {status === "VERF" ? "Verify Another ID" : "Try Again"}
                                           </button>

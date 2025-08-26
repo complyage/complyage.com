@@ -6,16 +6,15 @@ package verifier
 
 import (
 	"base/abstract"
-	"base/db"
 	"base/helpers"
-	"base/interfaces"
-	"base/models"
 	"base/responses"
+	"base/verify"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
+
+	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -38,16 +37,6 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 
 	if which != "front" && which != "back" && which != "selfie" {
 		responses.Error(w, http.StatusBadRequest, "Invalid 'which' value")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Find Verification Record & Account
-	//||------------------------------------------------------------------------------------------------||
-
-	var verificationRecord models.Verification
-	if err := db.DB.Where("verification_uuid = ?", identifier).First(&verificationRecord).Error; err != nil {
-		responses.Error(w, http.StatusNotFound, "Verification record not found")
 		return
 	}
 
@@ -117,79 +106,72 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Make Key
+	//|| Load Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	bucket := os.Getenv("MINIO_PRIVATE_BUCKET")
-	objectName := fmt.Sprintf("verifications/%s/%s", identifier, which)
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check File
-	//||------------------------------------------------------------------------------------------------||
-
-	if len(content) == 0 {
-		if err := helpers.MinioDelete(bucket, objectName); err != nil {
-			responses.Error(w, http.StatusInternalServerError, "Failed to delete media")
-			return
-		}
-		responses.Success(w, http.StatusOK, map[string]string{
-			"status":  "deleted",
-			"section": which,
-		})
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Upload the file to MinIO
-	//||------------------------------------------------------------------------------------------------||
-
-	url, err := helpers.MinioUpload(bucket, objectName, mime, content)
+	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.AccountPrivate, account.AccountPublic)
 	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to upload to MinIO")
+		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
 		return
 	}
-	fmt.Println("✅ Uploaded to MinIO:", url)
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| If content is empty, delete from Redis and return status
+	//|| Create Media
 	//||------------------------------------------------------------------------------------------------||
 
+	var mediaRecord verify.Media
 	if len(content) == 0 {
-		if err := helpers.MinioDelete(bucket, objectName); err != nil {
-			responses.Error(w, http.StatusInternalServerError, "Failed to delete media from MinIO")
-			return
-		}
-
-		responses.Success(w, http.StatusOK, interfaces.VerificationMediaResponse{
-			Exists: true,
-			Blob:   "",
+		mediaRecord = verify.Media{
+			Exists: false,
+			Size:   0,
 			Mime:   "",
-			Type:   which,
-		})
-		return
+			Base64: "",
+		}
+	} else {
+		mediaRecord = verify.Media{
+			Exists: true,
+			Size:   int64(len(content)),
+			Mime:   mime,
+			Base64: base64.StdEncoding.EncodeToString(content),
+		}
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch from Redis
+	//|| Pull the Data
 	//||------------------------------------------------------------------------------------------------||
 
-	encoded := base64.StdEncoding.EncodeToString(content)
+	verifyData := verifyRecord.Encrypted.Data.IDEN
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Build Media Struct
+	//|| Add the Correct Media
 	//||------------------------------------------------------------------------------------------------||
 
-	media := interfaces.VerificationMediaResponse{
-		Exists: true,
-		Blob:   encoded,
-		Mime:   mime,
-		Type:   which,
+	switch which {
+	case "front":
+		verifyData.Front = mediaRecord
+	case "back":
+		verifyData.Back = mediaRecord
+	case "selfie":
+		verifyData.Selfie = mediaRecord
 	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Reassign the Data
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord.SetDataIDEN(verifyData)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Save All
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord.Save()
+	verifyRecord.DatabaseUpdate()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Done
 	//||------------------------------------------------------------------------------------------------||
 
 	fmt.Printf("✅ Uploaded %s for verification: %s (size=%d)\n", which, identifier, len(content))
-	responses.Success(w, http.StatusOK, media)
+	responses.Success(w, http.StatusOK, mediaRecord)
 }

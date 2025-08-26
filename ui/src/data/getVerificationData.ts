@@ -30,15 +30,14 @@
       //||------------------------------------------------------------------------------------------------||      
 
       export const VerificationStatusLabels: Record<VerificationStatuses, string > = {
-            MISS: "N/A",
             PEND: "Pending",
             PEVF: "Pending Verification",
-            APPR: "Pending Approval",
             VERF: "Verified",
+            INPR: "In Progress",
             RJCT: "Rejected",
             ESCL: "Escalated",
             EXPD: "Expired",
-            CNCL: "Cancelled"
+            UNKN: "Unknown"
       };
 
       //||------------------------------------------------------------------------------------------------||      

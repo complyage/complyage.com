@@ -133,21 +133,21 @@ func (a *Address) Mask() string {
 //||------------------------------------------------------------------------------------------------||
 
 type Media struct {
-	Hash   string `json:"hash"`
+	Exists bool   `json:"exists"`
 	Size   int64  `json:"size,omitempty"`
 	Base64 string `json:"blob,omitempty"`
 	Mime   string `json:"mime,omitempty"`
 }
 
 func (m *Media) String() string {
-	return fmt.Sprintf("Media(hash=%s, mime=%s, size=%d)", m.Hash, m.Mime, m.Size)
+	return fmt.Sprintf("Media(mime=%s, size=%d)", m.Mime, m.Size)
 }
 
 func (m *Media) Mask() string {
 	if m == nil {
 		return ""
 	}
-	return fmt.Sprintf("Media(hash=%s, mime=%s, size=%d)", maskString(m.Hash), m.Mime, m.Size)
+	return fmt.Sprintf("Media(mime=%s, size=%d)", m.Mime, m.Size)
 }
 
 //||------------------------------------------------------------------------------------------------||

@@ -22,7 +22,7 @@
       //|| Types
       //||------------------------------------------------------------------------------------------------||
 
-      export type VerificationTypes = "MAIL" | "PHNE" | "UAGE" | "ADDR" | "CRCD" | "UNAM" | "UNKN";
+      export type VerificationTypes = "MAIL" | "IDEN" | "PHNE" | "UAGE" | "ADDR" | "CRCD" | "UNAM" | "UNKN" ;
 
       //||------------------------------------------------------------------------------------------------||      
       //|| Status

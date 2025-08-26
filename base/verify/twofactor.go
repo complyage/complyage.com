@@ -76,30 +76,30 @@ func (v *Verification) TwoFactorVerify(code string) error {
 	expirationTime := v.TwoFactor.Expiration
 	if !expirationTime.IsZero() && time.Now().UTC().After(expirationTime) {
 		v.UpdateStatusExpired()
-		return fmt.Errorf("Verification code expired")
+		return fmt.Errorf("verification code expired")
 	}
 	//||------------------------------------------------------------------------------------------------||
 	//|| Attempts
 	//||------------------------------------------------------------------------------------------------||
 	if v.TwoFactor.Attempts > 5 {
-		v.UpdateStatusReject()
-		return fmt.Errorf("Too many attempts")
+		v.UpdateStatusReject("TWOFACTOR", "Too many attempts")
+		return fmt.Errorf("too many attempts")
 	}
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check Code
 	//||------------------------------------------------------------------------------------------------||
 	if v.TwoFactor.Code == "" {
-		return fmt.Errorf("TwoFactor code was not set")
+		return fmt.Errorf("twoFactor code was not set")
 	}
 	if v.TwoFactor.Code != code {
 		v.TwoFactor.Attempts = v.TwoFactor.Attempts + 1
-		v.Save(false)
-		return fmt.Errorf("Invalid code")
+		v.Save()
+		return fmt.Errorf("invalid code")
 	}
 	//||------------------------------------------------------------------------------------------------||
 	//|| Success - Update Status
 	//||------------------------------------------------------------------------------------------------||
-	upErr := v.UpdateStatusVerified(0)
+	upErr := v.UpdateStatusVerified("TWOFACTOR")
 	if upErr != nil {
 		return upErr
 	}

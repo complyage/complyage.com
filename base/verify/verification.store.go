@@ -21,6 +21,7 @@ type VerificationComplete struct {
 	//|| Process
 	//||------------------------------------------------------------------------------------------------||
 	Level int    `json:"level"`
+	Step  int    `json:"step"`
 	Steps []Step `json:"steps"`
 	//||------------------------------------------------------------------------------------------------||
 	//|| Approval
@@ -46,6 +47,7 @@ func (v *Verification) AsComplete() VerificationComplete {
 		Type:        v.Type,
 		Display:     v.Display,
 		Level:       v.Level,
+		Step:        v.Step,
 		Steps:       v.Steps,
 		Moderate:    v.Moderate,
 		Transaction: v.Transaction,

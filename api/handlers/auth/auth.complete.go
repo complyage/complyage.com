@@ -226,7 +226,7 @@ func CompleteHandler(w http.ResponseWriter, r *http.Request) {
 		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return
 	}
-	verifyRecord.UpdateStatusVerified(0) // Automatic Moderator
+	verifyRecord.UpdateStatusVerified("TWOFACTOR") // Automatic Moderator
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Refetch the User Data

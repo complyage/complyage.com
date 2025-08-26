@@ -52,7 +52,7 @@
                               method                  : "POST",
                               credentials             : "include",
                               headers                 : { "Content-Type": "application/json", },
-                              body                    : JSON.stringify({ uuid : process.verificationUUID }),
+                              body                    : JSON.stringify({ "identifier" : process.verificationUUID }),
                         });
                         const data = await res.json();
                         console.log("Submission response:", data);

@@ -14,6 +14,7 @@ type StepType int
 const (
 	StepInitial StepType = iota
 	StepStatusChange
+	StepAgentLevel1
 	StepModerate
 	StepSentEmail
 	StepSentSMS
@@ -23,6 +24,8 @@ const (
 	StepFaceLive
 	StepMediaUpload
 	StepOCR
+	StepDOB
+	StepAgeVerified
 	StepComplete
 )
 
@@ -36,6 +39,8 @@ func (t StepType) Code() string {
 		return "INITIAL"
 	case StepStatusChange:
 		return "STATUS_CHANGE"
+	case StepAgentLevel1:
+		return "STEP_AGENT_L1"
 	case StepModerate:
 		return "MODERATE"
 	case StepSentEmail:
@@ -54,6 +59,10 @@ func (t StepType) Code() string {
 		return "MEDIA_UPLOAD"
 	case StepOCR:
 		return "OCR"
+	case StepDOB:
+		return "DOB"
+	case StepAgeVerified:
+		return "AGE_VERIFIED"
 	case StepComplete:
 		return "COMPLETE"
 	default:
@@ -67,6 +76,8 @@ func (t StepType) Description(more string) string {
 		return "Initial verification step"
 	case StepStatusChange:
 		return "Status changed to " + more
+	case StepAgentLevel1:
+		return "Agent Level 1 processing"
 	case StepModerate:
 		return "Moderation step: " + more
 	case StepSentEmail:
@@ -85,6 +96,10 @@ func (t StepType) Description(more string) string {
 		return "Media uploaded"
 	case StepOCR:
 		return "Optical Character Recognition performed"
+	case StepDOB:
+		return "DOB verified (" + more + ")"
+	case StepAgeVerified:
+		return "Age verified (" + more + ")"
 	case StepComplete:
 		return "Verification process completed"
 	default:
@@ -114,6 +129,8 @@ func (t *StepType) UnmarshalJSON(data []byte) error {
 		*t = StepInitial
 	case "STATUS_CHANGE":
 		*t = StepStatusChange
+	case "STEP_AGENT_L1":
+		*t = StepAgentLevel1
 	case "MODERATE":
 		*t = StepModerate
 	case "SENT_EMAIL":
@@ -132,6 +149,10 @@ func (t *StepType) UnmarshalJSON(data []byte) error {
 		*t = StepMediaUpload
 	case "OCR":
 		*t = StepOCR
+	case "DOB":
+		*t = StepDOB
+	case "AGE_VERIFIED":
+		*t = StepAgeVerified
 	case "COMPLETE":
 		*t = StepComplete
 	default:
@@ -145,31 +166,37 @@ func (t *StepType) UnmarshalJSON(data []byte) error {
 //||------------------------------------------------------------------------------------------------||
 
 type nsStepType struct {
-	Initial      StepType
-	StatusChange StepType
-	Moderate     StepType
-	SentEmail    StepType
-	SentSMS      StepType
-	PayProcess   StepType
-	CodeEntry    StepType
-	FaceMatch    StepType
-	FaceLive     StepType
-	MediaUpload  StepType
-	OCR          StepType
-	Complete     StepType
+	Initial         StepType
+	StatusChange    StepType
+	StepAgentLevel1 StepType
+	Moderate        StepType
+	SentEmail       StepType
+	SentSMS         StepType
+	PayProcess      StepType
+	CodeEntry       StepType
+	FaceMatch       StepType
+	FaceLive        StepType
+	MediaUpload     StepType
+	OCR             StepType
+	DOB             StepType
+	AgeVerified     StepType
+	Complete        StepType
 }
 
 var STEPTYPES = nsStepType{
-	Initial:      StepInitial,
-	StatusChange: StepStatusChange,
-	Moderate:     StepModerate,
-	SentEmail:    StepSentEmail,
-	SentSMS:      StepSentSMS,
-	PayProcess:   StepPayProcess,
-	CodeEntry:    StepCodeEntry,
-	FaceMatch:    StepFaceMatch,
-	FaceLive:     StepFaceLive,
-	MediaUpload:  StepMediaUpload,
-	OCR:          StepOCR,
-	Complete:     StepComplete,
+	Initial:         StepInitial,
+	StatusChange:    StepStatusChange,
+	StepAgentLevel1: StepAgentLevel1,
+	Moderate:        StepModerate,
+	SentEmail:       StepSentEmail,
+	SentSMS:         StepSentSMS,
+	PayProcess:      StepPayProcess,
+	CodeEntry:       StepCodeEntry,
+	FaceMatch:       StepFaceMatch,
+	FaceLive:        StepFaceLive,
+	MediaUpload:     StepMediaUpload,
+	OCR:             StepOCR,
+	DOB:             StepDOB,
+	AgeVerified:     StepAgeVerified,
+	Complete:        StepComplete,
 }

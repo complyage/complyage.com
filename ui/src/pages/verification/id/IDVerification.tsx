@@ -74,7 +74,7 @@
                   step                : 0,
                   status              : "PEND",
                   verificationUUID    : verificationUUID,
-            });
+            });            
 
             //||------------------------------------------------------------------------------------------------||
             //|| onUpload
@@ -176,7 +176,7 @@
                   if (!process.verificationUUID) return;
                   (async () => {
                         try {
-                              const res = await fetch(`/v1/api/verify/id/status?identifier=${process.verificationUUID}`);
+                              const res = await fetch(`/v1/api/verify/status?identifier=${process.verificationUUID}`);
                               if (!res.ok) {
                                     throw new Error("Failed to load verification process");
                               }

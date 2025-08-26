@@ -5,7 +5,6 @@ import (
 	"api/handlers/public"
 	"api/handlers/user"
 	"api/handlers/utils"
-	"api/handlers/v1/agent"
 	"api/handlers/v1/sites"
 	"api/handlers/v1/verifier"
 	"base/adapters"
@@ -59,7 +58,7 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Starting switch-over to aria
 	//||------------------------------------------------------------------------------------------------||
-	if err := app.Init("config.json"); err != nil {
+	if err := app.Init("../config.json"); err != nil {
 		app.Log.Error("main", "Startup failed: %v", err)
 		os.Exit(1)
 	}
@@ -158,17 +157,17 @@ func main() {
 	router.HandleFunc("/v1/api/verify/list", verifier.GetVerificationsList).Methods("GET")
 	router.HandleFunc("/v1/api/verify/load", verifier.VerificationCodeLoad).Methods("GET")
 	router.HandleFunc("/v1/api/verify/check", verifier.VerificationCodeCheck).Methods("POST")
+	router.HandleFunc("/v1/api/verify/status", verifier.VerifyStatusHandler).Methods("GET")
 	router.HandleFunc("/v1/api/verify/qr/generate", verifier.QRCodeGenerate).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - ID
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/verify/id/init", verifier.IDVerifyInitHandler).Methods("GET")
-	router.HandleFunc("/v1/api/verify/id/status", verifier.VerifyIDStatusHandler).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/init", verifier.IdentifierVerifyInitHandler).Methods("GET")
 	router.HandleFunc("/v1/api/verify/id/media/upload", verifier.VerifyIDMediaUpload).Methods("POST")
 	router.HandleFunc("/v1/api/verify/id/media/fetch", verifier.VerifyIDMediaFetch).Methods("GET")
 	router.HandleFunc("/v1/api/verify/id/success", verifier.VerifyIDSuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
-	//|| Verify - Card
+	//|| Verify - Phone
 	//||------------------------------------------------------------------------------------------------||
 	router.HandleFunc("/v1/api/verify/phone", verifier.PhoneVerifyInitHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
@@ -187,9 +186,10 @@ func main() {
 	router.HandleFunc("/v1/api/currency", utils.ConvertUSDHandler).Methods("GET")
 	router.HandleFunc("/health", utils.HealthHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
-	//|| Agent
+	//|| Admin
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/api/agent/fatal", agent.AgentFatalHandler).Methods("POST")
+	router.HandleFunc("/v1/api/verify/json", verifier.TestingJSONVerification).Methods("GET")
+	router.HandleFunc("/v1/api/verify/id/reset", verifier.TestingResetVerification).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Cors Middleware - Need to update to handle CORS properly
 	//||------------------------------------------------------------------------------------------------||

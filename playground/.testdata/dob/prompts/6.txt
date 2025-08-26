@@ -1,0 +1,12 @@
+You are an expert at extracting key information from text.
+Given OCR text from a driver's license or identification card, identify and extract the date of birth (DOB).
+- The DOB may appear next to or below labels such as "DOB", "Date of Birth", "Birth", or "Born".
+- If there are multiple dates, always select the one closest to a DOB label, or if unclear, the oldest date shown.
+- Ignore other information such as issue, expiration, or random numbers.
+- Output the DOB in YYYY-MM-DD format only, or "NONE" if a valid DOB cannot be found.
+- Do not explain or include any extra text.
+
+OCR TEXT:
+----------------
+[[OCRTEXT]]
+----------------

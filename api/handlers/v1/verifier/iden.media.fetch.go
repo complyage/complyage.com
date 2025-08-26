@@ -6,15 +6,12 @@ package verifier
 
 import (
 	"base/abstract"
-	"base/db"
 	"base/helpers"
-	"base/interfaces"
-	"base/models"
 	"base/responses"
-	"encoding/base64"
-	"fmt"
+	"base/verify"
 	"net/http"
-	"os"
+
+	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -37,16 +34,6 @@ func VerifyIDMediaFetch(w http.ResponseWriter, r *http.Request) {
 
 	if which != "front" && which != "back" && which != "selfie" {
 		responses.Error(w, http.StatusBadRequest, "Invalid 'which' value")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Find Verification Record & Account
-	//||------------------------------------------------------------------------------------------------||
-
-	var verificationRecord models.Verification
-	if err := db.DB.Where("verification_uuid = ?", identifier).First(&verificationRecord).Error; err != nil {
-		responses.Error(w, http.StatusNotFound, "Verification record not found")
 		return
 	}
 
@@ -90,43 +77,38 @@ func VerifyIDMediaFetch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Make Key
+	//|| Load Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	bucket := os.Getenv("MINIO_PRIVATE_BUCKET")
-	objectName := fmt.Sprintf("verifications/%s/%s", identifier, which)
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Download
-	//||------------------------------------------------------------------------------------------------||
-
-	data, contentType, err := helpers.MinioDownload(bucket, objectName)
-	if err != nil || len(data) == 0 {
-		fmt.Println("Media file not found media:", len(data))
-		responses.Success(w, http.StatusOK, interfaces.VerificationMediaResponse{
-			Exists: false,
-			Blob:   "",
-			Type:   which,
-		})
+	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.AccountPrivate, account.AccountPublic)
+	if err != nil {
+		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch from Redis
+	//|| Pull the Data
 	//||------------------------------------------------------------------------------------------------||
 
-	encoded := base64.StdEncoding.EncodeToString(data)
-	fmt.Println("Encoded Media Size:", len(encoded))
-	fmt.Println("Mime Type:", contentType)
+	verifyData := verifyRecord.Encrypted.Data.IDEN
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Return Success
+	//|| Add the Correct Media
 	//||------------------------------------------------------------------------------------------------||
 
-	responses.Success(w, http.StatusOK, interfaces.VerificationMediaResponse{
-		Exists: true,
-		Blob:   encoded,
-		Mime:   contentType,
-		Type:   which,
-	})
+	mediaRecord := verify.Media{}
+
+	if which == "front" {
+		mediaRecord = verifyData.Front
+	} else if which == "back" {
+		mediaRecord = verifyData.Back
+	} else if which == "selfie" {
+		mediaRecord = verifyData.Selfie
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Done
+	//||------------------------------------------------------------------------------------------------||
+
+	responses.Success(w, http.StatusOK, mediaRecord)
 }

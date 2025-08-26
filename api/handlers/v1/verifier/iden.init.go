@@ -5,19 +5,31 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"api/verification"
+	"base/abstract"
 	"base/helpers"
-	"base/interfaces"
 	"base/responses"
+	"base/verify"
 	"fmt"
 	"net/http"
+
+	"github.com/ralphferrara/aria/app"
 )
+
+//||------------------------------------------------------------------------------------------------||
+//|| Request
+//||------------------------------------------------------------------------------------------------||
+
+type idenInitResponse struct {
+	Identifier string `json:"identifier"`
+}
 
 //||------------------------------------------------------------------------------------------------||
 //|| Handler
 //||------------------------------------------------------------------------------------------------||
 
-func IDVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
+func IdentifierVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
+
+	verify.LogInfo("IdentifierVerifyInitHandler")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
@@ -30,7 +42,7 @@ func IDVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Session Cookie
+	//|| Check Session
 	//||------------------------------------------------------------------------------------------------||
 
 	session, err := helpers.FetchSession(cookie.Value)
@@ -40,13 +52,22 @@ func IDVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Verification
+	//|| Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verificationUUID, iErr := verification.CreateVerificationIDEN(session.ID, session.Public)
-	if iErr != nil {
-		fmt.Println("Error creating card verification:", iErr)
-		responses.Error(w, http.StatusInternalServerError, "Failed to create verification record")
+	account, err := abstract.GetAccountByID(fmt.Sprintf("%d", session.ID))
+	if err != nil || account == nil {
+		responses.Error(w, http.StatusBadRequest, "Account not found for session")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verification Record matches Account
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord, err := verify.Init(verify.DataTypeIDEN, account.IDAccount, app.Storages["verifications"], app.SQLDB["main"], account.AccountPrivate, account.AccountPublic)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return
 	}
 
@@ -54,8 +75,8 @@ func IDVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
-	responses.Success(w, http.StatusOK, interfaces.VerificationBasicInitialResponse{
-		UUID: verificationUUID,
+	responses.Success(w, http.StatusOK, idenInitResponse{
+		Identifier: verifyRecord.UUID,
 	})
 
 }

@@ -101,12 +101,13 @@
 
             const generateIdenUUID = async() => {
                   try {
-                        const res  = await fetch(`/v1/api/verify/id/init`);
-                        const body = await res.json();
-                        if (!res.ok || !body?.success) {
-                              throw new Error(body?.message || "Verification init failed");
+                        const res         = await fetch(`/v1/api/verify/id/init`);
+                        const response    = await res.json();
+                        console.log("Generate UUID :: ", response);
+                        if (!res.ok || !response.success) {
+                              throw new Error(response.message || "Verification init failed");
                         }
-                        const identifier = body?.data?.uuid;
+                        const identifier = response.data.identifier;
                         if (!identifier) throw new Error("Missing identifier in response");
                         navigate(`/verification/id/?identifier=${identifier}`);
                   } catch (err: any) {
@@ -131,6 +132,15 @@
                   }
             };
 
+
+            //||------------------------------------------------------------------------------------------------||
+            //|| Button Action
+            //||------------------------------------------------------------------------------------------------||
+
+            const checkStatus = (uuid : string) => {
+                  navigate(`/verification/status?identifier=${uuid}`);
+            }
+
             //||------------------------------------------------------------------------------------------------||
             //|| Button Action
             //||------------------------------------------------------------------------------------------------||
@@ -138,7 +148,12 @@
             const buttonAction = (uuid: string, status: VerificationStatuses) => {
                   switch (status) {
                         case "PEND": return ( <button className="btn btn-error btn-md rounded-md px-4 flex items-center gap-1" title="Try again" onClick={handleInit}><XCircle size={18} className="inline-block" /></button>);
-                        case "PEVF": return ( <button className="btn btn-success btn-md rounded-md px-4" title="Enter Verification" onClick={() => handleVerify(uuid)} >Enter Verification</button> );
+                        case "PEVF": 
+                              if (typeVerify === "IDEN") {
+                                    return ( <button className="btn btn-success btn-md rounded-md px-4" title="View Status" onClick={() => { checkStatus(uuid) }} >View Status</button> );
+                              }
+                              return ( <button className="btn btn-success btn-md rounded-md px-4" title="Enter Verification" onClick={() => handleVerify(uuid)} >Enter Verification</button> );
+                              break;
                         case "INPR": return ( <span className="badge badge-outline badge-info flex items-center p-5 text-xs"><Timer size={24} className="inline-block" /><span className="w-18 block font-bold">In Progress</span></span>);
                         case "VERF": return ( <span className="badge badge-outline badge-info flex items-center gap-1"><CheckCircle size={24} className="inline-block" /><span className="w-18 block font-bold">Verified</span></span>);
                         case "RJCT": return ( <button className="btn btn-error btn-md rounded-md px-4 flex items-center gap-1" title="Try again" onClick={handleInit}><XCircle size={18} className="inline-block" /></button>);
@@ -259,6 +274,8 @@
 															<td className="text-sm w-40">{row.display}</td>
 															<td className="text-xs w-40">{row.created}</td>
 															<td className="text-xs w-40">{row.updated}</td>
+                                                                                          <td className="text-xs w-40">{row.type}</td>
+                                                                                          <td className="text-xs w-40">{row.status}</td>
 															<td className="text-xs text-center">
 																{buttonAction(
 																	row.uuid,

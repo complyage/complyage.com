@@ -99,7 +99,7 @@ func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	verifyRecord.SetDataADDR(updateRequest.Address)
-	verifyRecord.Save(false)
+	verifyRecord.Save()
 	verifyRecord.DatabaseUpdate()
 
 	//||------------------------------------------------------------------------------------------------||

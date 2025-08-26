@@ -1,0 +1,19 @@
+Do not respond with anything other than a [0-100] integer, no chitchat, 
+Is this Date of Birth correct from this ocr text. 
+
+
+DATE OF BIRTH
+----------------
+[[DOB]]
+----------------
+
+OCR TEXT
+----------------
+[[OCRTEXT]]
+----------------
+
+RESPOND WITH : [0-100]
+Zero if you don't know
+100 if you do 
+or anywhere in between
+NO CHAT ONLY NUMBER

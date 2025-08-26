@@ -5,9 +5,8 @@ package verify
 //||------------------------------------------------------------------------------------------------||
 
 type Moderate struct {
-	Type      ModerateType   `json:"type"`
-	Status    ModerateStatus `json:"status"`
-	Moderator int64          `json:"moderator,omitempty"`
-	Timestamp string         `json:"timestamp,omitempty"`
-	Details   string         `json:"details,omitempty"`
+	Status    string `json:"status"`
+	Moderator string `json:"moderator,omitempty"`
+	Timestamp string `json:"timestamp,omitempty"`
+	Details   string `json:"details,omitempty"`
 }
