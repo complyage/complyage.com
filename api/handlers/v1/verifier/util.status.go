@@ -5,13 +5,14 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/abstract"
-	"base/helpers"
-	"base/responses"
+	"base/db/abstract"
 	"base/verify"
 	"net/http"
 
+	"github.com/ralphferrara/aria/responses"
+
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -67,7 +68,7 @@ func VerifyStatusHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Fetch a Session
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -87,7 +88,7 @@ func VerifyStatusHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Session Account
 	//||------------------------------------------------------------------------------------------------||
 
-	if session.ID != account.IDAccount {
+	if session.ID != account.ID {
 		responses.Error(w, http.StatusBadRequest, "Session does not match account")
 		return
 	}
@@ -96,7 +97,7 @@ func VerifyStatusHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.AccountPrivate, account.AccountPublic)
+	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
 	if err != nil {
 		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
 		return

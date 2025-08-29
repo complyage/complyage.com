@@ -1,19 +1,15 @@
 package main
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/loaders"
-	"base/template"
+	"base/sites"
+	"base/zones"
 	"fmt"
-	"log"
-	"net/http"
 	"oauth/handlers"
-	"os"
-	"time"
+	"oauth/templates"
 
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/http"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -35,119 +31,44 @@ func main() {
 		fmt.Println("No .env file found, continuing...")
 	}
 	//||------------------------------------------------------------------------------------------------||
-	//|| Should we use in-memory storage or DB?
+	//|| Starting switch-over to aria
 	//||------------------------------------------------------------------------------------------------||
-	env := os.Getenv("ENV_MODE")
-	fmt.Println("ENV_MODE = " + env)
-	if env == "production" {
-		fmt.Println("Running in production mode, using In memory storage")
-		UseInMemory = true
-	} else {
-		fmt.Println("Running in development mode, using DB")
-		UseInMemory = false
-	}
+	app.Init("../config.json")
+	app.ListenForShutdown()
 	//||------------------------------------------------------------------------------------------------||
-	//|| Register Templates
+	//|| Cors
 	//||------------------------------------------------------------------------------------------------||
-	template.Register("oauth", "./assets/oauth.html")
-	template.Register("private", "./assets/private.html")
-	template.Register("private_locked", "./assets/private.locked.html")
-	template.Register("private_unlocked", "./assets/private.unlocked.html")
-	template.Register("private_key", "./assets/private.key.html")
-	template.Register("private_bip39", "./assets/private.bip39.html")
-	template.Register("permission", "./assets/permission.html")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Open DB Connection
-	//||------------------------------------------------------------------------------------------------||
-	db.ConnectMySQL()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Connect to Redis
-	//||------------------------------------------------------------------------------------------------||
-	db.ConnectRedis() // Redis
-	//||------------------------------------------------------------------------------------------------||
-	//|| Open DB Connection
-	//||------------------------------------------------------------------------------------------------||
-	if UseInMemory {
-		fmt.Println("Loading IP ranges...Please be patient, takes minutes")
-		if err := loaders.LoadIPRanges(); err != nil {
-			panic(fmt.Sprintf("Failed to load IP ranges: %v", err))
-		}
-	}
+	app.HTTP["oauth"].SetDefaults(http.Defaults{
+		Cors: http.CORS([]string{
+			"https://",
+			"http://localhost:5174",
+			"*",
+		}),
+		Middleware: http.Logger(),
+	})
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Zones
 	//||------------------------------------------------------------------------------------------------||
-	loaders.LoadZones()
+	zones.LoadZones()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Sites
 	//||------------------------------------------------------------------------------------------------||
-	loaders.StartSiteLoader()
+	sites.LoadSites()
 	//||------------------------------------------------------------------------------------------------||
-	//|| Preload Translations
+	//|| Templates
 	//||------------------------------------------------------------------------------------------------||
-	loaders.LoadTranslations()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Setup Router
-	//||------------------------------------------------------------------------------------------------||
-	router := mux.NewRouter()
+	templates.InitTemplates()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Static Assets
 	//||------------------------------------------------------------------------------------------------||
-	fs := http.FileServer(http.Dir("public"))
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+	app.HTTP["oauth"].Mount("/static/", "public")
+	app.HTTP["oauth"].Start()
 	//||------------------------------------------------------------------------------------------------||
-	//|| Middleware
+	//|| Init Routes
 	//||------------------------------------------------------------------------------------------------||
-	router.Use(LoggerMiddleware)
-	router.HandleFunc("/cli/translate", helpers.TranslateI18nHandler).Methods("GET")
+	handlers.InitRoutes()
 	//||------------------------------------------------------------------------------------------------||
-	//|| Global Routes
+	//|| Keep Alive
 	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/authorize", handlers.ServeOAuthHandler).Methods("GET")
-	router.HandleFunc("/v1/deny", handlers.DenyOAuthHandler).Methods("GET")
-	router.HandleFunc("/v1/approve", handlers.ApproveOAuthHandler).Methods("GET")
-	router.HandleFunc("/v1/private", handlers.ServePrivateKeyForm).Methods("GET")
-	router.HandleFunc("/v1/return", handlers.OAuthReturnHandler).Methods("GET")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Simple Up Check
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(
-			w,
-			`{"status":"ok","time":"%s"}`,
-			time.Now().Format(time.RFC3339),
-		)
-	}).Methods("GET")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Cors Middleware - Need to update to handle CORS properly
-	//||------------------------------------------------------------------------------------------------||
-	allowedOrigins := []string{"*"} // or list your domains
-	//||------------------------------------------------------------------------------------------------||
-	//|| Logger Middleware
-	//||------------------------------------------------------------------------------------------------||
-	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[%s] %s %s => 404\n", time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
-		http.Error(w, "404 page not found", http.StatusNotFound)
-	})
-	//||------------------------------------------------------------------------------------------------||
-	//|| We are up and running
-	//||------------------------------------------------------------------------------------------------||
-	fmt.Println("OAUTH server running on :" + os.Getenv("PORT_HTTP_OAUTH"))
-	log.Fatal(
-		http.ListenAndServe(
-			":"+os.Getenv("PORT_HTTP_OAUTH"),
-			helpers.CORSMiddleware(allowedOrigins, router),
-		),
-	)
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Logger Middleware
-//||------------------------------------------------------------------------------------------------||
-
-func LoggerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[%s] %s %s\n", time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
+	select {}
 }

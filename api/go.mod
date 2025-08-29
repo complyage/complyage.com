@@ -7,14 +7,12 @@ require (
 	base v0.0.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.95
 	github.com/ralphferrara/aria v0.0.0-20250825041409-28a260478831
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/stripe/stripe-go/v82 v82.4.1
-	gorm.io/gorm v1.30.1
 )
 
 require (
@@ -73,6 +71,7 @@ require (
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.5 // indirect
@@ -86,7 +85,6 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
-	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	github.com/streadway/amqp v1.1.0 // indirect
@@ -122,8 +120,11 @@ require (
 	gorm.io/datatypes v1.2.6 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
+	gorm.io/gorm v1.30.1 // indirect
 )
 
 replace agent => ../agent
 
 replace base => ../base
+
+replace github.com/ralphferrara/aria => ../aria

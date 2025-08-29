@@ -5,13 +5,15 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/models"
-	"base/responses"
-	"encoding/hex"
+	"base/db/models"
 	"fmt"
 	"net/http"
+
+	"github.com/ralphferrara/aria/base/random"
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -34,7 +36,7 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -44,20 +46,8 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Generate Public/Private Keys
 	//||------------------------------------------------------------------------------------------------||
 
-	privKeyBytes, err := helpers.GenerateRandom()
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to generate private key")
-		return
-	}
-
-	pubKeyBytes, err := helpers.GenerateRandom()
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to generate public key")
-		return
-	}
-
-	privKey := hex.EncodeToString(privKeyBytes)
-	pubKey := hex.EncodeToString(pubKeyBytes)
+	privKey := random.RandomString(32)
+	pubKey := random.RandomString(32)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create New Site Model
@@ -71,7 +61,7 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 		SiteEnforcement: "ALLZ",
 	}
 
-	if err := db.DB.Create(&site).Error; err != nil {
+	if err := app.SQLDB["main"].DB.Create(&site).Error; err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to create site")
 		fmt.Println("Error creating site:", err)
 		return

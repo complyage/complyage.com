@@ -1,9 +1,7 @@
 package verify
 
-import (
-	"github.com/ralphferrara/aria/log"
-)
+import "github.com/ralphferrara/aria/app"
 
 func LogInfo(message string, args ...interface{}) {
-	log.Print(log.INFO, "Verify", message, args...)
+	app.Log.Info(message, args...)
 }

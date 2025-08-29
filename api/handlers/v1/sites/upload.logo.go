@@ -11,7 +11,6 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -27,12 +26,14 @@ import (
 	"strings"
 
 	"base/agnostic"
-	"base/helpers"
-	"base/responses"
+
+	"github.com/ralphferrara/aria/responses"
 
 	"github.com/disintegration/imaging"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -64,7 +65,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -141,7 +142,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	var count int64
-	err = db.DB.
+	err = app.SQLDB["main"].DB.
 		Table("sites").
 		Where("id_site = ? AND fid_account = ? AND site_status NOT IN ?", siteID, session.ID, []string{"RMVD", "BNND"}).
 		Count(&count).Error

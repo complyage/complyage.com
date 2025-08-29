@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"base/responses"
+	"github.com/ralphferrara/aria/responses"
 )
 
 //||------------------------------------------------------------------------------------------------||

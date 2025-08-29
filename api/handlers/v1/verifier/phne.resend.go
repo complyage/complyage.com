@@ -6,23 +6,23 @@ package verifier
 
 import (
 	"api/send"
-	"base/helpers"
-	"base/interfaces"
-	"base/responses"
 	"base/verify"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/ralphferrara/aria/responses"
+
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
 //|| Request
 //||------------------------------------------------------------------------------------------------||
 
-type PhoneVerifyResendRequest struct {
+type phoneVerifyResendRequest struct {
 	Identifier string `json:"identifier"`
 }
 
@@ -42,7 +42,7 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -62,7 +62,7 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Generate verification tuple (amount + 4-digit code)
 	//||------------------------------------------------------------------------------------------------||
 
-	var req PhoneVerifyResendRequest
+	var req phoneVerifyResendRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload"+err.Error())
 		return
@@ -112,8 +112,8 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
-	responses.Success(w, http.StatusOK, interfaces.VerificationBasicInitialResponse{
-		UUID: verifyRecord.UUID,
+	responses.Success(w, http.StatusOK, phoneVerifyResendRequest{
+		Identifier: verifyRecord.UUID,
 	})
 
 }

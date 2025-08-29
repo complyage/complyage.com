@@ -8,7 +8,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/queue"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -33,7 +32,7 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Start Consumer
 	//||------------------------------------------------------------------------------------------------||
-	rabbit := queue.Rabbit["agent"]
+	rabbit := app.QueueRabbit["agent"]
 	if rabbit == nil {
 		panic("RabbitMQ instance 'agent' not found")
 	}

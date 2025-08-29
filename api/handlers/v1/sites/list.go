@@ -5,10 +5,12 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/responses"
 	"net/http"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -41,7 +43,7 @@ func SitesListHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -52,7 +54,7 @@ func SitesListHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	var sites []SiteListResponse
-	if err := db.DB.
+	if err := app.SQLDB["main"].DB.
 		Table("sites").
 		Select("id_site", "site_name", "site_url").
 		Where("fid_account = ?", session.ID).

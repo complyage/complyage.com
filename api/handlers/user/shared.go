@@ -5,12 +5,14 @@ package user
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/responses"
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -44,7 +46,7 @@ func UserSharedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -74,7 +76,7 @@ func UserSharedHandler(w http.ResponseWriter, r *http.Request) {
         ORDER BY st.site_name, s.shared_timestamp DESC
     `
 
-	if err := db.DB.Raw(query, accountID).Scan(&sharedItems).Error; err != nil {
+	if err := app.SQLDB["main"].DB.Raw(query, accountID).Scan(&sharedItems).Error; err != nil {
 		fmt.Println("❌ Failed to fetch shared data:", err)
 		responses.Error(w, http.StatusInternalServerError, "Database query failed")
 		return

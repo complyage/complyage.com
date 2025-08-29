@@ -5,16 +5,17 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/abstract"
-	"base/helpers"
-	"base/responses"
+	"base/db/abstract"
 	"base/verify"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/ralphferrara/aria/responses"
+
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -64,7 +65,7 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -74,7 +75,7 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	//|| Check Session Match
 	//||------------------------------------------------------------------------------------------------||
 
-	if session.ID != account.IDAccount {
+	if session.ID != account.ID {
 		responses.Error(w, http.StatusForbidden, "Session does not match verification record")
 		return
 	}
@@ -109,7 +110,7 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	//|| Load Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.AccountPrivate, account.AccountPublic)
+	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
 	if err != nil {
 		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
 		return

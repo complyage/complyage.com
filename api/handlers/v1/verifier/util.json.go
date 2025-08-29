@@ -5,10 +5,11 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/responses"
 	"base/verify"
 	"encoding/json"
 	"net/http"
+
+	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
 )

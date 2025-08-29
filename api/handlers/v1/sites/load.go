@@ -5,16 +5,18 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/models"
-	"base/responses"
+	"base/db/models"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -37,7 +39,7 @@ func SitesLoadHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -64,7 +66,7 @@ func SitesLoadHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	var site models.Site
-	if err := db.DB.
+	if err := app.SQLDB["main"].DB.
 		Where("id_site = ? AND fid_account = ?", id, session.ID).
 		Where("site_status NOT IN ('RMVD', 'BNND')").
 		First(&site).Error; err != nil {

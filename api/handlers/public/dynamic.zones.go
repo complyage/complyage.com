@@ -1,15 +1,15 @@
 package public
 
 import (
-	"base/models"
+	"base/db/models"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	// Updated import path to base/models
-	"base/db"        // Import the db package to access db.DB
-	"base/responses" // Import the responses package
+	"github.com/ralphferrara/aria/responses" // Import the responses package
+
+	"github.com/ralphferrara/aria/app"
 )
 
 // ZoneOutput defines the structure for the JSON response
@@ -39,7 +39,7 @@ var (
 func fetchZonesFromDB() ([]models.Zone, error) {
 	var zones []models.Zone
 	// Use the global DB instance from the base/dbb package
-	result := db.DB.Where("id_zone <> ?", 9999).Find(&zones)
+	result := app.SQLDB["main"].DB.Where("id_zone <> ?", 9999).Find(&zones)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to fetch zones from database: %w", result.Error)
 	}

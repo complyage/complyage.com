@@ -5,13 +5,15 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/models"
-	"base/responses"
+	"base/db/models"
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -39,7 +41,7 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -65,7 +67,7 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	var original models.Site
-	if err := db.DB.
+	if err := app.SQLDB["main"].DB.
 		Where("id_site = ? AND fid_account = ?", input.IDSite, session.ID).
 		Where("site_status NOT IN ('RMVD', 'BNND')").
 		First(&original).Error; err != nil {
@@ -94,7 +96,7 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Perform Update
 	//||------------------------------------------------------------------------------------------------||
 
-	err = db.DB.Model(&models.Site{}).
+	err = app.SQLDB["main"].DB.Model(&models.Site{}).
 		Where("id_site = ? AND fid_account = ?", input.IDSite, session.ID).
 		Updates(map[string]interface{}{
 			"site_name":         input.SiteName,

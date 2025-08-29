@@ -6,15 +6,16 @@ package verifier
 
 import (
 	"api/send"
-	"base/helpers"
-	"base/responses"
 	"base/verify"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/ralphferrara/aria/responses"
+
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -47,7 +48,7 @@ func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return

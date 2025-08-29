@@ -5,14 +5,16 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/models"
-	"base/responses"
-	"encoding/hex"
+	"base/db/models"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/ralphferrara/aria/base/random"
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -35,7 +37,7 @@ func SitesCopyHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -62,7 +64,7 @@ func SitesCopyHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	var source models.Site
-	if err := db.DB.
+	if err := app.SQLDB["main"].DB.
 		Where("id_site = ? AND fid_account = ?", id, session.ID).
 		First(&source).Error; err != nil {
 		responses.Error(w, http.StatusNotFound, "Site not found or access denied")
@@ -73,20 +75,8 @@ func SitesCopyHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Generate New Keys
 	//||------------------------------------------------------------------------------------------------||
 
-	privKeyBytes, err := helpers.GenerateRandom()
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to generate private key")
-		return
-	}
-
-	pubKeyBytes, err := helpers.GenerateRandom()
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to generate public key")
-		return
-	}
-
-	privKey := hex.EncodeToString(privKeyBytes)
-	pubKey := hex.EncodeToString(pubKeyBytes)
+	privKey := random.RandomString(32)
+	pubKey := random.RandomString(32)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create New Copied Site
@@ -102,7 +92,7 @@ func SitesCopyHandler(w http.ResponseWriter, r *http.Request) {
 		newSite.SiteName += " - Copy"
 	}
 
-	if err := db.DB.Create(&newSite).Error; err != nil {
+	if err := app.SQLDB["main"].DB.Create(&newSite).Error; err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to create copied site")
 		return
 	}

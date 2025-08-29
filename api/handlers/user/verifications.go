@@ -5,13 +5,15 @@ package user
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/responses"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -43,7 +45,7 @@ func UserVerifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -89,7 +91,7 @@ func UserVerifications(w http.ResponseWriter, r *http.Request) {
 		LIMIT ? OFFSET ?;
 	`
 
-	if err := db.DB.Raw(query, accountID, limit, offset).Scan(&verifications).Error; err != nil {
+	if err := app.SQLDB["main"].DB.Raw(query, accountID, limit, offset).Scan(&verifications).Error; err != nil {
 		fmt.Println("Failed to fetch user verifications:", err)
 		responses.Error(w, http.StatusInternalServerError, "Database query failed")
 		return
@@ -100,7 +102,7 @@ func UserVerifications(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	var total int64
-	if err := db.DB.Raw(`SELECT COUNT(*) FROM verifications WHERE fid_account = ?`, accountID).Scan(&total).Error; err != nil {
+	if err := app.SQLDB["main"].DB.Raw(`SELECT COUNT(*) FROM verifications WHERE fid_account = ?`, accountID).Scan(&total).Error; err != nil {
 		fmt.Println("Failed to count verifications:", err)
 		total = int64(len(verifications)) // fallback
 	}

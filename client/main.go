@@ -1,18 +1,14 @@
 package main
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/loaders"
+	"base/sites"
+	"base/zones"
 	"client/handlers"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/http"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -34,89 +30,40 @@ func main() {
 		fmt.Println("No .env file found, continuing...")
 	}
 	//||------------------------------------------------------------------------------------------------||
-	//|| Should we use in-memory storage or DB?
+	//|| Starting switch-over to aria
 	//||------------------------------------------------------------------------------------------------||
-	env := os.Getenv("ENV_MODE")
-	fmt.Println("ENV_MODE = " + env)
-	if env == "production" {
-		fmt.Println("Running in production mode, using In memory storage")
-		UseInMemory = true
-	} else {
-		fmt.Println("Running in development mode, using DB")
-		UseInMemory = false
-	}
+	app.Init("../config.json")
+	app.ListenForShutdown()
 	//||------------------------------------------------------------------------------------------------||
-	//|| Open DB Connection
+	//|| Cors
 	//||------------------------------------------------------------------------------------------------||
-	db.ConnectMySQL()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Connect to Redis
-	//||------------------------------------------------------------------------------------------------||
-	db.ConnectRedis() // Redis
+	app.HTTP["client"].SetDefaults(http.Defaults{
+		Cors: http.CORS([]string{
+			"https://",
+			"http://localhost:5174",
+			"*",
+		}),
+		Middleware: http.Logger(),
+	})
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Zones
 	//||------------------------------------------------------------------------------------------------||
-	loaders.LoadZones()
+	zones.LoadZones()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Sites
 	//||------------------------------------------------------------------------------------------------||
-	loaders.StartSiteLoader()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Preload Translations
-	//||------------------------------------------------------------------------------------------------||
-	loaders.LoadTranslations()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Setup Router
-	//||------------------------------------------------------------------------------------------------||
-	router := mux.NewRouter()
+	sites.LoadSites()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Static Assets
 	//||------------------------------------------------------------------------------------------------||
-	fs := http.FileServer(http.Dir("public"))
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+	app.HTTP["client"].Mount("/static/", "public")
+	app.HTTP["client"].Start()
 	//||------------------------------------------------------------------------------------------------||
-	//|| Middleware
+	//|| Init Routes
 	//||------------------------------------------------------------------------------------------------||
-	router.Use(LoggerMiddleware)
+	handlers.InitRoutes()
 	//||------------------------------------------------------------------------------------------------||
-	//|| Cors Middleware - Need to update to handle CORS properly
+	//|| Keep Alive
 	//||------------------------------------------------------------------------------------------------||
-	allowedOrigins := []string{"*"} // or list your domains
-	//||------------------------------------------------------------------------------------------------||
-	//|| Serve
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/gate.html", handlers.ServeAgeGateHandler).Methods("GET")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Client Functions
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/client/enforce", handlers.CheckClientEnforcement).Methods("GET")
-	router.HandleFunc("/v1/client/session", handlers.CheckSession).Methods("GET")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Logger Middleware
-	//||------------------------------------------------------------------------------------------------||
-	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[%s] %s %s => 404\n", time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
-		http.Error(w, "404 page not found", http.StatusNotFound)
-	})
-	//||------------------------------------------------------------------------------------------------||
-	//|| We are up and running
-	//||------------------------------------------------------------------------------------------------||
-	fmt.Println("Age Gate CLIENT server running on :" + os.Getenv("PORT_HTTP_CLIENT"))
-	log.Fatal(
-		http.ListenAndServe(
-			":"+os.Getenv("PORT_HTTP_CLIENT"),
-			helpers.CORSMiddleware(allowedOrigins, router),
-		),
-	)
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Logger Middleware
-//||------------------------------------------------------------------------------------------------||
-
-func LoggerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[%s] %s %s\n", time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
+	select {}
 }

@@ -36,10 +36,7 @@ var (
 		DataTypeIDEN,
 		DataTypeUSER,
 	}
-
-	AllDataTypeStrings = []string{
-		"UAGE", "MAIL", "PHNE", "ADDR", "CRCD", "IDEN", "USER",
-	}
+	AllDataTypeStrings = []string{"UAGE", "MAIL", "PHNE", "ADDR", "CRCD", "IDEN", "USER"}
 )
 
 func IsValidDataType(s string) bool {

@@ -5,9 +5,11 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/responses"
 	"net/http"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
 )
 
 // ||------------------------------------------------------------------------------------------------||
@@ -31,7 +33,7 @@ func VerificationTypesListHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Fetch Verification Types
 	//||------------------------------------------------------------------------------------------------||
 	var types []VerificationTypeResponse
-	if err := db.DB.
+	if err := app.SQLDB["main"].DB.
 		Table("verification_types").
 		Select("id_verification_type", "verification_code", "verification_description", "verification_level").
 		Order("verification_level ASC, verification_code ASC").

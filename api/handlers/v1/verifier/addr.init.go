@@ -5,16 +5,17 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/abstract"
 	"base/adapters"
-	"base/helpers"
-	"base/responses"
+	"base/db/abstract"
 	"base/verify"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/ralphferrara/aria/responses"
+
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -68,7 +69,7 @@ func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Check Session
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -88,7 +89,7 @@ func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Init(verify.DataTypeADDR, account.IDAccount, app.Storages["verifications"], app.SQLDB["main"], account.AccountPrivate, account.AccountPublic)
+	verifyRecord, err := verify.Init(verify.DataTypeADDR, account.ID, app.Storages["verifications"], app.SQLDB["main"], account.Private, account.Public)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return

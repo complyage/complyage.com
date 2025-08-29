@@ -7,7 +7,7 @@
 package adapters
 
 import (
-	"base/interfaces"
+	"base/verify"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -68,7 +68,7 @@ type ClickSendEmailRequest struct {
 //|| ClickSend Address struct
 //||------------------------------------------------------------------------------------------------||
 
-func ClickSendPostcard(toAddress interfaces.Address, verificationUUID string, templatePath string, verifyURL string, checkCode string, clickSendUsername string, clickSendAPIKey string) (string, error) {
+func ClickSendPostcard(toAddress verify.Address, verificationUUID string, templatePath string, verifyURL string, checkCode string, clickSendUsername string, clickSendAPIKey string) (string, error) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create the Back PNG

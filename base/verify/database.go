@@ -1,7 +1,7 @@
 package verify
 
 import (
-	"base/models"
+	"base/db/models"
 	"encoding/json"
 	"fmt"
 )

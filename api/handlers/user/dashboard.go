@@ -5,11 +5,13 @@ package user
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/responses"
 	"fmt"
 	"net/http"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -37,7 +39,7 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -65,7 +67,7 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 		ORDER BY vt.id_verification_type;
     `
 
-	if err := db.DB.Raw(query, accountID).Scan(&results).Error; err != nil {
+	if err := app.SQLDB["main"].DB.Raw(query, accountID).Scan(&results).Error; err != nil {
 		fmt.Println("Failed to query verification statuses:", err)
 		responses.Error(w, http.StatusInternalServerError, "Database query failed")
 		return

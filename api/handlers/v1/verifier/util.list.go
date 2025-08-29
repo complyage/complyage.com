@@ -1,13 +1,14 @@
 package verifier
 
 import (
-	"base/helpers"
-	"base/models"
-	"base/responses"
+	"base/db/models"
 	"base/verify"
 	"net/http"
 
+	"github.com/ralphferrara/aria/responses"
+
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -30,7 +31,7 @@ func GetVerificationsList(w http.ResponseWriter, r *http.Request) {
 	//|| Fetch Session
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return

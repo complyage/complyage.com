@@ -5,12 +5,14 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db"
-	"base/helpers"
-	"base/models"
-	"base/responses"
+	"base/db/models"
 	"net/http"
 	"strconv"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -33,7 +35,7 @@ func SitesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := helpers.FetchSession(cookie.Value)
+	session, err := actions.FetchSession(cookie.Value)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
@@ -59,7 +61,7 @@ func SitesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Delete Site if Owned by User
 	//||------------------------------------------------------------------------------------------------||
 
-	if err := db.DB.
+	if err := app.SQLDB["main"].DB.
 		Model(&models.Site{}).
 		Where("id_site = ? AND fid_account = ?", id, session.ID).
 		Update("site_status", "RMVD").Error; err != nil {

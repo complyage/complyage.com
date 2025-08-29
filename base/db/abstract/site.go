@@ -1,0 +1,61 @@
+package abstract
+
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
+
+import (
+	"base/db/models"
+	"base/oauth"
+	"fmt"
+
+	"github.com/ralphferrara/aria/app"
+)
+
+//||------------------------------------------------------------------------------------------------||
+//|| Helper: OAuthSites
+//||------------------------------------------------------------------------------------------------||
+
+func GetSiteByPublic(publicKey string) (models.Site, error) {
+	var s models.Site
+	if err := app.SQLDB["main"].DB.
+		Where("site_public = ?", publicKey).
+		Where("site_status NOT IN ('RMVD','BNND')").
+		First(&s).Error; err != nil {
+		return s, err
+	}
+	return models.Site{}, nil
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Helper: OAuthSites
+//||------------------------------------------------------------------------------------------------||
+
+func OAuthSite(publicKey string) (oauth.OAuthSite, error) {
+	var s models.Site
+	if err := app.SQLDB["main"].DB.
+		Where("site_public = ?", publicKey).
+		Where("site_status NOT IN ('RMVD','BNND')").
+		First(&s).Error; err != nil {
+		return oauth.OAuthSite{}, err
+	}
+	return oauth.OAuthSite{
+		Name:        s.SiteName,
+		URL:         s.SiteURL,
+		Logo:        s.SiteLogo,
+		Description: s.SiteDescription,
+	}, nil
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Load All Sites
+//||------------------------------------------------------------------------------------------------||
+
+func ReturnAllSites() ([]models.Site, error) {
+	var results []models.Site
+	err := app.SQLDB["main"].DB.Table("sites").Where("site_status NOT IN ?", []string{"RMVD", "BNND"}).Find(&results).Error
+	if err != nil {
+		return []models.Site{}, fmt.Errorf("failed to load sites: %w", err)
+	}
+	return results, nil
+}

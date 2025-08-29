@@ -1,7 +1,7 @@
 package adapters
 
 import (
-	"base/interfaces"
+	"base/verify"
 	"bytes"
 	"fmt"
 	"image/png"
@@ -13,11 +13,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-func GeneratePostcardBack(
-	addr interfaces.Address,
-	uuid string,
-	checkCode string,
-) ([]byte, error) {
+func GeneratePostcardBack(addr verify.Address, uuid string, checkCode string) ([]byte, error) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Generate the Verify URL

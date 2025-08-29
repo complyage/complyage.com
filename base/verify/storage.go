@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"base/helpers"
+	"github.com/ralphferrara/aria/base/encrypt"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -57,6 +57,10 @@ func (v *Verification) Save() error {
 	//||------------------------------------------------------------------------------------------------||
 	return nil
 }
+
+//||------------------------------------------------------------------------------------------------||
+//|| Finalize and persist a Verification to storage as <uuid>.json
+//||------------------------------------------------------------------------------------------------||
 
 func (v *Verification) Finalize() error {
 	//||------------------------------------------------------------------------------------------------||
@@ -159,7 +163,7 @@ func (v *Verification) LoadEncrypted() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Decrypt Data
 	//||------------------------------------------------------------------------------------------------||
-	decryptedData, err := helpers.DecryptWithPrivateKey(rawData, v.Keys.Private)
+	decryptedData, err := encrypt.DecryptWithPrivateKey(rawData, v.Keys.Private)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Unmarshal
 	//||------------------------------------------------------------------------------------------------||
@@ -201,7 +205,7 @@ func (v *Verification) SaveEncrypted() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Encrypt
 	//||------------------------------------------------------------------------------------------------||
-	encryptedData, err := helpers.EncryptWithPublicKey(data, v.Keys.Public)
+	encryptedData, err := encrypt.EncryptWithPublicKey(data, v.Keys.Public)
 	if err != nil {
 		return fmt.Errorf("encrypt verification failed: %w", err)
 	}

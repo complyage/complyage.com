@@ -6,9 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"base/db"
-	"base/models"
-	"base/responses"
+	"base/db/models"
+
+	"github.com/ralphferrara/aria/responses"
+
+	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -36,7 +38,7 @@ func fetchZonesBaseFromDB() ([]models.Zone, error) {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Handle Database Query
 	//||------------------------------------------------------------------------------------------------||
-	result := db.DB.Where("id_zone <> ?", 9999).Find(&zones)
+	result := app.SQLDB["main"].DB.Where("id_zone <> ?", 9999).Find(&zones)
 	if result.Error != nil {
 		fmt.Println(result)
 		return nil, fmt.Errorf("failed to fetch zones from database: %w", result.Error)

@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ralphferrara/aria/queue"
+	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -30,7 +30,7 @@ func PublishAgentVerification(agentRequest AgentVerification) error {
 	//|| Fetch Aria RabbitMQ Instance
 	//||------------------------------------------------------------------------------------------------||
 
-	rabbit := queue.Rabbit["agent"]
+	rabbit := app.QueueRabbit["agent"]
 	if rabbit == nil {
 		return fmt.Errorf("RabbitMQ instance 'agent' not found")
 	}
