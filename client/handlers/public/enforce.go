@@ -43,9 +43,8 @@ func CheckClientEnforcement(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get the API Key Data
 	//||------------------------------------------------------------------------------------------------||
-	site := sites.FetchSiteByPublic(apiKey)
-	if site == nil {
-		// 401 because we didn’t find a matching API key
+	site, err := sites.FetchSiteByPublic(apiKey)
+	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "invalid apiKey")
 		return
 	}
@@ -69,7 +68,7 @@ func CheckClientEnforcement(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check if in a restricted territory
 	//||------------------------------------------------------------------------------------------------||
-	shouldEnforce := ips.ShouldEnforce(location.Country, location.State, *site, *zone, zoneFound)
+	shouldEnforce := ips.ShouldEnforce(location.Country, location.State, site, *zone, zoneFound)
 	fmt.Println(site.SiteURL)
 	fmt.Println(zone.IDZone)
 	//||------------------------------------------------------------------------------------------------||
@@ -82,5 +81,5 @@ func CheckClientEnforcement(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Give the data
 	//||------------------------------------------------------------------------------------------------||
-	ips.Enforce(w, *site, *zone)
+	ips.Enforce(w, site, *zone)
 }

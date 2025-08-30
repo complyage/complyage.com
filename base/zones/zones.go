@@ -25,7 +25,7 @@ func LoadZones() error {
 	}
 	Zones = make([]models.Zone, len(results))
 	copy(Zones, results)
-	fmt.Printf("\033[32m[LOAD] - Loaded %d zones into memory\033[0m\n", len(Zones))
+	fmt.Printf("\n\033[32m[LOAD] - Loaded %d zones into memory\033[0m\n", len(Zones))
 	return nil
 }
 

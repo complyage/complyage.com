@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/ralphferrara/aria/locale"
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
@@ -94,7 +95,7 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 
 	phone := verifyRecord.Encrypted.Data.PHNE
 	code := verifyRecord.TwoFactor.Code
-	bodyTxt, sendErr := send.SendVerifyText(phone.CountryCode+phone.Number, code)
+	bodyTxt, sendErr := send.SendVerifyText(phone.CountryCode+phone.Number, code, locale.Request(r))
 	if sendErr != nil {
 		fmt.Println("Error sending verification SMS:", sendErr)
 		responses.Error(w, http.StatusInternalServerError, "Failed to send verification SMS")

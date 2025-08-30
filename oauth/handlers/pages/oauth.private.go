@@ -17,6 +17,7 @@ import (
 	"github.com/ralphferrara/aria/auth/actions"
 	"github.com/ralphferrara/aria/auth/types"
 	"github.com/ralphferrara/aria/base/template"
+	"github.com/ralphferrara/aria/locale"
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/google/uuid"
@@ -104,32 +105,28 @@ func ServePrivateKeyForm(w http.ResponseWriter, r *http.Request) {
 	//|| Template
 	//||------------------------------------------------------------------------------------------------||
 
-	tpl := template.Create("private").
-		Add("SITE_URL", site.SiteURL).
-		Add("SITE_NAME", site.SiteName).
-		Add("APIKEY", clientID).
-		Add("OAUTHAPPR", os.Getenv("VITE_COMPLYAGE_OAUTH_URL")+"/v1/approve?oauth="+referenceKey).
-		Add("LOGINSTATUS", func() string {
-			if session.Level > 0 && session.Status == "ACTV" {
-				return "loggedin"
-			}
-			return "loggedout"
-		}()).
-		Add("USERNAME", session.Username).
-		Add("USERLEVEL", fmt.Sprintf("%d", session.Level)).
-		Add("COMPLYAGE_UI_URL", os.Getenv("SITE_URL")).
-		Add("COMPLYAGE_CLIENT_URL", os.Getenv("LOCAL_URL"))
+	tpl := template.Create("private", locale.Request(r))
+	tpl.Add("SITE_URL", site.SiteURL)
+	tpl.Add("SITE_NAME", site.SiteName)
+	tpl.Add("APIKEY", clientID)
+	tpl.Add("OAUTHAPPR", os.Getenv("VITE_COMPLYAGE_OAUTH_URL")+"/v1/approve?oauth="+referenceKey)
+	tpl.Add("LOGINSTATUS", func() string {
+		if session.Level > 0 && session.Status == "ACTV" {
+			return "loggedin"
+		}
+		return "loggedout"
+	}())
+	tpl.Add("USERNAME", session.Username)
+	tpl.Add("USERLEVEL", fmt.Sprintf("%d", session.Level))
+	tpl.Add("COMPLYAGE_UI_URL", os.Getenv("SITE_URL"))
+	tpl.Add("COMPLYAGE_CLIENT_URL", os.Getenv("LOCAL_URL"))
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Modal
 	//||------------------------------------------------------------------------------------------------||
 
-	sub := template.Create("private_locked")
-	subHTML, err := sub.Compile()
-	if err != nil {
-		responses.ErrorHTML(w, "Template rendering failed: "+err.Error())
-		return
-	}
+	sub := template.Create("private_locked", locale.Request(r))
+	subHTML := sub.Compile()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Submodal
@@ -138,20 +135,10 @@ func ServePrivateKeyForm(w http.ResponseWriter, r *http.Request) {
 	tpl.Add("SUBMODAL", subHTML)
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Translate
-	//||------------------------------------------------------------------------------------------------||
-
-	tpl = tpl.Translate(r)
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Compile and Output
 	//||------------------------------------------------------------------------------------------------||
 
-	html, err := tpl.Compile()
-	if err != nil {
-		responses.ErrorHTML(w, "Template rendering failed: "+err.Error())
-		return
-	}
+	html := tpl.Compile()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| HTML Output

@@ -7,6 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth"
 	"github.com/ralphferrara/aria/http"
 )
 
@@ -26,8 +27,8 @@ func main() {
 	//|| Starting switch-over to aria
 	//||------------------------------------------------------------------------------------------------||
 	app.Init("../config.json")
-	app.Log.Info("API started")
 	app.ListenForShutdown()
+	auth.Init()
 	//||------------------------------------------------------------------------------------------------||
 	//|| Cors
 	//||------------------------------------------------------------------------------------------------||

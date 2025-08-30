@@ -21,12 +21,12 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type UserVerificationFull struct {
-	ID        int64     `json:"id" gorm:"column:id_verification"`
-	Type      string    `json:"type" gorm:"column:verification_type"`
-	Status    string    `json:"status" gorm:"column:verification_status"`
-	Meta      string    `json:"meta" gorm:"column:verification_meta"`
-	CreatedAt time.Time `json:"created" gorm:"column:verification_created"`
-	UpdatedAt time.Time `json:"updated" gorm:"column:verification_updated"`
+	ID        int64     `json:"id" 	gorm:"column:id_verify"`
+	Type      string    `json:"type" 	gorm:"column:verify_type"`
+	Status    string    `json:"status" 	gorm:"column:verify_status"`
+	Meta      string    `json:"meta" 	gorm:"column:verify_meta"`
+	CreatedAt time.Time `json:"created" gorm:"column:verify_created"`
+	UpdatedAt time.Time `json:"updated" gorm:"column:verify_updated"`
 }
 
 //||------------------------------------------------------------------------------------------------||

@@ -14,9 +14,9 @@
       //||------------------------------------------------------------------------------------------------||
 
       export const ZoneRequirementLabels: Record<ZoneRequirement, string > = {
-            ID_UPLOAD     : "Upload of government-issued ID",
-            GOV_ID        : "Government-issued ID check",
-            TXN_DATA      : "Transactional data check",
+            IDEN          : "Government-issued ID check",
+            CRCD          : "Credit Card Transaction",
+            FACE          : "Facial age estimation",
             DIGITAL_ID    : "National digital ID system (SPID, eID, EUDI Wallet)",
             BIOMETRIC     : "Biometric check (facial recognition, facial age estimation)",
             "3P_AV"       : "Third-party age verification service",
@@ -34,6 +34,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       export function getZoneRequirement(requirement: ZoneRequirement): string {
+            if (!ZoneRequirementLabels[requirement]) return requirement;
             return ZoneRequirementLabels[requirement];
       }
 

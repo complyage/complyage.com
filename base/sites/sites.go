@@ -88,7 +88,7 @@ func FetchSiteByPublic(publicKey string) (models.Site, error) {
 	} else {
 		local, err := GetSiteByPublic(publicKey)
 		if err != nil {
-			return models.Site{}, fmt.Errorf("Site not found")
+			return models.Site{}, fmt.Errorf("site not found")
 		}
 		return local, nil
 	}

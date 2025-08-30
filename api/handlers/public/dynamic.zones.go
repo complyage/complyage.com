@@ -1,5 +1,8 @@
 package public
 
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
 import (
 	"base/db/models"
 	"fmt"
@@ -7,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ralphferrara/aria/responses" // Import the responses package
-
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/responses"
 )
 
-// ZoneOutput defines the structure for the JSON response
-// with simplified field names as requested.
+// ||------------------------------------------------------------------------------------------------||
+// || Interface: Zone Output (Public)
+// ||------------------------------------------------------------------------------------------------||
 type ZoneOutput struct {
 	ID             uint       `json:"id"`
 	State          *string    `json:"state"`
@@ -28,17 +31,21 @@ type ZoneOutput struct {
 	Longitude      *string    `json:"long"`
 }
 
+// ||------------------------------------------------------------------------------------------------||
+// || Cache
+// ||------------------------------------------------------------------------------------------------||
 var (
-	cachedZones     []ZoneOutput // Cache now stores ZoneOutput objects
+	cachedZones     []ZoneOutput
 	zoneCacheExpiry time.Time
 	zoneCacheMutex  sync.Mutex
 )
 
-// fetchZonesFromDB fetches all zones from the database using the global db.DB instance.
-// This function still returns models.Zone, as it's directly from the DB.
+// ||------------------------------------------------------------------------------------------------||
+// || Fetch: Zones From DB
+// ||------------------------------------------------------------------------------------------------||
 func fetchZonesFromDB() ([]models.Zone, error) {
 	var zones []models.Zone
-	// Use the global DB instance from the base/dbb package
+
 	result := app.SQLDB["main"].DB.Where("id_zone <> ?", 9999).Find(&zones)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to fetch zones from database: %w", result.Error)
@@ -46,26 +53,41 @@ func fetchZonesFromDB() ([]models.Zone, error) {
 	return zones, nil
 }
 
-// ZoneHandler handles requests for zone data, with caching.
-// It is now a direct http.HandlerFunc, suitable for mux.HandleFunc.
+// ||------------------------------------------------------------------------------------------------||
+// || Handler: Zones (Cached)
+// ||------------------------------------------------------------------------------------------------||
 func ZoneHandler(w http.ResponseWriter, r *http.Request) {
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Create Mutex Lock
+	//||------------------------------------------------------------------------------------------------||
+
 	zoneCacheMutex.Lock()
 	defer zoneCacheMutex.Unlock()
 
-	// Check if cache is valid and not expired
+	//||------------------------------------------------------------------------------------------------||
+	//|| Cache: Serve if Fresh
+	//||------------------------------------------------------------------------------------------------||
+
 	if time.Now().Before(zoneCacheExpiry) && cachedZones != nil {
 		responses.Success(w, http.StatusOK, cachedZones)
 		return
 	}
 
-	// If cache is expired or empty, fetch new data from DB
-	dbZones, err := fetchZonesFromDB() // Renamed local variable to avoid conflict
+	//||------------------------------------------------------------------------------------------------||
+	//|| Fetch: From DB
+	//||------------------------------------------------------------------------------------------------||
+
+	dbZones, err := fetchZonesFromDB()
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to fetch zones")
 		return
 	}
 
-	// Transform models.Zone to ZoneOutput for the desired JSON structure
+	//||------------------------------------------------------------------------------------------------||
+	//|| Transform: models.Zone -> ZoneOutput
+	//||------------------------------------------------------------------------------------------------||
+
 	outputZones := make([]ZoneOutput, len(dbZones))
 	for i, z := range dbZones {
 		outputZones[i] = ZoneOutput{
@@ -83,10 +105,14 @@ func ZoneHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Update cache with fresh data (now of type []ZoneOutput)
+	//||------------------------------------------------------------------------------------------------||
+	//|| Cache: Update
+	//||------------------------------------------------------------------------------------------------||
 	cachedZones = outputZones
 	zoneCacheExpiry = time.Now().Add(15 * time.Minute)
 
-	// Return the zones using the standardized success response
+	//||------------------------------------------------------------------------------------------------||
+	//|| Respond
+	//||------------------------------------------------------------------------------------------------||
 	responses.Success(w, http.StatusOK, outputZones)
 }

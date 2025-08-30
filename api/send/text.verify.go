@@ -6,7 +6,6 @@ package send
 
 import (
 	"base/adapters"
-	"fmt"
 
 	"github.com/ralphferrara/aria/base/template"
 )
@@ -23,30 +22,33 @@ func init() {
 //|| SendVerifyText
 //||------------------------------------------------------------------------------------------------||
 
-func SendVerifyText(phone string, code string) (string, error) {
+func SendVerifyText(phone, code, lang string) (string, error) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Template
 	//||------------------------------------------------------------------------------------------------||
 
-	tpl := template.Create("verify.sms").Add("VERIFY_CODE", code)
+	tpl := template.Create("verify.sms", lang)
+	tpl.Add("VERIFY_CODE", code)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Modal
 	//||------------------------------------------------------------------------------------------------||
 
-	subVerify, err := tpl.Compile()
-	if err != nil {
-		return "", fmt.Errorf("template rendering failed: %w", err)
-	}
+	compiledVerify := tpl.Compile()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Send SMS
 	//||------------------------------------------------------------------------------------------------||
 
-	sent, err := adapters.SendText(phone, subVerify)
+	sent, err := adapters.SendText(phone, compiledVerify)
 	if err != nil {
 		return "", err
 	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Return Compiled
+	//||------------------------------------------------------------------------------------------------||
+
 	return sent, nil
 }
