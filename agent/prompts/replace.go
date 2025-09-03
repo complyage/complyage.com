@@ -5,7 +5,7 @@ package prompts
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/template"
+	"github.com/ralphferrara/aria/base/template"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -13,12 +13,9 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func Replace(alias, content1 string) string {
-	tpl := template.Create(alias)
+	tpl := template.Create(alias, "en")
 	tpl.Add("CONTENT1", content1)
-	content, err := tpl.Compile()
-	if err != nil {
-		panic("Failed to compile static prompt: " + alias + " Error: " + err.Error())
-	}
+	content := tpl.Compile()
 	return content
 }
 
@@ -27,12 +24,9 @@ func Replace(alias, content1 string) string {
 //||------------------------------------------------------------------------------------------------||
 
 func ReplaceTwo(alias, content1, content2 string) string {
-	tpl := template.Create(alias)
+	tpl := template.Create(alias, "en")
 	tpl.Add("CONTENT1", content1)
 	tpl.Add("CONTENT2", content2)
-	content, err := tpl.Compile()
-	if err != nil {
-		panic("Failed to compile static prompt: " + alias + " Error: " + err.Error())
-	}
+	content := tpl.Compile()
 	return content
 }

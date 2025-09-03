@@ -40,11 +40,14 @@ func InitRoutes() {
 	app.HTTP["api"].Router.HandleFunc("/user/dashboard", user.UserDashboard).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/verifications", user.UserVerifications).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/shared", user.UserSharedHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/user/location", user.LocationUserDashboard).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/user/vpns/rate", user.VPNRatingUserHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get News/Zones Public
 	//||------------------------------------------------------------------------------------------------||
 	app.HTTP["api"].Router.HandleFunc("/v1/api/news", public.NewsHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/zones", public.ZoneHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/vpns", public.VPNHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Member Sites
 	//||------------------------------------------------------------------------------------------------||
@@ -72,6 +75,13 @@ func InitRoutes() {
 	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/id/media/upload", verifier.VerifyIDMediaUpload).Methods("POST")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/id/media/fetch", verifier.VerifyIDMediaFetch).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/id/success", verifier.VerifyIDSuccessHandler).Methods("POST")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify - Face
+	//||------------------------------------------------------------------------------------------------||
+	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/face/init", verifier.FaceVerifyInitHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/face/media/upload", verifier.VerifyFaceMediaUpload).Methods("POST")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/face/media/fetch", verifier.VerifyFaceMediaFetch).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/face/success", verifier.VerifyFaceSuccessHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify - Phone
 	//||------------------------------------------------------------------------------------------------||

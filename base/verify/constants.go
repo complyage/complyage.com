@@ -22,7 +22,7 @@ func init() {
 	lib.AddCode("Phone", "PHNE", "Phone Verification")
 	lib.AddCode("Address", "ADDR", "Address Verification")
 	lib.AddCode("CreditCard", "CRCD", "Credit Card Verification")
-	lib.AddCode("Identity", "IDEN", "Identity Verification")
+	lib.AddCode("ID Card", "IDEN", "IDCARD Verification")
 	lib.AddCode("Face", "FACE", "Facial Age Analyis")
 	lib.AddCode("Username", "USER", "Username Verification")
 	//||------------------------------------------------------------------------------------------------||

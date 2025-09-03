@@ -25,10 +25,7 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Starting switch-over to aria
 	//||------------------------------------------------------------------------------------------------||
-	if err := app.Init("../config.json"); err != nil {
-		app.Log.Error("main", "Startup failed: %v", err)
-		os.Exit(1)
-	}
+	app.Init("../config.json")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Start Consumer
 	//||------------------------------------------------------------------------------------------------||
@@ -41,14 +38,14 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	errL1 := rabbit.ConsumeQueue("AgentLevelOne", func(msg []byte) {
 		if err := consumers.Level1Router(msg); err != nil {
-			app.Log.Error("main", "Level1Router error: %v", err)
+			app.Log.Error("Level1Router error: %v\n", err)
 		}
 	})
 	if errL1 != nil {
-		app.Log.Error("main", "Failed to start Level 1 consumer: %v", errL1)
+		app.Log.Error("Failed to start Level 1 consumer: %v", errL1)
 		os.Exit(1)
 	}
-	app.Log.Info("main", "Listening for Level 1 messages on 'AgentLevelOne' queue")
+	app.Log.Info("Listening for Level 1 messages on 'AgentLevelOne' queue\n")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Consume Level 1
 	//||------------------------------------------------------------------------------------------------||
@@ -58,14 +55,14 @@ func main() {
 		}
 	})
 	if errL2 != nil {
-		app.Log.Error("main", "Failed to start Level 2 consumer: %v", errL1)
+		app.Log.Error("Failed to start Level 2 consumer: %v", errL1)
 		os.Exit(1)
 	}
-	app.Log.Info("main", "Listening for Level 2 messages on 'AgentLevelTwo' queue")
+	app.Log.Info("Listening for Level 2 messages on 'AgentLevelTwo' queue")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Started
 	//||------------------------------------------------------------------------------------------------||
-	app.Log.Info("main", "Agent has started")
+	app.Log.Info("Agent has started")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Template
 	//||------------------------------------------------------------------------------------------------||

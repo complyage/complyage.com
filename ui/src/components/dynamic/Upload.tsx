@@ -140,7 +140,7 @@ export default function Upload({ which, onUpload, getUpload, onClose }: UploadPr
                                           <img
                                                 src={preview}
                                                 alt="Preview"
-                                                className="max-w-full h-96 w-256 group-hover:text-blue-600"
+                                                className="max-w-full h-auto w-256 group-hover:text-blue-600"
                                           />
 
                                           <button

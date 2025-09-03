@@ -130,11 +130,6 @@
 
             return (
 			<div className="space-y-6 p-6">
-				<div className="flex items-center gap-2 text-gray-300">
-					<CreditCard className="w-5 h-5" />
-					<span>Choose how your charge appears and (optionally) add a donation.</span>
-				</div>
-
 				<div>
 					<div className="flex items-center justify-between border-b border-gray-400 py-2 mb-4">
 						<div className="flex items-center gap-2">

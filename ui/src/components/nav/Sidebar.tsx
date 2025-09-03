@@ -4,7 +4,11 @@
 
 import React                                          from "react";
 import {Link, useLocation}                            from "react-router-dom";
-import {Home, User as UserIcon, Lock, Settings, Share, Globe, LogOut}   from "lucide-react";
+import { 
+      Home, User as UserIcon, 
+      KeyRound, Settings, Share, 
+      Globe, LogOut, EarthLock
+}   from "lucide-react";
 import RequireMember, { User }                        from "../dynamic/RequireMember";
 import LinkQuery                                      from "../../components/dynamic/LinkQuery";
 
@@ -42,6 +46,15 @@ export default function Sidebar() {
                                           <Home className="w-5 h-5 mr-2" /> Dashboard
                                     </LinkQuery>
                                     <LinkQuery
+                                          to="/members/identity"
+                                          className={`btn justify-start ${
+                                                isActive("/members/identity")
+                                                      ? "btn-primary"
+                                                      : "btn-ghost"
+                                          }`}>
+                                          <KeyRound className="w-5 h-5 mr-2" /> My Identity
+                                    </LinkQuery>                                    
+                                    <LinkQuery
                                           to="/members/sites"
                                           className={`btn justify-start ${
                                                 isActive("/members/sites")
@@ -49,15 +62,6 @@ export default function Sidebar() {
                                                       : "btn-ghost"
                                           }`}>
                                           <Globe className="w-5 h-5 mr-2" /> Sites
-                                    </LinkQuery>
-                                    <LinkQuery
-                                          to="/members/encrypted"
-                                          className={`btn justify-start ${
-                                                isActive("/members/encrypted")
-                                                      ? "btn-primary"
-                                                      : "btn-ghost"
-                                          }`}>
-                                          <Lock className="w-5 h-5 mr-2" /> Your Profile
                                     </LinkQuery>
                                     <LinkQuery
                                           to="/members/shared"
@@ -77,6 +81,16 @@ export default function Sidebar() {
                                           }`}>
                                           <Settings className="w-5 h-5 mr-2" /> Settings
                                     </LinkQuery>
+
+                                   <LinkQuery
+                                          to="/members/vpns"
+                                          className={`btn justify-start text-orange-400 ${
+                                                isActive("/members/vpns")
+                                                      ? "btn-primary"
+                                                      : "btn-ghost"
+                                          }`}>
+                                          <EarthLock className="w-5 h-5 mr-2" /> Recommended VPNs
+                                    </LinkQuery>                                    
 
                                     <button className="btn btn-ghost fixed bottom-0 w-64 py-4 pb-10 text-sm">
                                           <LogOut className="w-4 h-4" /><span className="text-xs">Logout</span>

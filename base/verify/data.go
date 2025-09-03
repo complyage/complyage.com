@@ -7,7 +7,7 @@ import "fmt"
 //||------------------------------------------------------------------------------------------------||
 
 type Data struct {
-	UAGE DOB            `json:"UAGE,omitempty"`
+	FACE Facial         `json:"FACE,omitempty"`
 	MAIL EmailAddress   `json:"MAIL,omitempty"`
 	PHNE PhoneNumber    `json:"PHNE,omitempty"`
 	ADDR Address        `json:"ADDR,omitempty"`
@@ -21,8 +21,8 @@ type Data struct {
 
 func (e *Encrypted) DataInit() error {
 	switch e.Type {
-	case DataTypeUAGE:
-		e.Data = Data{UAGE: DOB{}}
+	case DataTypeFACE:
+		e.Data = Data{FACE: Facial{}}
 	case DataTypeMAIL:
 		e.Data = Data{MAIL: EmailAddress{}}
 	case DataTypePHNE:
@@ -53,9 +53,9 @@ func (v *Verification) SetDataEmail(email EmailAddress) {
 	v.Display = email.Mask()
 }
 
-func (v *Verification) SetDataDOB(dob DOB) {
-	v.Encrypted.Data.UAGE = dob
-	v.Display = dob.Mask()
+func (v *Verification) SetDataFACE(face Facial) {
+	v.Encrypted.Data.FACE = face
+	v.Display = face.Mask()
 }
 
 func (v *Verification) SetDataIDEN(iden Identification) {
@@ -79,8 +79,8 @@ func (v *Verification) SetDataCRCD(crcd CreditCard) {
 
 func (e *Encrypted) GetDataMasked() string {
 	switch e.Type {
-	case DataTypeUAGE:
-		return e.Data.UAGE.Mask()
+	case DataTypeFACE:
+		return e.Data.FACE.Mask()
 	case DataTypeMAIL:
 		return e.Data.MAIL.Mask()
 	case DataTypePHNE:

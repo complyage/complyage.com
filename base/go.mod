@@ -1,4 +1,4 @@
-module base
+module agent
 
 go 1.24.5
 
@@ -120,7 +120,5 @@ require (
 )
 
 replace base => ../base
-
-replace api => ../api
 
 replace github.com/ralphferrara/aria => ../aria

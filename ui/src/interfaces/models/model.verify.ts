@@ -22,10 +22,10 @@
       //|| Types
       //||------------------------------------------------------------------------------------------------||
 
-      export type VerificationTypes = "MAIL" | "IDEN" | "PHNE" | "UAGE" | "ADDR" | "CRCD" | "UNAM" | "UNKN" ;
+      export type VerificationTypes = "MAIL" | "IDEN" | "PHNE" | "ADDR" | "CRCD" | "UNAM" | "FACE" | "UNKN" ;
 
       //||------------------------------------------------------------------------------------------------||      
       //|| Status
       //||------------------------------------------------------------------------------------------------||
 
-      export type VerificationStatuses = "PEND" | "PEVF" | "INPR" | "ESCL" | "VERF" | "RJCT" | "EXPD" | "UNKN";
+      export type VerificationStatuses = "PEND" | "PEVF" | "INPR" | "ESCL" | "VERF" | "RJCT" | "EXPD";

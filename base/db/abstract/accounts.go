@@ -2,6 +2,8 @@ package abstract
 
 import (
 	"base/db/models"
+	"base/identity"
+	"encoding/json"
 	"fmt"
 
 	"github.com/ralphferrara/aria/app"
@@ -30,11 +32,11 @@ func GetAccountByID(id string) (*models.Account, error) {
 //|| Get Account Based on Email
 //||------------------------------------------------------------------------------------------------||
 
-func GetAccountByEmail(email string) (*models.Account, error) {
+func GetAccountByEmail(hashedEmail string) (*models.Account, error) {
 	var account models.Account
 
 	result := app.SQLDB["main"].DB.
-		Where("account_email = ?", email).
+		Where("account_email = ?", hashedEmail).
 		Limit(1).
 		Find(&account)
 
@@ -74,6 +76,30 @@ func GetAccountByVerificationUUID(uuid string) (*models.Account, error) {
 }
 
 //||------------------------------------------------------------------------------------------------||
+//|| Update User Identity
+//||------------------------------------------------------------------------------------------------||
+
+func UpdateUserIdentity(idAccount int64, ident identity.Identity) error {
+	blob, err := json.Marshal(ident)
+	if err != nil {
+		return err
+	}
+
+	tx := app.SQLDB["main"].DB.
+		Model(&models.Account{}).
+		Where("id_account = ?", idAccount).
+		Update("account_identity", string(blob))
+
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+//||------------------------------------------------------------------------------------------------||
 //|| DeleteAccount – deletes an account and cascades deletions where necessary
 //||------------------------------------------------------------------------------------------------||
 
@@ -91,6 +117,7 @@ func DeleteAccount(accountID int64) error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Explicitly delete any shared records referencing verifications tied to this account
 	//||------------------------------------------------------------------------------------------------||
+
 	if err := tx.Exec(`
         DELETE s FROM shared s
         JOIN verifications v ON v.id_verification = s.fid_verification
@@ -102,6 +129,7 @@ func DeleteAccount(accountID int64) error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Delete the account itself (verifications cascade via FK ON DELETE CASCADE)
 	//||------------------------------------------------------------------------------------------------||
+
 	if err := tx.Exec(`DELETE FROM accounts WHERE id_account = ?`, accountID).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to delete account: %w", err)

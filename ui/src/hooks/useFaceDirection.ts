@@ -8,7 +8,6 @@
 /*||------------------------------------------------------------------------------------------------||
 //|| Imports
 //||------------------------------------------------------------------------------------------------||*/
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tf                                               from "@tensorflow/tfjs";
 import * as faceLandmarksDetection                           from "@tensorflow-models/face-landmarks-detection";
@@ -17,17 +16,22 @@ import "@tensorflow/tfjs-backend-webgl";
 /*||------------------------------------------------------------------------------------------------||
 //|| Types
 //||------------------------------------------------------------------------------------------------||*/
-
 export type Detector = Awaited<ReturnType<typeof faceLandmarksDetection.createDetector>>;
 
 type UseFaceDirectionOpts = {
-      size?               : number;     // normalized canvas size (default 500)
-      enabled?            : boolean;    // start/stop RAF loop
-      ema?                : number;     // smoothing 0..1 for dx/dy (omit for raw)
-      flipHorizontal?     : boolean;    // forwarded to estimateFaces
-      mirroredPreview?    : boolean;    // set true if your on-screen <video> is mirrored (e.g., CSS -scale-x-100)
-      hThreshold?         : number;     // horizontal deadzone (normalized, default 0.08)
-      vThreshold?         : number;     // vertical deadzone (normalized, default 0.08)
+      size?               : number;   // normalized canvas size (default 500)
+      enabled?            : boolean;  // start/stop RAF loop
+      ema?                : number;   // smoothing 0..1 for dx/dy (omit for raw)
+      flipHorizontal?     : boolean;  // forwarded to estimateFaces
+      mirroredPreview?    : boolean;  // set true if your on-screen <video> is mirrored (e.g., CSS -scale-x-100)
+      hThreshold?         : number;   // horizontal deadzone (normalized, default 0.08)
+      vThreshold?         : number;   // vertical deadzone (normalized, default 0.08)
+      smoothWindow?       : number;   // N frames to vote over (default 7)
+      smoothConsensus?    : number;   // K votes required (default 5)
+      holdMs?             : number;   // must persist before commit (default 120ms)
+      cooldownMs?         : number;   // min time between commits (default 600ms)
+      hysteresis?         : number;   // add/subtract around thresholds (default 0.02)
+      minBoxFrac?         : number;   // ignore updates if face is tiny (default 0.28)
 };
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -39,7 +43,6 @@ import { FaceDirection }                  from "../interfaces/verify/id/types";
 /*||------------------------------------------------------------------------------------------------||
 //|| Detector (lazy singleton)
 //||------------------------------------------------------------------------------------------------||*/
-
 let detectorPromise: Promise<Detector> | null = null;
 
 async function initDetector(): Promise<Detector> {
@@ -59,7 +62,6 @@ async function initDetector(): Promise<Detector> {
 /*||------------------------------------------------------------------------------------------------||
 //|| (Optional) Wait for <video> readiness
 //||------------------------------------------------------------------------------------------------||*/
-
 export async function waitForVideoReady(video: HTMLVideoElement): Promise<void> {
       await video.play().catch(() => {});
       await new Promise<void>((resolve) => {
@@ -80,16 +82,13 @@ export async function waitForVideoReady(video: HTMLVideoElement): Promise<void> 
 //|| - Applies thresholds + optional EMA smoothing
 //|| - Emits horiz/vert labels and combined "horiz-vert" string
 //||------------------------------------------------------------------------------------------------||*/
-
 export function useFaceDirection(
       videoRef: React.RefObject<HTMLVideoElement>,
       opts: UseFaceDirectionOpts = {}
 ) {
-
       /*||------------------------------------------------------------------------------------------------||
       //|| Options
       //||------------------------------------------------------------------------------------------------||*/
-
       const {
             size            = 500,
             enabled         = true,
@@ -98,12 +97,17 @@ export function useFaceDirection(
             mirroredPreview = false,
             hThreshold      = 0.08,
             vThreshold      = 0.08,
+            smoothWindow    = 7,
+            smoothConsensus = 5,
+            holdMs          = 120,
+            cooldownMs      = 600,
+            hysteresis      = 0.02,
+            minBoxFrac      = 0.28,
       } = opts;
 
       /*||------------------------------------------------------------------------------------------------||
       //|| State / Debug
       //||------------------------------------------------------------------------------------------------||*/
-
       const [horiz,     setHoriz]               = useState<FaceDir>("center");
       const [vert,      setVert ]               = useState<FaceVert>("center");
       const [faceDir,   setFaceDir ]            = useState<FaceDirection>("center-center");
@@ -113,7 +117,6 @@ export function useFaceDirection(
       /*||------------------------------------------------------------------------------------------------||
       //|| State / Debug
       //||------------------------------------------------------------------------------------------------||*/
-
       const [facesCount, setFacesCount] = useState(0);
       const [vw, setVw]                 = useState(0);
       const [vh, setVh]                 = useState(0);
@@ -124,16 +127,22 @@ export function useFaceDirection(
       /*||------------------------------------------------------------------------------------------------||
       //|| Refs
       //||------------------------------------------------------------------------------------------------||*/
-
       const detectorRef                 = useRef<Detector | null>(null);
       const rafRef                      = useRef<number | null>(null);
       const smoothDxRef                 = useRef<number | null>(null);
       const smoothDyRef                 = useRef<number | null>(null);
 
+      // Label smoothing / gating
+      const labelBufRef                 = useRef<FaceDirection[]>([]);
+      const committedRef                = useRef<{h:FaceDir; v:FaceVert; label:FaceDirection; at:number}>({
+            h: "center", v: "center", label: "center-center", at: performance.now()
+      });
+      const lastAcceptAtRef             = useRef<number>(0);
+      const rawLabelRef                 = useRef<FaceDirection>("center-center");
+
       /*||------------------------------------------------------------------------------------------------||
       //|| Offscreen canvas (reused)
       //||------------------------------------------------------------------------------------------------||*/
-
       const offscreen = useMemo(() => {
             if (typeof document === "undefined") return null;
             const c = document.createElement("canvas");
@@ -145,7 +154,6 @@ export function useFaceDirection(
       /*||------------------------------------------------------------------------------------------------||
       //|| Helpers
       //||------------------------------------------------------------------------------------------------||*/
-
       // Build bbox from a set of 2D or 3D points
       const bboxFromPoints = (pts: any[]): Box | null => {
             if (!Array.isArray(pts) || pts.length === 0) return null;
@@ -163,9 +171,7 @@ export function useFaceDirection(
             return { x: minX, y: minY, width: w, height: h };
       };
 
-      // Pick a "nose" anchor:
-      // - Prefer the landmark with smallest Z (closest to camera) if z available
-      // - Else fallback to bbox center
+      // Pick a "nose" anchor (prefer smallest Z; fallback to bbox center)
       const pickNose = (pts: any[], box: Box): {x:number;y:number;z?:number} => {
             let best = null as {x:number;y:number;z?:number} | null;
             let bestZ = Infinity;
@@ -182,27 +188,59 @@ export function useFaceDirection(
             return { x: box.x + box.width/2, y: box.y + box.height/2 };
       };
 
+      // Baseline quantizer (kept for reference)
       const quantizeDir = (dx: number, dy: number): {h: FaceDir; v: FaceVert} => {
             let h: FaceDir = "center";
             let v: FaceVert = "center";
-
-            // dx: +right, -left (flip if preview mirrored)
             const adjDx = mirroredPreview ? -dx : dx;
-
             if (adjDx >  hThreshold) h = "right";
             else if (adjDx < -hThreshold) h = "left";
-
-            // dy: +down, -up  (canvas y grows downward)
             if (dy >  vThreshold)         v = "top";
             else if (dy < -vThreshold)    v = "bottom";
-
             return { h, v };
       };
+
+      // Hysteresis helpers
+      function hysteresis1D(prev: "left"|"center"|"right", x: number, th: number, m: number): FaceDir {
+            const enter = th + m;
+            const exit  = th - m;
+            switch (prev) {
+                  case "center":
+                        if (x >  enter)  return "right";
+                        if (x < -enter)  return "left";
+                        return "center";
+                  case "right":
+                        if (x <  exit)   return "center";
+                        if (x < -enter)  return "left";
+                        return "right";
+                  case "left":
+                        if (x > -exit)   return "center";
+                        if (x >  enter)  return "right";
+                        return "left";
+            }
+      }
+      function quantizeWithHys(
+            dx: number, dy: number,
+            prevH: FaceDir, prevV: FaceVert,
+            hTh: number, vTh: number, m: number,
+            mirrored: boolean
+      ): { h: FaceDir; v: FaceVert } {
+            const adjDx = mirrored ? -dx : dx;
+            const h = hysteresis1D(prevH, adjDx, hTh, m);
+            const vDir = hysteresis1D(
+                  prevV === "top" ? "right" : prevV === "bottom" ? "left" : "center",
+                  dy, vTh, m
+            );
+            let v: FaceVert = "center";
+            if (vDir === "right") v = "top";
+            else if (vDir === "left") v = "bottom";
+            else v = "center";
+            return { h, v };
+      }
 
       /*||------------------------------------------------------------------------------------------------||
       //|| Tick (RAF)
       //||------------------------------------------------------------------------------------------------||*/
-
       const tick = useCallback(async () => {
             const video = videoRef.current;
             const detector = detectorRef.current;
@@ -230,10 +268,10 @@ export function useFaceDirection(
                   const srcW = video.videoWidth, srcH = video.videoHeight;
                   const srcAspect = srcW / srcH;
                   let sx = 0, sy = 0, sw = srcW, sh = srcH;
-                  if (srcAspect > 1) {                       // crop sides for square
+                  if (srcAspect > 1) {
                         const newW = srcH;
                         sx = (srcW - newW) / 2; sw = newW;
-                  } else if (srcAspect < 1) {                // crop top/bottom for square
+                  } else if (srcAspect < 1) {
                         const newH = srcW;
                         sy = (srcH - newH) / 2; sh = newH;
                   }
@@ -303,25 +341,67 @@ export function useFaceDirection(
 
                   setLastDxDy({ dx, dy });
 
-                  // quantize to labels
-                  const { h, v } = quantizeDir(dx, dy);
-                  const combined = `${h}-${v}` as const;
+                  // Gate tiny faces: skip updates if face is very small on screen
+                  const faceFrac = Math.min(1, Math.max(0, box.width / size));
+                  const prevH = committedRef.current.h;
+                  const prevV = committedRef.current.v;
 
-                  setHoriz(h);
-                  setVert(v);
-                  setFaceDir(combined);
+                  if (faceFrac < minBoxFrac) {
+                        const { h: hTmp, v: vTmp } = quantizeWithHys(dx, dy, prevH, prevV, hThreshold, vThreshold, hysteresis, mirroredPreview);
+                        rawLabelRef.current = `${hTmp}-${vTmp}` as FaceDirection;
+                        // keep committed state in React state
+                        if (horiz !== committedRef.current.h) setHoriz(committedRef.current.h);
+                        if (vert  !== committedRef.current.v) setVert (committedRef.current.v);
+                        if (faceDir !== committedRef.current.label) setFaceDir(committedRef.current.label);
+                        rafRef.current = requestAnimationFrame(tick);
+                        return;
+                  }
+
+                  // Candidate label with hysteresis around committed state
+                  const { h: hCand, v: vCand } = quantizeWithHys(dx, dy, prevH, prevV, hThreshold, vThreshold, hysteresis, mirroredPreview);
+                  const cand = `${hCand}-${vCand}` as FaceDirection;
+                  rawLabelRef.current = cand;
+
+                  // Consensus over buffer
+                  const buf = labelBufRef.current;
+                  buf.push(cand);
+                  if (buf.length > smoothWindow) buf.shift();
+
+                  let mode: FaceDirection = committedRef.current.label;
+                  let best = -1;
+                  const counts = new Map<FaceDirection, number>();
+                  for (const l of buf) counts.set(l, (counts.get(l) || 0) + 1);
+                  for (const [k, c] of counts) { if (c > best) { best = c; mode = k as FaceDirection; } }
+
+                  // Dwell + cooldown
+                  const now    = performance.now();
+                  const enough = best >= smoothConsensus;
+                  const dwell  = (now - committedRef.current.at) >= holdMs;
+                  const cool   = (now - lastAcceptAtRef.current) >= cooldownMs;
+
+                  if (mode !== committedRef.current.label && enough && dwell && cool) {
+                        const [mh, mv] = mode.split("-") as [FaceDir, FaceVert];
+                        committedRef.current = { h: mh, v: mv, label: mode, at: now };
+                        lastAcceptAtRef.current = now;
+                        if (horiz !== mh) setHoriz(mh);
+                        if (vert  !== mv) setVert (mv);
+                        if (faceDir !== mode) setFaceDir(mode);
+                  } else {
+                        if (horiz !== committedRef.current.h) setHoriz(committedRef.current.h);
+                        if (vert  !== committedRef.current.v) setVert (committedRef.current.v);
+                        if (faceDir !== committedRef.current.label) setFaceDir(committedRef.current.label);
+                  }
 
             } catch (e: any) {
                   // keep looping even on a bad frame
             }
 
             rafRef.current = requestAnimationFrame(tick);
-      }, [videoRef, enabled, ema, offscreen, size, flipHorizontal, mirroredPreview, hThreshold, vThreshold]);
+      }, [videoRef, enabled, ema, offscreen, size, flipHorizontal, mirroredPreview, hThreshold, vThreshold, smoothWindow, smoothConsensus, holdMs, cooldownMs, hysteresis, minBoxFrac, horiz, vert, faceDir]);
 
       /*||------------------------------------------------------------------------------------------------||
       //|| Init / Cleanup
       //||------------------------------------------------------------------------------------------------||*/
-
       useEffect(() => {
             let mounted = true;
             (async () => {
@@ -346,7 +426,6 @@ export function useFaceDirection(
       /*||------------------------------------------------------------------------------------------------||
       //|| Enable/Disable (start/stop RAF)
       //||------------------------------------------------------------------------------------------------||*/
-
       useEffect(() => {
             if (!faceDirReady) return;
             if (enabled) {
@@ -360,7 +439,6 @@ export function useFaceDirection(
       /*||------------------------------------------------------------------------------------------------||
       //|| Return
       //||------------------------------------------------------------------------------------------------||*/
-
       return {
             faceDir,
             faceDirReady,
@@ -371,8 +449,10 @@ export function useFaceDirection(
                   lastBox,
                   lastNose,
                   lastDxDy,
-                  thresholds: { hThreshold, vThreshold },
-                  options: { mirroredPreview, flipHorizontal }
+                  thresholds: { hThreshold, vThreshold, hysteresis },
+                  options: { mirroredPreview, flipHorizontal },
+                  rawDir: rawLabelRef.current,
+                  buffer: [...labelBufRef.current],
             }
       };
 }

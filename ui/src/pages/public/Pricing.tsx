@@ -1,7 +1,22 @@
-import React from "react";
-import NavMain from "../../components/nav/NavMain";
-import FooterMain from "../../components/footer/FooterMain";
-import ProgressBar from "../../components/base/ProgressBar";
+/*||------------------------------------------------------------------------------------------------||
+//|| Progress Steps Component
+//|| ProgressSteps
+//||------------------------------------------------------------------------------------------------||*/
+
+/*||------------------------------------------------------------------------------------------------||
+//|| React
+//||------------------------------------------------------------------------------------------------||*/
+
+import React                        from "react";
+import NavMain                      from "../../components/nav/NavMain";
+import FooterMain                   from "../../components/footer/FooterMain";
+import ProgressBar                  from "../../components/base/ProgressBar";
+
+/*||------------------------------------------------------------------------------------------------||
+//|| Pricing
+//||------------------------------------------------------------------------------------------------||*/
+
+
 export default function Pricing() {
 	return (
 		<main className="min-h-screen flex flex-col bg-base-100 text-base-content">
@@ -49,7 +64,7 @@ export default function Pricing() {
 			{/* Donations Progress */}
 			<section className="py-8 px-4 bg-black text-base-content text-center">
 				<h3 className="text-2xl font-bold mb-4">Monthly Support Raised</h3>
-				<ProgressBar current={0} goal={4314} />
+				<ProgressBar current={0} goal={4314} prefix="$" label="of goal" />
 			</section>
                   
 			{/* How It's Possible */}

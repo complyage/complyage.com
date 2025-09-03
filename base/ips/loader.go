@@ -8,19 +8,6 @@ import (
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| IP Range entry
-//||------------------------------------------------------------------------------------------------||
-
-type IPRange struct {
-	StartIP   uint32
-	EndIP     uint32
-	Country   string
-	State     string
-	Latitude  float64
-	Longitude float64
-}
-
-//||------------------------------------------------------------------------------------------------||
 //|| Array of IP Ranges
 //||------------------------------------------------------------------------------------------------||
 
@@ -39,10 +26,11 @@ func LoadIPRanges() error {
 	IPRanges = make([]IPRange, len(results))
 	for i, row := range results {
 		IPRanges[i] = IPRange{
-			StartIP:   uint32(row.StartIP),
+			StartIP:   uint32(row.StartIP), // IPv4 only; cast is fine
 			EndIP:     uint32(row.EndIP),
 			Country:   row.Country,
 			State:     row.State,
+			City:      row.City, // <<< add this
 			Latitude:  row.Latitude,
 			Longitude: row.Longitude,
 		}
@@ -57,33 +45,19 @@ func LoadIPRanges() error {
 //||------------------------------------------------------------------------------------------------||
 
 func FindIPRange(ipNum uint32) (*IPRange, bool) {
-	low := 0
-	high := len(IPRanges) - 1
-
+	low, high := 0, len(IPRanges)-1
 	for low <= high {
 		mid := (low + high) / 2
 		block := IPRanges[mid]
 
 		if ipNum < block.StartIP {
 			high = mid - 1
-		} else if ipNum > block.StartIP {
+		} else if ipNum > block.EndIP { // correct comparison
 			low = mid + 1
 		} else {
-			// Exact match
-			if ipNum <= block.EndIP {
-				return &block, true
-			}
-			break
+			// ipNum is within [StartIP, EndIP]
+			return &IPRanges[mid], true
 		}
 	}
-
-	// Check final candidate
-	if high >= 0 {
-		block := IPRanges[high]
-		if ipNum >= block.StartIP && ipNum <= block.EndIP {
-			return &block, true
-		}
-	}
-
 	return nil, false
 }

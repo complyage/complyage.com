@@ -8,7 +8,7 @@
       //||------------------------------------------------------------------------------------------------||      
 
       import { VerificationStatuses, VerificationTypes }                            from "../interfaces/models/model.verify";
-      import { Mail, Phone, IdCard, MapPin, CreditCard, User, Image as ImageIcon }  from "lucide-react";
+      import { Mail, Phone, IdCard, MapPin, CreditCard, User, Image as ImageIcon, Smile }  from "lucide-react";
       import { LucideIcon }                                                          from "lucide-react";
 
       //||------------------------------------------------------------------------------------------------||      
@@ -18,10 +18,11 @@
       export const VerificationTypeLabels: Record<VerificationTypes, string > = {
             MAIL: "Email",
             PHNE: "Phone",
-            UAGE: "Age",
             ADDR: "Address",
             CRCD: "Credit Card",
             UNAM: "Username",
+            IDEN: "ID Document",
+            FACE: "Facial Recognition",
             UNKN: "Unknown"
       };
 
@@ -47,10 +48,11 @@
       export const VerificationTypeIcons: Record<VerificationTypes, React.ComponentType<any>> = {
             MAIL: Mail,
             PHNE: Phone,
-            UAGE: IdCard,
+            IDEN: IdCard,
             ADDR: MapPin,
             CRCD: CreditCard,
             UNAM: User,
+            FACE: Smile,
             UNKN: ImageIcon
       };
 

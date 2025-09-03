@@ -6,7 +6,7 @@ package verify
 
 type Identity struct {
 	MAIL IdentityOption `json:"email,omitempty"`
-	UAGE IdentityOption `json:"dob,omitempty"`
+	FACE IdentityOption `json:"face,omitempty"`
 	PHNE IdentityOption `json:"phone,omitempty"`
 	CRCD IdentityOption `json:"credit_card,omitempty"`
 	ADDR IdentityOption `json:"address,omitempty"`
@@ -32,9 +32,9 @@ func (v *Verification) UpdateIdentity() {
 	//|| Update Identity Record
 	//||------------------------------------------------------------------------------------------------||
 	switch v.Type {
-	case DataTypeUAGE:
-		v.Identity.UAGE = IdentityOption{
-			Display:          v.Encrypted.Data.UAGE.Mask(),
+	case DataTypeFACE:
+		v.Identity.FACE = IdentityOption{
+			Display:          v.Encrypted.Data.FACE.Mask(),
 			VerificationUUID: v.UUID,
 		}
 	case DataTypeMAIL:
@@ -78,8 +78,8 @@ func (v *Verification) RemoveIdentity(dataType DataType) {
 	//|| Update Identity Record
 	//||------------------------------------------------------------------------------------------------||
 	switch dataType {
-	case DataTypeUAGE:
-		v.Identity.UAGE = IdentityOption{}
+	case DataTypeFACE:
+		v.Identity.FACE = IdentityOption{}
 	case DataTypeMAIL:
 		v.Identity.MAIL = IdentityOption{}
 	case DataTypePHNE:

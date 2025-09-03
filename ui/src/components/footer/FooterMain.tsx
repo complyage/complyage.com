@@ -61,23 +61,18 @@ export default function FooterMain() {
 
 				{/* Newsletter */}
 				<div>
-					<h4 className="font-bold text-lg mb-4">Stay in the Loop</h4>
-					<p className="text-gray-400 mb-4">No spam. No tracking. Just updates on your rights.</p>
-					<form className="flex">
-						<input
-							type="email"
-							placeholder="Your email"
-							className="p-2 rounded-l bg-gray-800 border border-gray-600 text-white flex-1"
-						/>
-						<button type="submit" className="p-2 bg-primary text-black rounded-r font-bold hover:bg-primary-focus">
-							Join
-						</button>
-					</form>
+					<h4 className="font-bold text-lg mb-4">We don't want to know</h4>
+					<p className="text-gray-400 mb-4">No spam. No tracking. No hidden goals.</p>
+					<div className="flex text-gray-500">
+                                    This is where we'd ask for your email, but we respect your privacy too much to do that.
+                                    We don't want your email.
+                                    So, no newsletter signup here.
+                              </div>
 				</div>
 			</div>
 
 			<div className="mt-12 border-t border-gray-800 pt-6 text-center text-gray-500 text-sm">
-				© {new Date().getFullYear()} ComplyAge. All rights reserved. Built by rebels for rebels.
+				© {new Date().getFullYear()} ComplyAge. All rights reserved. Built by normal people for normal people.
 			</div>
 		</footer>
 	);

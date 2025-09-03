@@ -11,14 +11,34 @@ import (
 //|| Location
 //||------------------------------------------------------------------------------------------------||
 
-func FetchIPFromDatabase(ipInteger uint32) (string, string, float64, float64, error) {
+func FetchIPFromDatabase(ipNum uint32) (city, state, country string, lat, long float64, err error) {
+
 	//||------------------------------------------------------------------------------------------------||
-	//|| Convert IP
+	//|| Cast to signed to match BIGINT (signed) columns
 	//||------------------------------------------------------------------------------------------------||
-	var ipRecord models.IP
-	err := app.SQLDB["main"].DB.Where("start_ip <= ? AND end_ip >= ?", ipInteger, ipInteger).Order("start_ip DESC").Limit(1).First(&ipRecord)
-	if err != nil {
-		return "", "", 0, 0, errors.New("IP not found")
+
+	ipI64 := int64(ipNum)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Cast to signed to match BIGINT (signed) columns
+	//||------------------------------------------------------------------------------------------------||
+
+	var rec models.IP
+	db := app.SQLDB["main"].DB
+
+	tx := db.
+		Where("? BETWEEN start_ip AND end_ip", ipI64).
+		Order("start_ip DESC").
+		Limit(1).
+		First(&rec)
+
+	if tx.Error != nil {
+		return "", "", "", 0, 0, tx.Error
 	}
-	return ipRecord.Country, ipRecord.State, ipRecord.Latitude, ipRecord.Longitude, nil
+	// Defensive: verify range
+	if ipI64 < int64(rec.StartIP) || ipI64 > int64(rec.EndIP) {
+		return "", "", "", 0, 0, errors.New("ip not in returned range (sanity check failed)")
+	}
+
+	return rec.City, rec.State, rec.Country, rec.Latitude, rec.Longitude, nil
 }

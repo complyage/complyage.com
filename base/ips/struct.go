@@ -3,6 +3,33 @@ package ips
 import "time"
 
 //||------------------------------------------------------------------------------------------------||
+//|| IP Range entry
+//||------------------------------------------------------------------------------------------------||
+
+type IPRange struct {
+	StartIP   uint32
+	EndIP     uint32
+	Country   string
+	State     string
+	City      string
+	Latitude  float64
+	Longitude float64
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Struct for Response
+//||------------------------------------------------------------------------------------------------||
+
+type IPLocationVerificationResponse struct {
+	IPAddress string `json:"ipAddress"`
+	City      string `json:"city"`
+	Region    string `json:"region"`
+	Country   string `json:"country"`
+	Types     string `json:"types"`
+	MinAge    int    `json:"minAge,omitempty"`
+}
+
+//||------------------------------------------------------------------------------------------------||
 //|| Location
 //||------------------------------------------------------------------------------------------------||
 

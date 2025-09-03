@@ -48,7 +48,7 @@ type DOB struct {
 }
 
 func (d *DOB) String() string {
-	return fmt.Sprintf("%02d/%02d/%04d", d.Month, d.Day, d.Year)
+	return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day)
 }
 
 func (d *DOB) Mask() string {
@@ -56,7 +56,31 @@ func (d *DOB) Mask() string {
 		return ""
 	}
 	// mask year fully, keep month/day
-	return fmt.Sprintf("%02d/%02d/****", d.Month, d.Day)
+	return fmt.Sprintf("%04d-**-**", d.Year)
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| DOB
+//||------------------------------------------------------------------------------------------------||
+
+type Facial struct {
+	DOB      DOB   `json:"dob,omitempty"`
+	DOBMatch bool  `json:"dob_match,omitempty"`
+	Selfie   Media `json:"selfie,omitempty"`
+	Age      int   `json:"age,omitempty"`
+	Min      int   `json:"min,omitempty"`
+	Max      int   `json:"max,omitempty"`
+}
+
+func (f *Facial) String() string {
+	return fmt.Sprintf("%04d-%02d-%02d", f.DOB.Year, f.DOB.Month, f.DOB.Day)
+}
+
+func (f *Facial) Mask() string {
+	if f == nil {
+		return ""
+	}
+	return fmt.Sprintf("%04d-**-**", f.Age)
 }
 
 //||------------------------------------------------------------------------------------------------||

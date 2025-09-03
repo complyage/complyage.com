@@ -70,7 +70,12 @@
                         }
                         const rows = Array.isArray(body?.data) ? body.data : [];
                         console.log("Fetched verifications:", rows);
-                        setVerifications(rows);
+                        setVerifications(rows); 
+                        if (rows.length === 0) {
+                              setTimeout(() => {
+                                    handleInit();
+                              }, 3000);
+                        }                       
                   } catch (err: any) {
                         setError(err.message || "Unknown error");
                   } finally {
@@ -91,6 +96,7 @@
                         case "ADDR": navigate(`/verification/address/`); return;
                         case "CRCD": navigate(`/verification/card/`); return;
                         case "IDEN": generateIdenUUID(); return;
+                        case "FACE": generateFaceUUID(); return;
                         default: setError("Invalid verification type"); return;
                   }
             };
@@ -118,6 +124,28 @@
             }
 
             //||------------------------------------------------------------------------------------------------||
+            //|| Create New / Init Logic
+            //||------------------------------------------------------------------------------------------------||
+
+            const generateFaceUUID = async() => {
+                  try {
+                        const res         = await fetch(`/v1/api/verify/face/init`);
+                        const response    = await res.json();
+                        console.log("Generate UUID :: ", response);
+                        if (!res.ok || !response.success) {
+                              throw new Error(response.message || "Verification init failed");
+                        }
+                        const identifier = response.data.identifier;
+                        if (!identifier) throw new Error("Missing identifier in response");
+                        navigate(`/verification/face/?identifier=${identifier}`);
+                  } catch (err: any) {
+                        setError(err.message || "Unknown error");
+                  } finally {
+                        setLoading(false);
+                  }                  
+            }            
+
+            //||------------------------------------------------------------------------------------------------||
             //|| handleVerify
             //||------------------------------------------------------------------------------------------------||
 
@@ -128,10 +156,10 @@
                         case "UAGE": navigate(`/verification/check/?identifier=${uuid}`); break;
                         case "ADDR": navigate(`/verification/check?identifier=${uuid}`); break;   
                         case "CRCD": navigate(`/verification/check?identifier=${uuid}`); break;
+                        case "FACE": navigate(`/verification/check?identifier=${uuid}`); break;
                         default: return;
                   }
             };
-
 
             //||------------------------------------------------------------------------------------------------||
             //|| Button Action
@@ -175,6 +203,7 @@
                         case "PHNE": return { icon: Phone, title: "Phone Verification" };
                         case "CRCD": return { icon: CreditCard, title: "Credit Card Verification" };
                         case "USER": return { icon: User, title: "Username Verification" };
+                        case "FACE": return { icon: User, title: "Liveness / Face Verification" };
                         default: return { icon: CheckCircle, title: "Verification" };
                   }
             };
@@ -217,6 +246,7 @@
 										have questions about verification, you can always contact our support team.
 									</p>
 								</div>
+                                                <SpinnerCircle size={40} className="mb-4" />
 								<button
 									className="btn btn-primary text-lg font-semibold px-8 py-3 mt-2 shadow-lg bg-orange-400 hover:bg-orange-500 text-white"
 									onClick={handleInit}>

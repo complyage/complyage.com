@@ -79,7 +79,7 @@
             //||------------------------------------------------------------------------------------------------||
 
             const steps: ProgessStep[] = [
-                  { label: "How it works", description: "Provide your physical address details." },
+                  { label: "How it works", description: "A Valid credit card is required" },
                   { label: "Enter Credit Card", description: "Review and confirm your address." },
                   { label: "Processed", description: "Transaction Complete!" },
             ]
@@ -121,9 +121,9 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout title="Credit Card Verification">
+                  <MembersLayout>
                         <div className="w-full max-w-2xl mx-auto">                              
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" />
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-2" />
                               { process.step === 1 && 
                                     <CCVerificationStep1 
                                           process={ process } 

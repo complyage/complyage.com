@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"client/handlers/internal"
 	"client/handlers/public"
 
 	"github.com/ralphferrara/aria/app"
@@ -24,4 +25,8 @@ func InitRoutes() {
 	//||------------------------------------------------------------------------------------------------||
 	app.HTTP["client"].Router.HandleFunc("/v1/client/enforce", public.CheckClientEnforcement).Methods("GET")
 	app.HTTP["client"].Router.HandleFunc("/v1/client/session", public.CheckSession).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Interal Call
+	//||------------------------------------------------------------------------------------------------||
+	app.HTTP["client"].Router.HandleFunc("/v1/internal/location", internal.HandleInternalLocation).Methods("GET")
 }

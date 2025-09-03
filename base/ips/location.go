@@ -1,5 +1,9 @@
 package ips
 
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
+
 import (
 	"base/db/abstract"
 	"errors"
@@ -9,43 +13,56 @@ import (
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Convert IP
+//|| GetLocationByIP
 //||------------------------------------------------------------------------------------------------||
 
 func GetLocationByIP(ipAddress string) (Location, error) {
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Convert IP
 	//||------------------------------------------------------------------------------------------------||
+
 	ipNum := convert.IpToUint32(ipAddress)
 	if ipNum == 0 {
-		return Location{}, errors.New("Invalid IP address - " + ipAddress)
+		return Location{}, errors.New("invalid IPv4 address: " + ipAddress)
 	}
+
 	//||------------------------------------------------------------------------------------------------||
-	//|| Dev mode - always hit the database
+	//|| Dev Mode: DB Lookup
 	//||------------------------------------------------------------------------------------------------||
+
 	if app.Config.App.Env != "production" {
-		city, state, lat, long, err := abstract.FetchIPFromDatabase(ipNum)
+		city, state, country, lat, long, err := abstract.FetchIPFromDatabase(ipNum)
 		if err != nil {
 			return Location{}, err
 		}
-		var location Location
-		location.Country = city
-		location.State = state
-		location.Latitude = lat
-		location.Longitude = long
-		return location, nil
+		return Location{
+			City:      city,
+			State:     state,
+			Country:   country,
+			Latitude:  lat,
+			Longitude: long,
+		}, nil
 	}
+
 	//||------------------------------------------------------------------------------------------------||
-	//|| Pull the Country and State
+	//|| Prod Mode: In-Memory Ranges
 	//||------------------------------------------------------------------------------------------------||
-	ipBlock, found := FindIPRange(ipNum)
-	if !found {
-		return Location{}, errors.New("IP not found")
+
+	ipBlock, ok := FindIPRange(ipNum)
+	if !ok {
+		return Location{}, errors.New("ip not found in range set")
 	}
-	var location Location
-	location.Country = ipBlock.Country
-	location.State = ipBlock.State
-	location.Latitude = ipBlock.Latitude
-	location.Longitude = ipBlock.Longitude
-	return location, nil
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Return
+	//||------------------------------------------------------------------------------------------------||
+
+	return Location{
+		City:      ipBlock.City,
+		State:     ipBlock.State,
+		Country:   ipBlock.Country,
+		Latitude:  ipBlock.Latitude,
+		Longitude: ipBlock.Longitude,
+	}, nil
 }

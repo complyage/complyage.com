@@ -1,22 +1,27 @@
 package identity
 
-//||------------------------------------------------------------------------------------------------||
-//|| Import
-//||------------------------------------------------------------------------------------------------||
+import "agent/verify"
 
 //||------------------------------------------------------------------------------------------------||
-//|| Identity (Epic Verified Profile)
+//|| Identity
 //||------------------------------------------------------------------------------------------------||
 
 type Identity struct {
-	Email       IdentityRecord            `json:"email,omitempty"`
-	Age         IdentityRecord            `json:"age,omitempty"`
-	Phone       IdentityRecord            `json:"phone,omitempty"`
-	Address     IdentityRecord            `json:"address,omitempty"`
-	CreditCard  IdentityRecord            `json:"creditCard,omitempty"`
-	IDCard      IdentityRecord            `json:"idCard,omitempty"`
-	Usernames   map[int64]IdentityUsernme `json:"usernames,omitempty"`
-	Approved    []string                  `json:"approved,omitempty"`
-	Verified    bool                      `json:"verified"`
-	VerifiedAge int                       `json:"verifiedAge,omitempty"`
+	//||------------------------------------------------------------------------------------------------||
+	//|| Meta
+	//||------------------------------------------------------------------------------------------------||
+	ID           int64           `json:"id,omitempty"`
+	VerifiedDOB  verify.DOB      `json:"verifiedDOB,omitempty"`
+	VerifiedType verify.DataType `json:"verifiedMethod,omitempty"`
+	Approved     []string        `json:"approved,omitempty"`
+	//||------------------------------------------------------------------------------------------------||
+	//|| Areas
+	//||------------------------------------------------------------------------------------------------||
+	Address    IdentityRecord             `json:"address,omitempty"`
+	CreditCard IdentityRecord             `json:"creditCard,omitempty"`
+	Email      IdentityRecord             `json:"email,omitempty"`
+	Face       IdentityRecord             `json:"face,omitempty"`
+	IDCard     IdentityRecord             `json:"idCard,omitempty"`
+	Phone      IdentityRecord             `json:"phone,omitempty"`
+	Usernames  map[int64]IdentityUsername `json:"usernames,omitempty"`
 }

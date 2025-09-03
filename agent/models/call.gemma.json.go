@@ -5,9 +5,10 @@ package models
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/template"
 	"encoding/json"
 	"fmt"
+
+	"github.com/ralphferrara/aria/base/template"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -37,14 +38,10 @@ type ModelGemmaJSONResult struct {
 
 // Don't use "json" as a variable or parameter name!
 func prompt(text string, jsonStruct any) string {
-	tpl := template.Create("promptIDGemma")
+	tpl := template.Create("promptIDGemma", "en")
 	tpl.Add("OCRTEXT", text)
 
-	promptStr, err := tpl.Compile()
-	if err != nil {
-		fmt.Println("Failed to build prompt:", err)
-		return "Failed to build prompt"
-	}
+	promptStr := tpl.Compile()
 	return promptStr
 }
 

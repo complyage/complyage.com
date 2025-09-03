@@ -10,108 +10,29 @@ import { Address }                                          from "../base/geo";
 import { DOB, EmailAddress, PhoneNumber, IDCard, Username}  from "../base/user";
 
 //||------------------------------------------------------------------------------------------------||
-//|| Verified Profile
+//|| Identity (Epic Verified Profile) - TypeScript Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-interface Identity { 
-      email       : VerifiedEmail           | "MISS",
-      age         : VerifiedAge             | "MISS",
-      phone       : VerifiedPhone           | "MISS",
-      address     : VerifiedAddress         | "MISS",
-      creditCard  : VerifiedCreditCard      | "MISS",
-      usernames   : Record<number, VerifiedUsername>
-      approved    : VerificationTypes[];
-}
-      
-//||------------------------------------------------------------------------------------------------||
-//|| Global Media
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedMedia {
-      display   : string;
-      data      : string;
-      decrypted : null | { 
-            hash      : string;
-            size      : number;
-      }
-      timestamp : Date;
+export interface IdentityUsername {
+      idSite            : number;
+      username          : string;
+      verification      : string;
 }
 
-//||------------------------------------------------------------------------------------------------||
-//|| Verified Email
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedEmail {
-      display     : string;
-      data        : string;
-      decrypted   : null | EmailAddress;
-      timestamp   : Date;
+export interface IdentityRecord {
+      display           : string;
+      verification      : string;
 }
 
-//||------------------------------------------------------------------------------------------------||
-//|| Verified Identification
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedIdentification {
-      display     : string;
-      data        : string;
-      decrypted   : null | IDCard;
-      media       : VerifiedMedia[];
-      timestamp   : Date
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Verified Age
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedAge {
-      display     : string;
-      data        : string;
-      decrypted   : null | DOB;
-      media       : VerifiedMedia[]
-      timestamp   : Date;
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Verified Phone
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedPhone {
-      display     : string;
-      data        : string;
-      decrypted   : null | PhoneNumber;
-      timestamp   : Date;
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Verified Address
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedAddress { 
-      display     : string;
-      data        : string;
-      decrypted   : null | Address;
-      timestamp   : Date;
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Verified Credit Card
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedCreditCard {
-      display     : string;
-      data        : string;
-      decrypted   : null | CreditCard;
-      timestamp   : Date;
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Verified Profile Pic
-//||------------------------------------------------------------------------------------------------||
-
-interface VerifiedUsername {
-      display     : string;
-      data        : string;
-      decrypted   : null | Username;
-      timestamp   : Date;      
+export interface Identity {
+      email?            : IdentityRecord;
+      age?              : IdentityRecord;
+      phone?            : IdentityRecord;
+      address?          : IdentityRecord;
+      creditCard?       : IdentityRecord;
+      idCard?           : IdentityRecord;
+      usernames?        : Record<string, IdentityUsername>;
+      approved?         : string[];
+      verified          : boolean;
+      verifiedAge?      : number;
 }

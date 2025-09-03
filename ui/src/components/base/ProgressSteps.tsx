@@ -7,16 +7,16 @@
 //|| React
 //||------------------------------------------------------------------------------------------------||*/
 
-import React from "react";
-import {Check} from "lucide-react";
+import React                  from "react";
+import {Check}                from "lucide-react";
 
 /*||------------------------------------------------------------------------------------------------||
 //|| Step
 //||------------------------------------------------------------------------------------------------||*/
 
-export type ProgessStep = {      
-	label: string;
-	description?: string;
+export type ProgressStep = {      
+	label             : string;
+	description?      : string;
 };
 
 /*||------------------------------------------------------------------------------------------------||
@@ -24,9 +24,9 @@ export type ProgessStep = {
 //||------------------------------------------------------------------------------------------------||*/
 
 interface ProgressStepsProps {
-	steps: ProgessStep[];
-	currentStep: number; // 1-based
-	className?: string;
+	steps             : ProgessStep[];
+	currentStep       : number;
+	className?        : string;
 }
 
 /*||------------------------------------------------------------------------------------------------||
@@ -103,8 +103,8 @@ const ProgressSteps: React.FC<ProgressStepsProps> = ({steps, currentStep, classN
       );
 };
 
-
 /*||------------------------------------------------------------------------------------------------||
 //|| Export
 //||------------------------------------------------------------------------------------------------||*/
+
 export default ProgressSteps;

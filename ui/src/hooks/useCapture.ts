@@ -44,17 +44,10 @@ export function useCapture(
       //||------------------------------------------------------------------------------------------------||*/
 
       const [capturing, setCapturing]     = useState(false);
-      const [countdown, setCountdown]     = useState<number | null>(null);
       const [error, setError]             = useState<string | null>(null);
 
       const [blob, setBlob]               = useState<Blob | null>(null);
       const [previewUrl, setPreviewUrl]   = useState<string | null>(null);
-
-      /*||------------------------------------------------------------------------------------------------||
-      //|| Refs
-      //||------------------------------------------------------------------------------------------------||*/
-
-      const timerRef                      = useRef<number | null>(null);
 
       /*||------------------------------------------------------------------------------------------------||
       //|| Offscreen Canvas
@@ -119,7 +112,9 @@ export function useCapture(
             const video = videoRef.current;
             if (!video) return;
 
+            if (capturing) return;
             try {
+                  console.log("Capturing photo...");
                   setCapturing(true);
                   setError(null);
 
@@ -132,10 +127,11 @@ export function useCapture(
                   // preview url
                   revokeURL(previewUrl);
                   const url = URL.createObjectURL(b);
-
+                  console.log("Setting Blob...");
                   setBlob(b);
                   setPreviewUrl(url);
             } catch (e: any) {
+                  console.log("Capture error:", e);
                   setError(e?.message || "Failed to capture");
             } finally {
                   setCapturing(false);
@@ -143,44 +139,10 @@ export function useCapture(
       }, [videoRef, drawToCanvas, canvasToBlob, revokeURL, previewUrl]);
 
       /*||------------------------------------------------------------------------------------------------||
-      //|| Countdown → Capture
-      //||------------------------------------------------------------------------------------------------||*/
-
-      const startCountdown = useCallback((sec = 3) => {
-            if (timerRef.current) window.clearInterval(timerRef.current);
-            setBlob(null);
-            revokeURL(previewUrl);
-            setPreviewUrl(null);
-            setError(null);
-            setCountdown(sec);
-
-            timerRef.current = window.setInterval(async () => {
-                  setCountdown((c) => {
-                        if (c === null) return c;
-                        if (c <= 1) {
-                              if (timerRef.current) {
-                                    window.clearInterval(timerRef.current);
-                                    timerRef.current = null;
-                              }
-                              // fire capture
-                              captureNow();
-                              return null;
-                        }
-                        return c - 1;
-                  });
-            }, 1000);
-      }, [captureNow, previewUrl, revokeURL]);
-
-      /*||------------------------------------------------------------------------------------------------||
       //|| Retake / Clear
       //||------------------------------------------------------------------------------------------------||*/
 
       const retake = useCallback(() => {
-            if (timerRef.current) {
-                  window.clearInterval(timerRef.current);
-                  timerRef.current = null;
-            }
-            setCountdown(null);
             setBlob(null);
             revokeURL(previewUrl);
             setPreviewUrl(null);
@@ -202,7 +164,6 @@ export function useCapture(
 
       useEffect(() => {
             return () => {
-                  if (timerRef.current) window.clearInterval(timerRef.current);
                   revokeURL(previewUrl);
             };
       }, [previewUrl, revokeURL]);
@@ -214,7 +175,6 @@ export function useCapture(
       return {
             // state
             capturing,
-            countdown,
             error,
 
             // result
@@ -223,7 +183,6 @@ export function useCapture(
 
             // actions
             captureNow,
-            startCountdown,
             retake,
             upload,
 

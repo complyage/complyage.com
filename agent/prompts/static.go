@@ -5,7 +5,7 @@ package prompts
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/template"
+	"github.com/ralphferrara/aria/base/template"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -13,10 +13,7 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func Static(alias string) string {
-	tpl := template.Create(alias)
-	content, err := tpl.Compile()
-	if err != nil {
-		panic("Failed to compile static prompt: " + fileName + " Error: " + err.Error())
-	}
+	tpl := template.Create(alias, "en")
+	content := tpl.Compile()
 	return content
 }

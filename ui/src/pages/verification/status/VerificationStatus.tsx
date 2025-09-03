@@ -30,7 +30,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       import MembersLayout                                        from "../../../layouts/MembersLayout";
-      import ProgressSteps, { ProgessStep }                       from "../../../components/base/ProgressSteps";
+      import ProgressSteps, { ProgressStep }                      from "../../../components/base/ProgressSteps";
       import SpinnerCircle                                        from "../../../components/base/SpinnerCircle";
       import InlineAlert                                          from "../../../components/base/InlineAlert";
 
@@ -49,34 +49,29 @@
       //||------------------------------------------------------------------------------------------------||
 
       const StatusIcon: Record<VerificationStatuses, React.ComponentType<any>> = {
-            MISS: AlertCircle,
             PEND: Clock,
             PEVF: Clock,
-            APPR: Clock,
             VERF: CheckCircle,
             RJCT: AlertCircle,
             ESCL: UserPlus,
             EXPD: AlertCircle,
-            CNCL: AlertCircle,
       };
 
       const StatusColor: Record<VerificationStatuses, string> = {
-            MISS: "text-gray-500",
             PEND: "text-yellow-500",
             PEVF: "text-blue-500",
-            APPR: "text-blue-400",
             VERF: "text-green-600",
             RJCT: "text-red-600",
             ESCL: "text-orange-600",
+            INPR: "text-green-300",   
             EXPD: "text-gray-500",
-            CNCL: "text-gray-400",
       };
 
       //||------------------------------------------------------------------------------------------------||
       //|| Steps
       //||------------------------------------------------------------------------------------------------||
 
-      const steps: ProgessStep[] = [
+      const steps: ProgressStep[] = [
             { label: "Awaiting Agent",          description: "Awaiting Agent" },
             { label: "Parsing ID Data",         description: "Parsing ID Data" },
             { label: "Verifying DOB",           description: "Verifying DOB" },
@@ -147,8 +142,6 @@
             //||----------------------------------------------------------------------------------------||
 
             const testReset = () => {
-                  //	router.HandleFunc("/v1/api/verify/id/reset", verifier.TestingResetVerification).Methods("POST")
-
                   fetch(`/v1/api/verify/id/reset?identifier=${verificationId}`).then(resp => {
                         if (!resp.ok) {
                               alert("Failed to reset verification status.");
@@ -170,7 +163,7 @@
 			const interval = setInterval(() => { 
                         setReload(true); 
                         fetchStatus(); 
-                  }, 500);
+                  }, 2000);
 			fetchStatus();
 			return () => clearInterval(interval);
 		}, [verificationId]);
@@ -332,9 +325,6 @@
                                                 )}
                                                 {status === "EXPD" && (
                                                       <span className="text-gray-500">⏰ Your verification has expired.</span>
-                                                )}
-                                                {status === "CNCL" && (
-                                                      <span className="text-gray-400">🚫 Verification was cancelled.</span>
                                                 )}
                                           </div>
                                           <button

@@ -152,7 +152,7 @@
 				<div className="relative min-h-[90vh]">
 					<div className="absolute inset-0 pointer-events-none z-0" />
 					<div className="relative z-10 max-w-2xl mx-auto">
-						<div className="py-10 flex flex-col gap-4 items-center">
+						<div className="flex flex-col gap-4 items-center">
 							<ProgressSteps steps={steps} currentStep={1} />
 						</div>
 
@@ -165,7 +165,7 @@
 
 						{loadError && <VerificationCheckFail error={loadError} verificationId={verificationId} onBack={ () => { setLoadError(null) } } />}
 
-						<div className="w-full max-w-2xl mx-auto">
+						<div className="w-full max-w-2xl mx-auto mt-4">
 							{!loadError && loaded && !complete && (
 								<div className="space-y-7 p-10 bg-black/20">
 									<p className="text-gray-50 text-center text-2xl font-bold tracking-tight mb-3">
@@ -212,7 +212,7 @@
 							)}
 
 							{complete && !loadError && (
-								<div className="space-y-8 p-10 bg-green-900/10 rounded-3xl shadow-2xl border border-green-400/30 mt-12 text-center">
+								<div className="space-y-8 p-10 rounded-3xl bg-black/20 mt-5 text-center">
 									<CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-2 animate-bounce" />
 									<p className="text-2xl text-green-300 font-extrabold mb-2">Verification Complete!</p>
 									<p className="text-gray-100 mb-8">

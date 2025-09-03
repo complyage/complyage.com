@@ -32,11 +32,12 @@ import Login                  from './pages/public/Login'
 
 import Dashboard              from './pages/members/Dashboard'
 import Sites                  from './pages/members/Sites'
-import Encrypted              from './pages/members/Encrypted'
+import Identity               from './pages/members/Identity'
 import Shared                 from './pages/members/Shared'
 import Settings               from './pages/members/Settings'
 import Verification           from './pages/members/Verification'
 import Logout                 from './pages/members/Logout'
+import VPNs                   from './pages/members/VPNs'
 import Quit                   from './pages/members/Quit'
 
 //||------------------------------------------------------------------------------------------------||
@@ -55,6 +56,7 @@ import CCVerification         from './pages/verification/card/CCVerification'
 import AddressVerification    from './pages/verification/address/AddressVerification'
 import IDVerification         from './pages/verification/id/IDVerification'
 import PhoneVerification      from './pages/verification/phone/PhoneVerification'
+import FaceVerification       from './pages/verification/face/FaceVerification'
 
 //||------------------------------------------------------------------------------------------------||
 //|| Test
@@ -103,8 +105,9 @@ export default function App() {
 			<Route path="/members/sites" element={<Sites />} />
 			<Route path="/members/settings" element={<Settings />} />
 			<Route path="/members/shared" element={<Shared />} />
-			<Route path="/members/encrypted" element={<Encrypted />} />
+			<Route path="/members/identity" element={<Identity />} />                  
 			<Route path="/members/verification" element={<Verification />} />
+                  <Route path="/members/vpns" element={<VPNs />} />                  
 			<Route path="/members/quit" element={<Quit />} />
 
                   <Route path="/verification/init" element={<VerificationInit />} />
@@ -112,6 +115,7 @@ export default function App() {
                   <Route path="/verification/status" element={<VerificationStatus />} />
                   
                   <Route path="/verification/id" element={<IDVerification />} />
+                  <Route path="/verification/face" element={<FaceVerification />} />
                   <Route path="/verification/card" element={<CCVerification />} />
                   <Route path="/verification/phone" element={<PhoneVerification />} />
                   <Route path="/verification/address" element={<AddressVerification />} />

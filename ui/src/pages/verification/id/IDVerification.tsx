@@ -24,6 +24,7 @@
 
       import IDVerificationStep1                            from "./IDVerification.Initial";
       import IDVerificationSubmit                           from "./IDVerification.Submit";
+      import IDVerificationSelfie                           from "./IDVerification.Selfie";
       import IDVerificationMedia                            from "./IDVerification.Media";
 
       //||------------------------------------------------------------------------------------------------||
@@ -32,18 +33,18 @@
 
       import InlineAlert                                    from "../../../components/base/InlineAlert";
       import MembersLayout                                  from "../../../layouts/MembersLayout";
-      import ProgressSteps, { ProgessStep }                 from "../../../components/base/ProgressSteps";
+      import ProgressSteps, { ProgressStep }                from "../../../components/base/ProgressSteps";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Step Props
       //||------------------------------------------------------------------------------------------------||
 
       export interface StepProps {
-            which             : "front" | "back" | "selfie" | "other";
+            which?            : "front" | "back" | "selfie";
             process           : VerificationID;
             updateProcess     : (process: VerificationID) => void;
             onUpload          : (file: File | Blob | null, which: "front" | "back" | "selfie") => Promise<void>;
-            getUpload         : (which: "front" | "back" | "selfie" | "other") => Promise<VerificationMedia | null>;
+            getUpload         : (which: "front" | "back" | "selfie") => Promise<VerificationMedia | null>;
       }
 
       //||------------------------------------------------------------------------------------------------||
@@ -113,6 +114,17 @@
             };       
 
             //||------------------------------------------------------------------------------------------------||
+            //|| Continue Enabled
+            //||------------------------------------------------------------------------------------------------||
+
+            const isContinueEnabled = () => {
+                  if (process.step === 2 && (!process.front || process.front.exists === false)) return false;
+                  if (process.step === 3 && (!process.back || process.back.exists === false)) return false;
+                  if (process.step === 4 && (!process.selfie || process.selfie.exists === false)) return false;
+                  return true;
+            }
+
+            //||------------------------------------------------------------------------------------------------||
             //|| getUpload
             //||------------------------------------------------------------------------------------------------||
 
@@ -140,7 +152,7 @@
                         }
 
                         console.log("Fetched upload:", json.data);
-                        return json.data as Media;
+                        return json.data as VerificationMedia;
                   } catch (err: any) {
                         console.error("Upload error:", err.message || err);
                         return null;
@@ -212,7 +224,7 @@
             //|| Stepper
             //||------------------------------------------------------------------------------------------------||
 
-            const steps: ProgessStep[] = [
+            const steps: ProgressStep[] = [
                   { label: "How it works",      description: "How to get your ID and Age verified" },
                   { label: "Upload ID Front",   description: "Upload the front of your ID." },
                   { label: "Upload ID Back",    description: "Upload the back of your ID" },
@@ -243,18 +255,18 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout title="ID Verification" icon={ IdCard }>
-                        <div className="w-full max-w-2xl mx-auto">                              
+                  <MembersLayout>
+                        <div className="w-full max-w-5xl mx-auto">                              
                               <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" /> 
                               { process.step <= 1 && <IDVerificationStep1 updateProcess={ updateProcess } process={process} />}
                               { process.step === 2 && <IDVerificationMedia which="front" updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
                               { process.step === 3 && <IDVerificationMedia which="back" updateProcess={ updateProcess } process={process}  onUpload={ onUpload } getUpload={ getUpload } />}
-                              { process.step === 4 && <IDVerificationMedia which="selfie" updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
-                              { process.step === 5 && <IDVerificationSubmit which="other" updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
+                              { process.step === 4 && <IDVerificationSelfie updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
+                              { process.step === 5 && <IDVerificationSubmit updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
                               {process.step > 0 && process.step < 5 && (                              
                                     <div className="flex flex-row items-center justify-between w-full border-t border-gray-500 mt-3 mx-auto pt-4">
                                           <button className="btn btn-primary text-2xl py-3 px-10 h-auto" onClick={() => updateProcess({ step: process.step - 1 })} >Back</button>
-                                          <button className="btn btn-secondary text-2xl py-3 px-10 h-auto" onClick={() => handleContinue()}>Continue</button>
+                                          <button disabled={ !isContinueEnabled() } className="btn btn-secondary text-2xl py-3 px-10 h-auto" onClick={() => handleContinue()}>Continue</button>
                                     </div>
                               )}
                               <div className="text-gray-500 text-sm block text-center pt-5">

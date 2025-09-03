@@ -30,9 +30,10 @@ type ModelFaceDetectResponse struct {
 type ModelFaceDetectFace struct {
 	BoundingBox ModelFaceBoundingBox `json:"bounding_box"`
 	Age         int                  `json:"age"`
-	AgeRange    string               `json:"age_range"`
+	AgeMin      *int                 `json:"age_min"` // nullable (pointer so you can check for missing)
+	AgeMax      *int                 `json:"age_max"` // nullable
 	Gender      string               `json:"gender"`
-	Confidence  *float64             `json:"confidence"` // nullable
+	Confidence  *float64             `json:"confidence"`
 }
 
 type ModelFaceBoundingBox struct {

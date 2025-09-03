@@ -18,7 +18,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       import MembersLayout                                  from "../../../layouts/MembersLayout";
-      import ProgressSteps, { ProgessStep }                 from "../../../components/base/ProgressSteps";
+      import ProgressSteps, { ProgressStep }                 from "../../../components/base/ProgressSteps";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Pages
@@ -69,11 +69,11 @@
 
             const [process, setProcess] = useState<VerificationAddress>({
                   verifyAddress : {
-                        line1: "234 Main",
+                        line1: "",
                         line2: "",
-                        city: "Phoenix",
-                        state: "AZ",
-                        postal: "85024",
+                        city: "",
+                        state: "",
+                        postal: "",
                         country: "US"
                   },
                   step              : 1,
@@ -118,7 +118,7 @@
             //|| Stepper
             //||------------------------------------------------------------------------------------------------||
 
-            const steps: ProgessStep[] = [
+            const steps: ProgressStep[] = [
                   { label: "How it works",      description: "Provide your physical address details." },
                   { label: "Verify Address",    description: "Review and confirm your address." },
                   { label: "Pay Postage",       description: "Pay for the postage to send" },
@@ -140,7 +140,6 @@
                   const ac = new AbortController();
 
                   (async () => {
-                        // convertCurrency(totalAmt, currency) should return the converted number, or null
                         const converted = await convertCurrency(totalAmt, currency);
                         if (converted === null) return;
                         setProcess(prev => ({

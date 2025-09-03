@@ -298,9 +298,12 @@ export default function Camera({ onUpload, onReset, onClose, errorMessage }: Cam
       //||------------------------------------------------------------------------------------------------||
 
 	return (
-		<div className="w-full max-w-2xl mx-auto text-center p-4">
+            <div className="flex flex-col w-full relative items-center justify-center mx-auto">
                   
-                  <button onClick={onClose} className="absolute top-20 right-4 rounded-xl bg-black/90 hover:text-gray-700 transition p-2"><XIcon className="w-8 h-8 text-white" /></button>
+                  <button onClick={onClose} className="absolute top-2 right-2 rounded-xl bg-black/90 hover:text-gray-700 transition p-2 cursor-pointer">
+                        <XIcon className="w-8 h-8 text-white" />
+                  </button>
+
                   {/* Camera / Preview */}
                   {cameraAvailable ? (
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden mx-auto border-2 ">

@@ -6,8 +6,8 @@ package models
 
 type IP struct {
 	ID         uint    `gorm:"column:id;primaryKey;autoIncrement"`
-	StartIP    uint64  `gorm:"column:start_ip;not null"`
-	EndIP      uint64  `gorm:"column:end_ip;not null"`
+	StartIP    int64   `gorm:"column:start_ip;not null"`
+	EndIP      int64   `gorm:"column:end_ip;not null"`
 	City       string  `gorm:"column:city;size:200"`
 	State      string  `gorm:"column:state;size:100"`
 	Country    string  `gorm:"column:country;size:5"`

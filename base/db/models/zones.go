@@ -20,6 +20,7 @@ type Zone struct {
 	ZoneMeta           *string    `gorm:"column:zone_meta;type:text"              json:"meta,omitempty"`
 	ZoneLatitude       *string    `gorm:"column:zone_latitude;type:text"          json:"latitude,omitempty"`
 	ZoneLongitude      *string    `gorm:"column:zone_longitude;type:text"         json:"longitude,omitempty"`
+	ZoneMinAge         int        `gorm:"column:zone_minage"                      json:"minAge,omitempty"`
 }
 
 //||------------------------------------------------------------------------------------------------||

@@ -42,6 +42,10 @@
             //||------------------------------------------------------------------------------------------------||
             //|| Load
             //||------------------------------------------------------------------------------------------------||
+            which = which || (process.step === 2 ? "front" : process.step === 3 ? "back" : "selfie");
+            //||------------------------------------------------------------------------------------------------||
+            //|| Load
+            //||------------------------------------------------------------------------------------------------||
             useEffect(() => {
                   (async () => {
                         try {
@@ -49,7 +53,10 @@
                               console.log("EFFECT MEDIA : ", media);
                               if (media === null || media.exists === false) return setMedia(null);
                               setMedia(media as VerificationMedia);
-                              updateProcess({ [which]: media });
+                              updateProcess({
+                                    ...process,
+                                    [which as string]: media,
+                              });
                         } catch (error) {
                               console.error("Error loading front ID image:", error);
                               setMedia(null);
@@ -82,7 +89,7 @@
             return (
                   <>
                         {media !== null ? (
-                              <MediaPreview media={media} onReset={() => setMedia(null)} />
+                              <MediaPreview media={media} onEdit={() => setMedia(null)} />
                         ) : (
                               <div className="w-full mx-auto text-center p-4 flex flex-row rounded-lg gap-5">
                                     {/* Camera Button */}

@@ -8,6 +8,7 @@ import (
 	"agent/publish"
 	"base/db/abstract"
 	"base/verify"
+	"fmt"
 	"net/http"
 
 	"github.com/ralphferrara/aria/responses"
@@ -103,12 +104,21 @@ func TestingResetVerification(w http.ResponseWriter, r *http.Request) {
 	//|| Update the Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	insert := publish.AgentVerifyIDStart(verifyRecord)
-	if insert != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to start ID verification: "+insert.Error())
-		return
+	if verifyRecord.Type == verify.DataTypeIDEN {
+		fmt.Println("Starting ID Verification Reset for: " + verifyRecord.UUID)
+		insert := publish.AgentVerifyIDStart(verifyRecord)
+		if insert != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to start ID verification: "+insert.Error())
+			return
+		}
+	} else {
+		fmt.Println("Starting Facial Verification Reset for: " + verifyRecord.UUID)
+		insert := publish.AgentVerifyFaceStart(verifyRecord)
+		if insert != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to start ID verification: "+insert.Error())
+			return
+		}
 	}
-
 	//||------------------------------------------------------------------------------------------------||
 	//|| Return Success
 	//||------------------------------------------------------------------------------------------------||

@@ -1,133 +1,142 @@
 package verify
 
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 )
 
-//||------------------------------------------------------------------------------------------------||
-//|| DataType (iota-based enum)
-//||------------------------------------------------------------------------------------------------||
-
+// ||------------------------------------------------------------------------------------------------||
+// || DataType (iota-based enum)
+// ||------------------------------------------------------------------------------------------------||
 type DataType int
 
 const (
-	DataTypeUAGE DataType = iota
-	DataTypeMAIL
+	DataTypeMAIL DataType = iota
 	DataTypePHNE
 	DataTypeADDR
 	DataTypeCRCD
 	DataTypeIDEN
 	DataTypeUSER
+	DataTypeFACE
 )
 
-//||------------------------------------------------------------------------------------------------||
-//|| Types List (all as slice of DataType and strings)
-//||------------------------------------------------------------------------------------------------||
-
+// ||------------------------------------------------------------------------------------------------||
+// || Lookup Tables
+// ||------------------------------------------------------------------------------------------------||
 var (
+	// list of all values (index matches iota)
 	AllDataTypes = []DataType{
-		DataTypeUAGE,
 		DataTypeMAIL,
 		DataTypePHNE,
 		DataTypeADDR,
 		DataTypeCRCD,
 		DataTypeIDEN,
 		DataTypeUSER,
+		DataTypeFACE,
 	}
-	AllDataTypeStrings = []string{"UAGE", "MAIL", "PHNE", "ADDR", "CRCD", "IDEN", "USER"}
+
+	// canonical strings for marshal/display
+	AllDataTypeStrings = []string{"MAIL", "PHNE", "ADDR", "CRCD", "IDEN", "USER", "FACE"}
+
+	// fast maps for (de)serialization
+	dataTypeFromString = map[string]DataType{
+		"MAIL": DataTypeMAIL,
+		"PHNE": DataTypePHNE,
+		"ADDR": DataTypeADDR,
+		"CRCD": DataTypeCRCD,
+		"IDEN": DataTypeIDEN,
+		"USER": DataTypeUSER,
+		"FACE": DataTypeFACE,
+	}
 )
 
 func IsValidDataType(s string) bool {
-	s = strings.ToUpper(s)
-	for _, v := range AllDataTypeStrings {
-		if s == v {
-			return true
-		}
-	}
-	return false
+	_, ok := dataTypeFromString[strings.ToUpper(strings.TrimSpace(s))]
+	return ok
 }
 
-//||------------------------------------------------------------------------------------------------||
-//|| String
-//||------------------------------------------------------------------------------------------------||
-
+// ||------------------------------------------------------------------------------------------------||
+// || String
+// ||------------------------------------------------------------------------------------------------||
 func (d DataType) String() string {
-	switch d {
-	case DataTypeUAGE:
-		return "UAGE"
-	case DataTypeMAIL:
-		return "MAIL"
-	case DataTypePHNE:
-		return "PHNE"
-	case DataTypeADDR:
-		return "ADDR"
-	case DataTypeCRCD:
-		return "CRCD"
-	case DataTypeIDEN:
-		return "IDEN"
-	case DataTypeUSER:
-		return "USER"
-	default:
-		return "UNKNOWN"
+	if int(d) >= 0 && int(d) < len(AllDataTypeStrings) {
+		return AllDataTypeStrings[d]
 	}
+	return "UNKNOWN"
 }
 
-//||------------------------------------------------------------------------------------------------||
-//|| JSON Marshal/Unmarshal
-//||------------------------------------------------------------------------------------------------||
-
+// ||------------------------------------------------------------------------------------------------||
+// || JSON Marshal/Unmarshal
+// ||------------------------------------------------------------------------------------------------||
 func (d DataType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
 func (d *DataType) UnmarshalJSON(data []byte) error {
-	var val string
-	if err := json.Unmarshal(data, &val); err != nil {
-		return err
+	// 1) Try string (case-insensitive, trims)
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		key := strings.ToUpper(strings.TrimSpace(s))
+		if v, ok := dataTypeFromString[key]; ok {
+			*d = v
+			return nil
+		}
+		return fmt.Errorf("invalid DataType: %q (allowed: %s)", s, strings.Join(AllDataTypeStrings, ", "))
 	}
-	switch val {
-	case "UAGE":
-		*d = DataTypeUAGE
-	case "MAIL":
-		*d = DataTypeMAIL
-	case "PHNE":
-		*d = DataTypePHNE
-	case "ADDR":
-		*d = DataTypeADDR
-	case "CRCD":
-		*d = DataTypeCRCD
-	case "IDEN":
-		*d = DataTypeIDEN
-	case "USER":
-		*d = DataTypeUSER
-	default:
-		return fmt.Errorf("invalid DataType: %q", val)
+
+	// 2) Try numeric (fallback for legacy numeric encodings)
+	var n int
+	if err := json.Unmarshal(data, &n); err == nil {
+		if n >= 0 && n < len(AllDataTypes) {
+			*d = AllDataTypes[n]
+			return nil
+		}
+		return fmt.Errorf("invalid DataType (numeric): %d", n)
 	}
-	return nil
+
+	// 3) Unknown type
+	return fmt.Errorf("invalid DataType: %s", string(data))
 }
 
-//||------------------------------------------------------------------------------------------------||
-//|| Dot notation namespace for DataType
-//||------------------------------------------------------------------------------------------------||
+// ||------------------------------------------------------------------------------------------------||
+// || Text Marshal/Unmarshal (useful for DB/YAML/env)
+// ||------------------------------------------------------------------------------------------------||
+func (d DataType) MarshalText() ([]byte, error) {
+	return []byte(d.String()), nil
+}
 
+func (d *DataType) UnmarshalText(text []byte) error {
+	key := strings.ToUpper(strings.TrimSpace(string(text)))
+	if v, ok := dataTypeFromString[key]; ok {
+		*d = v
+		return nil
+	}
+	return fmt.Errorf("invalid DataType: %q (allowed: %s)", string(text), strings.Join(AllDataTypeStrings, ", "))
+}
+
+// ||------------------------------------------------------------------------------------------------||
+// || Dot notation namespace for DataType
+// ||------------------------------------------------------------------------------------------------||
 type nsDataType struct {
-	UAGE DataType
 	MAIL DataType
 	PHNE DataType
 	ADDR DataType
 	CRCD DataType
 	IDEN DataType
 	USER DataType
+	FACE DataType
 }
 
 var DATATYPES = nsDataType{
-	UAGE: DataTypeUAGE,
 	MAIL: DataTypeMAIL,
 	PHNE: DataTypePHNE,
 	ADDR: DataTypeADDR,
 	CRCD: DataTypeCRCD,
 	IDEN: DataTypeIDEN,
 	USER: DataTypeUSER,
+	FACE: DataTypeFACE,
 }

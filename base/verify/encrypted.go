@@ -7,7 +7,7 @@ package verify
 type Encrypted struct {
 	UUID        string             `json:"uuid,omitempty"`
 	Type        DataType           `json:"type,omitempty"`
-	Data        Data               `json:"blob,omitempty"`
+	Data        Data               `json:"data,omitempty"`
 	Transaction TransactionPrivate `json:"transaction,omitempty"`
 }
 
