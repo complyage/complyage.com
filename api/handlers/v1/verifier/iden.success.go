@@ -2,7 +2,6 @@ package verifier
 
 import (
 	"agent/publish"
-	"base/constants"
 	"base/db/abstract"
 	"base/verify"
 	"encoding/json"
@@ -23,8 +22,8 @@ type idenVerifyRequest struct {
 }
 
 type idenVerifyResponse struct {
-	Identifier string `json:"uuid"`
-	Status     string `json:"status"`
+	Identifier string            `json:"uuid"`
+	Status     verify.StatusType `json:"status"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -131,6 +130,6 @@ func VerifyIDSuccessHandler(w http.ResponseWriter, r *http.Request) {
 
 	responses.Success(w, http.StatusOK, idenVerifyResponse{
 		Identifier: verifyRecord.UUID,
-		Status:     constants.VerificationStatuses.PendingVerification,
+		Status:     verify.STATUSES.PendingVerification,
 	})
 }

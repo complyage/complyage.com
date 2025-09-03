@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"base/agnostic"
+	"github.com/ralphferrara/aria/base/agnostic"
 
 	"github.com/ralphferrara/aria/responses"
 

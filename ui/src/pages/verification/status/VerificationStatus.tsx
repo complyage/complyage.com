@@ -22,7 +22,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       import { VerificationID }                                         from "../../../interfaces/verify/id/process";
-      import { VerificationStatuses }                                   from "../../../interfaces/models/model.verify";
+      import { VerificationStatuses, VerificationTypes }                from "../../../interfaces/models/model.verify";
       import { VerificationIDStatusProcess, VerificationIDStatusStep }  from "../../../interfaces/verify/status/process";
 
       //||------------------------------------------------------------------------------------------------||
@@ -49,6 +49,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       const StatusIcon: Record<VerificationStatuses, React.ComponentType<any>> = {
+            INPR: CheckCircle,
             PEND: Clock,
             PEVF: Clock,
             VERF: CheckCircle,
@@ -68,10 +69,10 @@
       };
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Steps
+      //|| Steps IDEN
       //||------------------------------------------------------------------------------------------------||
 
-      const steps: ProgressStep[] = [
+      const stepsIDEN: ProgressStep[] = [
             { label: "Awaiting Agent",          description: "Awaiting Agent" },
             { label: "Parsing ID Data",         description: "Parsing ID Data" },
             { label: "Verifying DOB",           description: "Verifying DOB" },
@@ -79,6 +80,29 @@
             { label: "Matching Photo",          description: "Matching ID to Selfie" },
             { label: "Encrypting Data",         description: "Encrypting your photos" },
       ];
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Steps FACe
+      //||------------------------------------------------------------------------------------------------||
+
+      const stepsFACE: ProgressStep[] = [
+            { label: "Awaiting Agent",          description: "Awaiting Agent" },
+            { label: "Parsing ID Data",         description: "Parsing ID Data" },
+            { label: "Encrypting Data",         description: "Encrypting your photos" },
+      ];
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Get Steps
+      //||------------------------------------------------------------------------------------------------||
+
+      function getStepsFromProcess(vType: VerificationTypes): ProgressStep[] {
+            switch (vType) {
+                  case "IDEN": return stepsIDEN;
+                  case "FACE": return stepsFACE;
+                  default:     return [];
+            }
+      }
+            
 
       //||------------------------------------------------------------------------------------------------||
       //|| Main Component
@@ -102,6 +126,7 @@
             const [error , setError]      = useState<string | null>(null);
             const [process, setProcess]   = useState<VerificationIDStatusProcess>({
                   status            : "UNKN" as VerificationStatuses,
+                  type              : "IDEN",
                   step              : 0,
                   verificationUUID  : verificationId,
                   steps             : [],
@@ -123,6 +148,7 @@
                               throw new Error(response.message || "Unknown error fetching verification status.");
                         }
                         setProcess({
+                              type              : response.data.type,
                               status            : response.data.status,
                               step              : response.data.step,
                               steps             : response.data.steps,
@@ -248,7 +274,7 @@
                               <div className="w-full mb-8">
                                     { process.step } 
                                     <textarea defaultValue={JSON.stringify(process)} className="w-full h-24 bg-black/20 text-xs p-2 rounded-lg text-gray-400 font-mono" readOnly />
-                                    <ProgressSteps steps={steps} currentStep={process.step || 1} />
+                                    <ProgressSteps steps={getStepsFromProcess(process.type)} currentStep={process.step || 1} />
                               </div>
 
                               <div className="bg-black/20 pt-4 w-full max-w-2xl rounded-xl relative">

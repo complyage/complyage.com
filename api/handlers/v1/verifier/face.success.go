@@ -2,7 +2,6 @@ package verifier
 
 import (
 	"agent/publish"
-	"base/constants"
 	"base/db/abstract"
 	"base/verify"
 	"encoding/json"
@@ -25,8 +24,8 @@ type faceVerifyRequest struct {
 }
 
 type faceVerifyResponse struct {
-	Identifier string `json:"uuid"`
-	Status     string `json:"status"`
+	Identifier string            `json:"uuid"`
+	Status     verify.StatusType `json:"status"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -157,6 +156,6 @@ func VerifyFaceSuccessHandler(w http.ResponseWriter, r *http.Request) {
 
 	responses.Success(w, http.StatusOK, faceVerifyResponse{
 		Identifier: verifyRecord.UUID,
-		Status:     constants.VerificationStatuses.PendingVerification,
+		Status:     verify.StatusPendingVerification,
 	})
 }

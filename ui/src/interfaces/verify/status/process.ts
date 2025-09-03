@@ -6,7 +6,7 @@
       //|| Import
       //||------------------------------------------------------------------------------------------------||
 
-      import { VerificationStatuses }     from "../../models/model.verify";
+      import { VerificationStatuses. VerificationTypes }     from "../../models/model.verify";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Step
@@ -24,6 +24,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       export interface VerificationIDStatusProcess {
+            type                          : VerificationTypes;
             status                        : VerificationStatuses;
             step                          : number;
             steps                         : VerificationIDStatusStep[];

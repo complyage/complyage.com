@@ -5,7 +5,6 @@ package public
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/helpers"
 	"base/ips"
 	"base/loaders"
 	"base/sites"
@@ -19,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ralphferrara/aria/base/convert"
 	ariaHTTP "github.com/ralphferrara/aria/http"
 	"github.com/ralphferrara/aria/responses"
 )
@@ -170,7 +170,7 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Effective Date
 	//||----------------------------------------------------------------------------------------------||
 	if zone.ZoneEffective != nil {
-		vars["EFFECTIVE"] = helpers.FormatMonthYear(*zone.ZoneEffective, lang)
+		vars["EFFECTIVE"] = convert.FormatMonthYear(*zone.ZoneEffective, lang)
 	} else {
 		vars["EFFECTIVE"] = ""
 	}

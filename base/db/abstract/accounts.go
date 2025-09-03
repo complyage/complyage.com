@@ -2,7 +2,7 @@ package abstract
 
 import (
 	"base/db/models"
-	"base/identity"
+	"base/verify"
 	"encoding/json"
 	"fmt"
 
@@ -79,7 +79,7 @@ func GetAccountByVerificationUUID(uuid string) (*models.Account, error) {
 //|| Update User Identity
 //||------------------------------------------------------------------------------------------------||
 
-func UpdateUserIdentity(idAccount int64, ident identity.Identity) error {
+func UpdateUserIdentity(idAccount int64, ident verify.Identity) error {
 	blob, err := json.Marshal(ident)
 	if err != nil {
 		return err

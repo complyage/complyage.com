@@ -5,7 +5,6 @@ package pages
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/identity"
 	"base/loaders"
 	"base/sites"
 	"crypto/sha256"
@@ -139,7 +138,7 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 				PrivateHash: "",
 				Security:    1,
 				Level:       0,
-				Identity:    identity.Identity{},
+				Identity:    Identity{},
 			}
 		}
 	}

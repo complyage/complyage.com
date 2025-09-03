@@ -85,15 +85,6 @@ export default function KeyPairGenerator({ setValue, defaultPublic, defaultPriva
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                              <label className="block text-gray-300 font-bold mb-2">Private Key</label>
-                              <textarea
-                                    value={privateKey}
-                                    readOnly
-                                    className="textarea textarea-bordered w-full h-128 font-mono text-xs bg-black text-green-300"
-                              />
-                        </div>
-
-                        <div>
                               <label className="block text-gray-300 font-bold mb-2">Public Key</label>
                               <textarea
                                     value={publicKey}
@@ -101,6 +92,14 @@ export default function KeyPairGenerator({ setValue, defaultPublic, defaultPriva
                                     className="textarea textarea-bordered w-full h-128 font-mono text-xs bg-black text-green-300"
                               />
                         </div>
+                        <div>
+                              <label className="block text-gray-300 font-bold mb-2">Private Key</label>
+                              <textarea
+                                    value={privateKey}
+                                    readOnly
+                                    className="textarea textarea-bordered w-full h-128 font-mono text-xs bg-black text-green-300"
+                              />
+                        </div>                        
                   </div>
             </div>
       );

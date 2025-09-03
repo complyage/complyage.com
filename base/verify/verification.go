@@ -1,7 +1,6 @@
 package verify
 
 import (
-	"base/identity"
 	"time"
 
 	"github.com/ralphferrara/aria/db"
@@ -50,11 +49,11 @@ type Verification struct {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Private Data
 	//||------------------------------------------------------------------------------------------------||
-	Database  *db.GormWrapper   `json:"-"`
-	Identity  identity.Identity `json:"identity,omitempty"`
-	Keys      PrivatePublic     `json:"keys,omitempty"`
-	Storage   storage.Storage   `json:"-"`
-	Encrypted Encrypted         `json:"encrypted,omitempty"`
+	Database  *db.GormWrapper `json:"-"`
+	Identity  Identity        `json:"identity,omitempty"`
+	Keys      PrivatePublic   `json:"keys,omitempty"`
+	Storage   storage.Storage `json:"-"`
+	Encrypted Encrypted       `json:"encrypted,omitempty"`
 }
 
 //||------------------------------------------------------------------------------------------------||

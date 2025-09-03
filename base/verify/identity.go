@@ -5,100 +5,21 @@ package verify
 //||------------------------------------------------------------------------------------------------||
 
 type Identity struct {
-	MAIL IdentityOption `json:"email,omitempty"`
-	FACE IdentityOption `json:"face,omitempty"`
-	PHNE IdentityOption `json:"phone,omitempty"`
-	CRCD IdentityOption `json:"credit_card,omitempty"`
-	ADDR IdentityOption `json:"address,omitempty"`
-	IDEN IdentityOption `json:"id_card,omitempty"`
-	LIST []DataType     `json:"approved,omitempty"`
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Identity
-//||------------------------------------------------------------------------------------------------||
-
-type IdentityOption struct {
-	Display          string `json:"display,omitempty"`
-	VerificationUUID string `json:"verification,omitempty"`
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Update Identity
-//||------------------------------------------------------------------------------------------------||
-
-func (v *Verification) UpdateIdentity() {
 	//||------------------------------------------------------------------------------------------------||
-	//|| Update Identity Record
+	//|| Meta
 	//||------------------------------------------------------------------------------------------------||
-	switch v.Type {
-	case DataTypeFACE:
-		v.Identity.FACE = IdentityOption{
-			Display:          v.Encrypted.Data.FACE.Mask(),
-			VerificationUUID: v.UUID,
-		}
-	case DataTypeMAIL:
-		v.Identity.MAIL = IdentityOption{
-			Display:          v.Encrypted.Data.MAIL.Mask(),
-			VerificationUUID: v.UUID,
-		}
-	case DataTypePHNE:
-		v.Identity.PHNE = IdentityOption{
-			Display:          v.Encrypted.Data.PHNE.Mask(),
-			VerificationUUID: v.UUID,
-		}
-	case DataTypeADDR:
-		v.Identity.ADDR = IdentityOption{
-			Display:          v.Encrypted.Data.ADDR.Mask(),
-			VerificationUUID: v.UUID,
-		}
-	case DataTypeCRCD:
-		v.Identity.CRCD = IdentityOption{
-			Display:          v.Encrypted.Data.CRCD.Mask(),
-			VerificationUUID: v.UUID,
-		}
-	case DataTypeIDEN:
-		v.Identity.IDEN = IdentityOption{
-			Display:          v.Encrypted.Data.IDEN.Mask(),
-			VerificationUUID: v.UUID,
-		}
-	}
+	ID           int64    `json:"id,omitempty"`
+	VerifiedDOB  DOB      `json:"verifiedDOB,omitempty"`
+	VerifiedType DataType `json:"verifiedMethod,omitempty"`
+	Approved     []string `json:"approved,omitempty"`
 	//||------------------------------------------------------------------------------------------------||
-	//|| Add to List if not already there
+	//|| Areas
 	//||------------------------------------------------------------------------------------------------||
-	v.Identity.LIST = append(v.Identity.LIST, v.Type)
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Remove Identity
-//||------------------------------------------------------------------------------------------------||
-
-func (v *Verification) RemoveIdentity(dataType DataType) {
-	//||------------------------------------------------------------------------------------------------||
-	//|| Update Identity Record
-	//||------------------------------------------------------------------------------------------------||
-	switch dataType {
-	case DataTypeFACE:
-		v.Identity.FACE = IdentityOption{}
-	case DataTypeMAIL:
-		v.Identity.MAIL = IdentityOption{}
-	case DataTypePHNE:
-		v.Identity.PHNE = IdentityOption{}
-	case DataTypeADDR:
-		v.Identity.ADDR = IdentityOption{}
-	case DataTypeCRCD:
-		v.Identity.CRCD = IdentityOption{}
-	case DataTypeIDEN:
-		v.Identity.IDEN = IdentityOption{}
-	}
-	//||------------------------------------------------------------------------------------------------||
-	//|| Remove from List if there
-	//||------------------------------------------------------------------------------------------------||
-	newList := []DataType{}
-	for _, dt := range v.Identity.LIST {
-		if dt != dataType {
-			newList = append(newList, dt)
-		}
-	}
-	v.Identity.LIST = newList
+	Address    IdentityRecord             `json:"address,omitempty"`
+	CreditCard IdentityRecord             `json:"creditCard,omitempty"`
+	Email      IdentityRecord             `json:"email,omitempty"`
+	Face       IdentityRecord             `json:"face,omitempty"`
+	IDCard     IdentityRecord             `json:"idCard,omitempty"`
+	Phone      IdentityRecord             `json:"phone,omitempty"`
+	Usernames  map[int64]IdentityUsername `json:"usernames,omitempty"`
 }
