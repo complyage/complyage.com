@@ -118,7 +118,7 @@
                                                                   <li
                                                                         key={suggestion}
                                                                         onMouseDown={() => updateWord(index, suggestion)}
-                                                                        className="px-3 py-2 hover:bg-gray-200 dark:hover:bg-neutral-700 cursor-pointer"
+                                                                        className="px-3 py-2 hover:bg-gray-600 dark:hover:bg-neutral-700 cursor-pointer"
                                                                   >
                                                                         {suggestion}
                                                                   </li>

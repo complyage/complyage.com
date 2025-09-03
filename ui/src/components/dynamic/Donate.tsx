@@ -8,6 +8,7 @@
 //||------------------------------------------------------------------------------------------------||
 
 import React, {useEffect, useRef, useState}                    from "react";
+import {formatStripeAmount, getCurrencySymbol}                 from "../../data/getCurrencies";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
@@ -16,82 +17,74 @@ import React, {useEffect, useRef, useState}                    from "react";
 type DonationProps = {
 	donation                : number;
 	setDonation             : (amount: number) => void;
+      currency                : string;
 };
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const presets = [0, 100, 300, 500, 1000, 5000];
+const presetSet = new Set(presets);
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default
 //||------------------------------------------------------------------------------------------------||
 
-export default function Donation({donation, setDonation}: DonationProps) {
+export default function Donation({ donation, setDonation, currency }: DonationProps) {
+      const isCustom = !presetSet.has(donation);
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| Const
-      //||------------------------------------------------------------------------------------------------||
+      // For input, show dollars (not pennies)
+      const inputValue = formatStripeAmount(donation, currency, true);
 
-      const presets   = [0, 1, 5, 10, 50, 100];
-	const presetSet = React.useMemo(() => new Set(presets), [presets]);
-	const isCustom = !presetSet.has(donation);
-
-      //||------------------------------------------------------------------------------------------------||
-      //|| Preset
-      //||------------------------------------------------------------------------------------------------||
-
-	const setPreset = (amt: number) => setDonation(clamp(Math.floor(amt), 0, 1_000_000));
-
-      //||------------------------------------------------------------------------------------------------||
-      //|| Custom Change
-      //||------------------------------------------------------------------------------------------------||
-
-	const onCustomChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-		const raw = Number(e.target.value);
-		const val = Number.isFinite(raw) ? Math.floor(raw) : 0;
-		setPreset(val);
-	};
-
-      //||------------------------------------------------------------------------------------------------||
-      //|| Custom Change
-      //||------------------------------------------------------------------------------------------------||
+      // When user changes input, multiply by 100 to get pennies/cents
+      const onCustomChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+            const raw = Number(e.target.value);
+            // ignore NaN or negatives
+            const cents = Number.isFinite(raw) && raw > 0 ? Math.round(raw * 100) : 0;
+            setDonation(cents);
+      };
 
       return (
-		<div className="">
-			<div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Choose donation amount">
-				{presets.map((amt) => {
-					const active = donation === amt;
-					return (
-						<button
-							key={amt}
-							type="button"
-							aria-pressed={active}
-							onClick={() => setPreset(amt)}
-							className={[
-								"px-3 py-2 rounded-2xl text-sm font-bold transition-colors",
-								active ? "bg-orange-500 text-white" : "bg-gray-600 text-white/90 hover:bg-gray-500",
-							].join(" ")}>
-							{amt === 0 ? "No Donation" : `$${amt}`}
-						</button>
-					);
-				})}
+            <div className="mx-auto">
+                  <div className="flex justify-center items-center gap-2" role="group" aria-label="Choose donation amount">
+                        {presets.map((amt) => {
+                              const active = donation === amt;
+                              return (
+                                    <button
+                                          key={amt}
+                                          type="button"
+                                          aria-pressed={active}
+                                          onClick={() => setDonation(amt)}
+                                          className={[
+                                                "px-3 py-2 rounded-2xl text-xs font-bold transition-colors",
+                                                active ? "bg-orange-500 text-white" : "bg-gray-600 text-white/90 hover:bg-gray-500",
+                                          ].join(" ")}
+                                    >
+                                          {amt === 0
+                                                ? "No Donation"
+                                                : `${formatStripeAmount(amt, currency)}`}
+                                    </button>
+                              );
+                        })}
 
-				{/* Custom amount */}
-				<div
-					className={[
-						"flex items-center gap-2 px-2 py-1 rounded-2xl",
-						isCustom ? "ring-2 ring-orange-400/60" : "ring-1 ring-transparent",
-					].join(" ")}>
-					<span className="text-sm">Custom</span>
-					<input
-						type="number"
-						min={0}
-						step={1}
-						value={donation}
-						onChange={onCustomChange}
-						className="input input-bordered w-24 h-9"
-						aria-label="Custom donation amount in dollars"
-					/>
-				</div>
-			</div>
-		</div>
-	);
+                        {/* Custom amount in dollars */}
+                        <div
+                              className={[
+                                    "flex items-center gap-2 px-2 py-1 rounded-2xl",
+                                    isCustom ? "bg-orange-400/60" : "ring-1 ring-transparent",
+                              ].join(" ")}
+                        >
+                              <span className="text-xs font-bold">Custom</span>
+                              { getCurrencySymbol(currency) }
+                              <input
+                                    type="number"
+                                    min={0}
+                                    step={0.01}
+                                    value={inputValue}
+                                    onChange={onCustomChange}
+                                    className="input input-bordered w-16 h-9 font-bold text-center bg-black text-yellow-400"
+                                    aria-label="Custom donation amount in dollars"
+                              />
+                              { currency }
+                        </div>
+                  </div>
+            </div>
+      );
 }

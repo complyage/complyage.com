@@ -1,0 +1,2 @@
+Scan the following text and create a table of all dates and their context (label or nearby word). Pick the most likely DOB based on being labeled "DOB", near "DOB", or being the oldest. Only return the DOB in MM/DD/YYYY format or "NONE":
+[[OCRTEXT]]

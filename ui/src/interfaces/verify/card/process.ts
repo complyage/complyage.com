@@ -7,7 +7,6 @@
       //|| Currency
       //||------------------------------------------------------------------------------------------------||
 
-      import { CurrencyAmount }                 from "../../base/transaction";
       import { CurrencyCode }                   from "../../../components/dynamic/Currency";
 
       //||------------------------------------------------------------------------------------------------||
@@ -16,16 +15,23 @@
 
       export type VerificationCard = {
             step                  : 1 | 2 | 3;
-            baseAmount            : CurrencyAmount;
-            chargeAmount          : CurrencyAmount;
-            donation              : number;
+            //||------------------------------------------------------------------------------------------------||
+            //|| Totals
+            //||------------------------------------------------------------------------------------------------||
+            baseAmount            : number;
+            chargeAmount          : number;
+            donationAmount        : number;
             currency              : CurrencyCode;
+            //||------------------------------------------------------------------------------------------------||
+            //|| Card
+            //||------------------------------------------------------------------------------------------------||
+            billingZip?           : string;
+            //||------------------------------------------------------------------------------------------------||
+            //|| Response
+            //||------------------------------------------------------------------------------------------------||
             clientSecret?         : string;
-            //Response Based Ignore
             lastFour?             : string;
             cardType?             : string;
-            billingZip?           : string;
             transactionId?        : string;
-            verificationUUID?    : string;
+            verificationUUID?     : string;
       }
-      

@@ -7,9 +7,10 @@
       //|| React
       //||------------------------------------------------------------------------------------------------||
 
-      import React                                          from "react";
-      import { Key, Lock }                                  from "lucide-react";
-      
+      import React, { useEffect }                           from "react";
+      import { CheckCircle, RefreshCw }                     from "lucide-react";
+      import { onlyDigits }                                 from "../../../utils/clean";
+
       //||------------------------------------------------------------------------------------------------||
       //|| Interfacss
       //||------------------------------------------------------------------------------------------------||
@@ -17,69 +18,148 @@
       import { VerificationPhone }                          from "../../../interfaces/verify/phone/process";
 
       //||------------------------------------------------------------------------------------------------||
+      //|| format
+      //||------------------------------------------------------------------------------------------------||
+
+      import { formatSimplePhone }                          from "../../../utils/phoneUtils";
+
+      //||------------------------------------------------------------------------------------------------||
       //|| React
       //||------------------------------------------------------------------------------------------------||
 
-      interface PhoneStep1Props {
+      interface PhoneStep2Props {
             process           : VerificationPhone;
-            setProcess        : (process: Partial<VerificationPhone>) => void;
+            updateProcess     : (process: Partial<VerificationPhone>) => void;
       }
+
 
       //||------------------------------------------------------------------------------------------------||
       //|| React
       //||------------------------------------------------------------------------------------------------||
 
-      export default function PhoneVerificationStep1({ process, setProcess }: PhoneStep1Props) {
+      export default function PhoneVerificationStep2({ process, updateProcess }: PhoneStep2Props) {
+            //||------------------------------------------------------------------------------------------------||
+            //|| React
+            //||------------------------------------------------------------------------------------------------||
+
+            const [cooldown, setCooldown] = React.useState(30);
+
+            //||------------------------------------------------------------------------------------------------||
+            //|| React
+            //||------------------------------------------------------------------------------------------------||
+
+            const handleResend = () => {
+                  fetch(`/v1/api/verify/phone/resend`, {
+                        method: "POST",
+                        headers: {
+                              "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                        console.log("Verification data sent:", data);
+                        if (data.success) {
+                              updateProcess({
+                                    verificationUUID: data.data.uuid                                    
+                              });
+                              setCooldown(30); // Reset cooldown
+                        } else {
+                              console.error("Failed to send verification code:", data.message);
+                        }
+                  });
+            }            
+            //||------------------------------------------------------------------------------------------------||
+            //|| Cooldown
+            //||------------------------------------------------------------------------------------------------||
+
+            useEffect(() => {
+                  console.log(process.verificationUUID);
+                  if (process.verificationUUID && process.verificationUUID !== "") return;
+                  const payload = {
+                        countryCode: process.countryCode,
+                        phone: process.phoneNumber,
+                  }
+                  fetch(`/v1/api/verify/phone`, {
+                        method: "POST",
+                        headers: {
+                              "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                        console.log("Verification data sent:", data);
+                        if (data.success) {
+                              updateProcess({
+                                    verificationUUID: data.data.identifier
+                              });
+                              setCooldown(30); // Reset cooldown
+                        } else {
+                              console.error("Failed to send verification code:", data.message);
+                        }
+                  });
+            }, []);
+
+            //||------------------------------------------------------------------------------------------------||
+            //|| Cooldown
+            //||------------------------------------------------------------------------------------------------||
+            
+            useEffect(() => {
+                  if (cooldown > 0) {
+                        const id = setTimeout(() => setCooldown(cooldown - 1), 1000);
+                        return () => clearTimeout(id);
+                  }
+                  return () => {};
+            }, [cooldown]);
+            
+            //||------------------------------------------------------------------------------------------------||
+            //|| React
+            //||------------------------------------------------------------------------------------------------||
+
             return (
-                  <div className="space-y-5 p-5">
-                        <div className="flex items-center gap-2 text-gray-300">
-                              <Key className="w-5 h-5" />
-                              <span>
-                                    Enter the 6-digit code we sent to {country.dial} {localPhone}
-                              </span>
-                        </div>
-
-                        <label className="block">
-                              <span className="block text-sm mb-1">Verification code</span>
-                              <input
-                                    placeholder="••••••"
-                                    inputMode="numeric"
-                                    maxLength={6}
-                                    value={onlyDigits(code)}
-                                    onChange={(e) => setCode(onlyDigits(e.target.value))}
-                                    className="input input-bordered w-full tracking-widest text-center h-16 text-2xl"
-                              />
-                        </label>
-
-                        <div className="flex items-center justify-between">
-                              <button
-                                    onClick={() => goStep(1)}
-                                    className="px-4 py-2 rounded-2xl font-bold bg-black/30 opacity-70 hover:opacity-100">
-                                    Back
-                              </button>
-                              <div className="flex items-center gap-2">
-                                    <button
-                                          onClick={handleResend}
-                                          disabled={busy || cooldown > 0}
-                                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border shadow-sm ${
-                                                cooldown === 0 && !busy
-                                                      ? "bg-black/10 hover:bg-black/20"
-                                                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                          }`}>
-                                          <RefreshCw className="w-4 h-4" /> Resend {cooldown > 0 ? `(${cooldown})` : ""}
-                                    </button>
-                                    <button
-                                          onClick={handleVerify}
-                                          disabled={!codeValid || busy}
-                                          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border shadow-sm ${
-                                                codeValid && !busy
-                                                      ? "bg-orange-400 cursor-pointer font-bold text-white border-0 opacity-80 hover:opacity-100"
-                                                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                          }`}>
-                                          <Lock className="w-4 h-4" /> Verify
-                                    </button>
+                  <>
+			<div className="flex w-full flex-col items-center justify-center min-h-[300px] py-4 px-4 bg-black/20">
+				<CheckCircle className="w-14 h-14 text-green-400 mb-4" />
+				<div className="text-xl font-bold text-gray-100 mb-2">Verification Code Sent!</div>
+				<div className="text-md text-gray-300 text-center mb-4">
+					We’ve sent a 6-digit code to
+					<br />
+					<span className="font-mono text-yellow-300 text-lg">
+						{formatSimplePhone(String(process.phoneNumber), String(process.countryCode))}
+					</span>
+					<br />
+					When you receive it, click Continue below.
+				</div>
+				<div className="flex flex-row gap-4 w-full justify-center items-center mt-4 px-4">
+					<button
+						className="btn btn-primary text-2xl py-2 font-bold transition h-auto w-auto px-4"
+						onClick={() => updateProcess({step: 1})}
+						type="button">
+						Back
+					</button>
+					<button
+						className="btn btn-secondary text-2xl py-2 font-bold transition h-auto px-4"
+						onClick={ () => { 
+                                          window.location.href = `/verification/check?identifier=${process.verificationUUID}`
+                                    }}
+						type="button">
+						Continue
+					</button>
                               </div>
-                        </div>
-                  </div>	
-            );
+                        <div className="flex flex-row gap-4 w-full justify-center items-center mt-4 border-t border-gray-600 pt-4">
+					<button
+						className={`btn btn-outline flex items-center gap-2 px-6 py-3 font-semibold text-gray-500 transition ${cooldown > 0 ? "opacity-60 cursor-not-allowed" : "hover:bg-black/20 "}`}
+						disabled={cooldown > 0}
+						onClick={handleResend}
+						type="button">
+						<RefreshCw className="w-4 h-4" />
+						{cooldown > 0 ? `Resend (${cooldown})` : "Resend"}
+					</button>
+				</div>
+			</div>
+                        <span className="opacity-10 block pt-10 text-center">UUID : { process.verificationUUID }</span>                  
+                        </>
+		);
       }
+

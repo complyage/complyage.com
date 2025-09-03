@@ -34,69 +34,6 @@
             //||------------------------------------------------------------------------------------------------||
 
             const [ error, setError ]                       = useState<string | null>(null);
-            const [ busy, setBusy ]                         = useState<boolean>(true);
-
-            //||------------------------------------------------------------------------------------------------||
-            //|| Refresh Handler
-            //||------------------------------------------------------------------------------------------------||
-
-            const handleLoad = useCallback(async () => {
-                  setBusy(true);
-                  setError(null);
-                  //||------------------------------------------------------------------------------------------------||
-                  //|| Payload
-                  //||------------------------------------------------------------------------------------------------||
-                  const payload : {
-                        amount        : number;
-                        currency      : string;
-                        uuid          : string;
-                        billingZip?   : string;
-                        clientSecret  : string;
-                        transactionId?: string;
-                  } = {
-                        amount        : process.chargeAmount.amount,
-                        billingZip    : process.billingZip || "",
-                        currency      : process.chargeAmount.currency,
-                        uuid          : process.verificationUUID || "",
-                        clientSecret  : process.clientSecret || "",
-                        transactionId : process.transactionId || "",
-                  };
-                  //||------------------------------------------------------------------------------------------------||
-                  //|| Pull
-                  //||------------------------------------------------------------------------------------------------||
-                  try {
-                        const res = await fetch("/v1/api/verify/card/success", {
-                              method      : "POST",
-                              headers     : { "Content-Type": "application/json" },
-                              body        : JSON.stringify(payload),
-                        });
-                        if (!res.ok) {
-                              let msg     = "Unknown error";
-                              try { msg = (await res.json()).message || msg; } catch {}
-                              setError(msg);
-                              setBusy(false);
-                              return;
-                        }
-                        setBusy(false);
-                  } catch (err: any) {
-                        setError("Network error, please try again.");
-                        setBusy(false);
-                  }
-            }, [process]);
-
-            //||------------------------------------------------------------------------------------------------||
-            //|| Auto-Call on Mount/Update
-            //||------------------------------------------------------------------------------------------------||
-
-            useEffect(() => { handleLoad(); }, [handleLoad]);
-
-            //||------------------------------------------------------------------------------------------------||
-            //|| Handlers
-            //||------------------------------------------------------------------------------------------------||
-
-            const onEnterCode = () => {
-                  window.location.href = `/verification/card/verify?uuid=${process.verificationUUID}`;
-            };
 
             //||------------------------------------------------------------------------------------------------||
             //|| Generate Descriptor
@@ -108,38 +45,8 @@
             //|| Busy
             //||------------------------------------------------------------------------------------------------||
 
-            if (busy) {
-                  return (
-                        <div className="flex flex-col items-center gap-4 p-12">
-                              <CheckCircle className="w-10 h-10 text-yellow-300 animate-spin" />
-                              <div className="text-gray-200 font-medium">Finalizing your payment...</div>
-                        </div>
-                  );
-            }
-
-            //||------------------------------------------------------------------------------------------------||
-            //|| Error
-            //||------------------------------------------------------------------------------------------------||
-
-            if (error) {
-                  return (
-                        <div className="max-w-xl mx-auto p-10 flex flex-col items-center gap-6">
-                              <AlertCircle className="w-12 h-12 text-red-500" />
-                              <InlineAlert message={error} isError={true} />
-                              <button 
-                                    onClick={handleLoad} 
-                                    className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                                    Retry
-                              </button>
-                              <textarea defaultValue={JSON.stringify(process, null, 2)} className="h-96 w-full" readOnly />
-
-                        </div>
-                  );
-            }
-
             return (
 			<div className="max-w-2xl mx-auto py-8 px-4">
-                        <textarea defaultValue={JSON.stringify(process, null, 2)} className="h-96 w-full" readOnly />
 				<div className="flex flex-col items-center mb-8">
 					<CheckCircle className="w-14 h-14 text-green-400 mb-3" />
 					<div className="text-2xl font-bold text-green-300 mb-1">Card charged successfully!</div>
@@ -148,13 +55,6 @@
 						<br />
 						<span className="text-yellow-300 font-semibold">Look for the 6-digit code in your bank’s pending transactions!</span>
 					</div>
-				</div>
-				<div className="bg-yellow-100/10 border border-yellow-400/40 rounded-lg px-5 py-4 mb-6 shadow">
-					<p className="text-yellow-300 text-base font-medium mb-1">
-						<span className="font-bold">Good news:</span> We’ll <span className="font-bold">refund</span> this charge as soon as you
-						complete verification.
-					</p>
-					<p className="text-sm text-yellow-100/80">You’ll only see a temporary charge on your statement.</p>
 				</div>
 				{/* Fake billing statement */}
 				<div className="bg-[#181818] border border-white/20 rounded-xl shadow-lg px-6 py-6 mb-8">
@@ -199,7 +99,7 @@
 				</div>
 				<div className="flex flex-col items-center">
 					<button
-						onClick={onEnterCode}
+						onClick={() => { window.location.href=`/verification/check?identifier=${process.verificationUUID}`} }
 						className="w-full md:w-2/3 text-lg font-bold py-4 px-8 bg-gradient-to-tr from-yellow-400 to-orange-500 text-black rounded-2xl shadow-lg hover:from-yellow-300 hover:to-orange-400 transition-all">
 						Enter My Code
 					</button>

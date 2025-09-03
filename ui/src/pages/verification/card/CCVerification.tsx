@@ -10,6 +10,7 @@
       import React, {useRef, useState, useEffect}           from "react";
       import {useNavigate, useSearchParams}                 from "react-router-dom";
       import {convertCurrency}                              from "../../../utils/convertCurrency";
+      import {getEnv}                                       from "../../../data/getEnv";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Components
@@ -48,7 +49,7 @@
       export default function CCVerification() {
 
             //||------------------------------------------------------------------------------------------------||
-            //|| Verification
+            //|| UUID
             //||------------------------------------------------------------------------------------------------||
 
             const [searchParams] = useSearchParams();
@@ -65,48 +66,22 @@
             //||------------------------------------------------------------------------------------------------||
 
             const [process, setProcess] = useState<VerificationCard>({
-                  step : 1,
-                  donation : 0,
-                  baseAmount : { 
-                        currency : "USD",
-                        amount   : import.meta.env.VITE_VERIFICATION_CARD_AMOUNT || 0.75
-                  },
-                  currency : "USD",
-                  chargeAmount : { 
-                        currency : "USD",
-                        amount   : import.meta.env.VITE_VERIFICATION_CARD_AMOUNT || 0.75
-                  }
+                  step              : 1,
+                  baseAmount        : import.meta.env.VITE_VERIFICATION_CARD_AMOUNT || 99,
+                  donationAmount    : 0,
+                  chargeAmount      : import.meta.env.VITE_VERIFICATION_CARD_AMOUNT || 99,
+                  currency          : "USD"
             }); 
 
-            //||------------------------------------------------------------------------------------------------||
-            //|| Handle Returning
-            //||------------------------------------------------------------------------------------------------||
-
-            useEffect(() => {
-                  if (!verificationId) return;
-                  (async () => {
-                        try {
-                              const res = await fetch(`/api/v1/verify/card/lookup?verification=${verificationId}`);
-                              if (res.ok) {
-                                    const data = await res.json();
-                                    if (data?.status === "pending") {
-                                          updateProcess({...process, step : 2});
-                                    }
-                              }
-                        } catch {}
-                  })();
-            }, [verificationId]);
 
             //||------------------------------------------------------------------------------------------------||
             //|| Stepper
             //||------------------------------------------------------------------------------------------------||
 
             const steps: ProgessStep[] = [
-                  { label: "How it works", description: "Provide your physical address details." },
+                  { label: "How it works", description: "A Valid credit card is required" },
                   { label: "Enter Credit Card", description: "Review and confirm your address." },
                   { label: "Processed", description: "Transaction Complete!" },
-                  { label: "Confirm Statement Code", description: "Enter the statement code" },
-
             ]
             
             //||------------------------------------------------------------------------------------------------||
@@ -124,39 +99,31 @@
             //|| Effect : Charge Amount (currency/base change)
             //||------------------------------------------------------------------------------------------------||*/
 
-            useEffect(() => {
-                  const API       = import.meta.env.VITE_COMPLYAGE_API_URL as string;
-                  const currency  = (process as any).currency || process.chargeAmount?.currency || process.baseAmount.currency;
-                  const baseAmt   = Number(process.baseAmount.amount) + process.donation;
+           useEffect(() => {
+                  const API      = getEnv("VITE_COMPLYAGE_API_URL") as string;
+                  const currency = process.currency;
+                  const baseAmt  = Number(process.baseAmount) || 0;
+                  const donation = Number(process.donationAmount) || 0;
+                  const totalAmt = baseAmt + donation;
 
-                  if (!API || !currency || Number.isNaN(baseAmt)) return;
-
-                  const ac = new AbortController();
+                  if (!API || !currency || Number.isNaN(totalAmt)) return;
 
                   (async () => {
-                        const converted = await convertCurrency(baseAmt, currency);                        
-                        if (converted === null) return;
-                        setProcess(prev => ({
-                              ...prev,
-                              chargeAmount: {
-                                    currency : String(currency),
-                                    amount   : converted,
-                                    country  : prev.chargeAmount.country 
-                              },
-                        }));
+                        setProcess(prev => ({ ...prev, chargeAmount: totalAmt }));
                   })();
 
+                  const ac = new AbortController();
                   return () => ac.abort();
-            }, [process.donation, process.chargeAmount?.currency, process.baseAmount.amount, (process as any).currency]);
+            }, [process.donationAmount, process.baseAmount, process.currency]);
 
             //||------------------------------------------------------------------------------------------------||
             //|| Step
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout title="Credit Card Verification">
+                  <MembersLayout>
                         <div className="w-full max-w-2xl mx-auto">                              
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" />
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-2" />
                               { process.step === 1 && 
                                     <CCVerificationStep1 
                                           process={ process } 
@@ -171,7 +138,7 @@
                                     />
                               }    
                                     
-                              {process.step === 3 && (
+                              {process.step >= 3 && (
                                     <CCVerificationStep3
                                           process={process}
                                           updateProcess={updateProcess}

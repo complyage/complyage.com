@@ -15,7 +15,6 @@ import {
       ALLOWED_STEPS, type Dir, type StepId
 }                                                                       from "../../utils/vision/steps";
 import {waitForVideoReady}                                              from "../../utils/vision/wait";
-import ProgressSteps                                                    from "../../components/base/ProgressSteps";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Const 
@@ -451,7 +450,6 @@ export default function Selfie() {
 			</div>
                   
                   <div className="max-w-xl mx-auto text-center bg-black/50 p-3 rounded-lg">
-                        <ProgressSteps maxSteps={5} currentStep={mode} />
                         <div className="font-semibold text-center py-2">
 						{mode === 0 && "Step 1: Get in frame (bright & close enough)"}
 						{mode === 1 && `Step 2: Look where shown - ${humanizeDir(currentStep || "center-center")}`}

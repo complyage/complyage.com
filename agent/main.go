@@ -1,25 +1,14 @@
 package main
 
 import (
-	"agent/handlers"
-	"base/db"
-	"base/helpers"
-	"base/loaders"
+	"agent/consumers"
+	"agent/prompts"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
-	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/ralphferrara/aria/app"
 )
-
-//||------------------------------------------------------------------------------------------------||
-//|| Use DB vs In-Memory
-//||------------------------------------------------------------------------------------------------||
-
-var UseInMemory bool
 
 //||------------------------------------------------------------------------------------------------||
 //|| Main
@@ -29,100 +18,57 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Env
 	//||------------------------------------------------------------------------------------------------||
-	err := godotenv.Load("../.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		fmt.Println("No .env file found, continuing...")
 	}
 	//||------------------------------------------------------------------------------------------------||
-	//|| Should we use in-memory storage or DB?
+	//|| Starting switch-over to aria
 	//||------------------------------------------------------------------------------------------------||
-	env := os.Getenv("ENV_MODE")
-	fmt.Println("ENV_MODE = " + env)
-	if env == "production" {
-		fmt.Println("Running in production mode, using In memory storage")
-		UseInMemory = true
-	} else {
-		fmt.Println("Running in development mode, using DB")
-		UseInMemory = false
+	app.Init("../config.json")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Start Consumer
+	//||------------------------------------------------------------------------------------------------||
+	rabbit := app.QueueRabbit["agent"]
+	if rabbit == nil {
+		panic("RabbitMQ instance 'agent' not found")
 	}
 	//||------------------------------------------------------------------------------------------------||
-	//|| Open DB Connection
+	//|| Consume Level 1
 	//||------------------------------------------------------------------------------------------------||
-	db.ConnectMySQL()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Connect to Redis
-	//||------------------------------------------------------------------------------------------------||
-	db.ConnectRedis() // Redis
-	//||------------------------------------------------------------------------------------------------||
-	//|| Connect to RabbitMQ
-	//||------------------------------------------------------------------------------------------------||
-	db.ConnectMQ() // RabbitMQ
-	//||------------------------------------------------------------------------------------------------||
-	//|| Load Sites
-	//||------------------------------------------------------------------------------------------------||
-	loaders.StartSiteLoader()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Setup Router
-	//||------------------------------------------------------------------------------------------------||
-	router := mux.NewRouter()
-	//||------------------------------------------------------------------------------------------------||
-	//|| Middleware
-	//||------------------------------------------------------------------------------------------------||
-	router.Use(LoggerMiddleware)
-	//||------------------------------------------------------------------------------------------------||
-	//|| Handlers from Agent
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/response/id.verify", handlers.ResponseProfileHandler).Methods("POST")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Complex Calls
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/process/identity.verify", handlers.RequestProfileHandler).Methods("POST")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Errors from the Agent
-	//||------------------------------------------------------------------------------------------------||
-	router.HandleFunc("/v1/agent/success", handlers.AgentCallbackHandler).Methods("POST")
-	router.HandleFunc("/v1/agent/error", handlers.AgentCallbackHandler).Methods("POST")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Cors Middleware - Need to update to handle CORS properly
-	//||------------------------------------------------------------------------------------------------||
-	allowedOrigins := []string{"*"} // or list your domains
-	//||------------------------------------------------------------------------------------------------||
-	//|| Logger Middleware
-	//||------------------------------------------------------------------------------------------------||
-	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[%s] %s %s => 404\n", time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
-		http.Error(w, "404 page not found", http.StatusNotFound)
+	errL1 := rabbit.ConsumeQueue("AgentLevelOne", func(msg []byte) {
+		if err := consumers.Level1Router(msg); err != nil {
+			app.Log.Error("Level1Router error: %v\n", err)
+		}
 	})
-	//||------------------------------------------------------------------------------------------------||
-	//|| We are up and running
-	//||------------------------------------------------------------------------------------------------||
-	fmt.Println("Agent API server running on :" + os.Getenv("PORT_HTTP_AGENT"))
-	log.Fatal(
-		http.ListenAndServe(
-			":"+os.Getenv("PORT_HTTP_AGENT"),
-			helpers.CORSMiddleware(allowedOrigins, router),
-		),
-	)
-
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| InternalRequestWrapper
-//||------------------------------------------------------------------------------------------------||
-
-func InternalRequestWrapper(model string, action string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handlers.InternalRequestHandler(w, r, model, action)
+	if errL1 != nil {
+		app.Log.Error("Failed to start Level 1 consumer: %v", errL1)
+		os.Exit(1)
 	}
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Logger Middleware
-//||------------------------------------------------------------------------------------------------||
-
-func LoggerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[%s] %s %s\n", time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
+	app.Log.Info("Listening for Level 1 messages on 'AgentLevelOne' queue\n")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Consume Level 1
+	//||------------------------------------------------------------------------------------------------||
+	errL2 := rabbit.ConsumeQueue("AgentLevelTwo", func(msg []byte) {
+		if err := consumers.Level2Router(msg); err != nil {
+			app.Log.Error("main", "Level2Router error: %v", err)
+		}
 	})
+	if errL2 != nil {
+		app.Log.Error("Failed to start Level 2 consumer: %v", errL1)
+		os.Exit(1)
+	}
+	app.Log.Info("Listening for Level 2 messages on 'AgentLevelTwo' queue")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Started
+	//||------------------------------------------------------------------------------------------------||
+	app.Log.Info("Agent has started")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Template
+	//||------------------------------------------------------------------------------------------------||
+	prompts.RegisterPrompts()
+	//||------------------------------------------------------------------------------------------------||
+	//|| Keep Running
+	//||------------------------------------------------------------------------------------------------||
+	select {}
 }

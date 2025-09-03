@@ -7,8 +7,9 @@
       //|| Import
       //||------------------------------------------------------------------------------------------------||      
 
-      import { VerificationStatuses, VerificationTypes }                            from "../interfaces/models/model.verification";
-      import { Mail, Phone, IdCard, MapPin, CreditCard, User, Image as ImageIcon }  from "lucide-react";
+      import { VerificationStatuses, VerificationTypes }                            from "../interfaces/models/model.verify";
+      import { Mail, Phone, IdCard, MapPin, CreditCard, User, Image as ImageIcon, Smile }  from "lucide-react";
+      import { LucideIcon }                                                          from "lucide-react";
 
       //||------------------------------------------------------------------------------------------------||      
       //|| All Types
@@ -17,10 +18,12 @@
       export const VerificationTypeLabels: Record<VerificationTypes, string > = {
             MAIL: "Email",
             PHNE: "Phone",
-            UAGE: "Age",
             ADDR: "Address",
             CRCD: "Credit Card",
             UNAM: "Username",
+            IDEN: "ID Document",
+            FACE: "Facial Recognition",
+            UNKN: "Unknown"
       };
 
       //||------------------------------------------------------------------------------------------------||      
@@ -28,15 +31,14 @@
       //||------------------------------------------------------------------------------------------------||      
 
       export const VerificationStatusLabels: Record<VerificationStatuses, string > = {
-            MISS: "N/A",
             PEND: "Pending",
             PEVF: "Pending Verification",
-            APPR: "Pending Approval",
             VERF: "Verified",
+            INPR: "In Progress",
             RJCT: "Rejected",
             ESCL: "Escalated",
             EXPD: "Expired",
-            CNCL: "Cancelled"
+            UNKN: "Unknown"
       };
 
       //||------------------------------------------------------------------------------------------------||      
@@ -46,10 +48,12 @@
       export const VerificationTypeIcons: Record<VerificationTypes, React.ComponentType<any>> = {
             MAIL: Mail,
             PHNE: Phone,
-            UAGE: IdCard,
+            IDEN: IdCard,
             ADDR: MapPin,
             CRCD: CreditCard,
             UNAM: User,
+            FACE: Smile,
+            UNKN: ImageIcon
       };
 
       //||------------------------------------------------------------------------------------------------||      
@@ -80,7 +84,7 @@
       //|| Get Verification Icon by Type
       //||------------------------------------------------------------------------------------------------||      
 
-      export function getVerificationIcon(type: VerificationTypes): React.ReactNode {
+      export function getVerificationIcon(type: VerificationTypes): LucideIcon | null {
             return VerificationTypeIcons[type] || null;
       }
 

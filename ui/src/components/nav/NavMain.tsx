@@ -3,7 +3,7 @@ import { Link, useLocation }                    from "react-router-dom";
 import LinkQuery          from "../../components/dynamic/LinkQuery";
 
 export default function NavMain() {
-	const location = useLocation();
+	const { pathname } = useLocation();
       const [loggedIn, setLoggedIn] = useState(false);
 
       // Check for session cookie on mount
@@ -30,15 +30,15 @@ export default function NavMain() {
 
                         {/* Navigation Links */}
                         <div className="flex-none flex gap-4 items-center">
-                              <LinkQuery to="/about" className={`btn btn-ghost text-xl ${location.pathname === "/about" ? "text-orange-500" : ""}`}>About</LinkQuery>
-                              <LinkQuery to="/vendors" className={`btn btn-ghost text-xl ${location.pathname === "/vendors" ? "text-orange-500" : ""}`}>Vendors</LinkQuery>
-                              <LinkQuery to="/gilead" className={`btn btn-ghost text-xl ${location.pathname === "/gilead" ? "text-orange-500" : ""}`}>Enforcement</LinkQuery>
-                              <LinkQuery to="/pricing" className={`btn btn-ghost text-xl ${location.pathname === "/pricing" ? "text-orange-500" : ""}`}>Pricing</LinkQuery>
+                              <LinkQuery to="/about" className={`btn btn-ghost text-xl ${pathname === "/about" ? "text-orange-500" : ""}`}>About</LinkQuery>
+                              <LinkQuery to="/vendors" className={`btn btn-ghost text-xl ${pathname === "/vendors" ? "text-orange-500" : ""}`}>Vendors</LinkQuery>
+                              <LinkQuery to="/gilead" className={`btn btn-ghost text-xl ${pathname === "/gilead" ? "text-orange-500" : ""}`}>Enforcement</LinkQuery>
+                              <LinkQuery to="/pricing" className={`btn btn-ghost text-xl ${pathname === "/pricing" ? "text-orange-500" : ""}`}>Pricing</LinkQuery>
 
                               {/* Conditional Links */}
                               {loggedIn ? (
                                     <>
-                                          <LinkQuery to="/members" className={`btn btn-ghost text-xl ${location.pathname === "/members" ? "text-orange-500" : ""}`}>Members</LinkQuery>
+                                          <LinkQuery to="/members" className={`btn btn-ghost text-xl ${pathname.startsWith("/members") ? "text-orange-500" : ""}`}>Members</LinkQuery>
                                           <LinkQuery to="/logout" className="btn btn-secondary">Logout</LinkQuery>
                                     </>
                               ) : (

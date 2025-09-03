@@ -30,12 +30,12 @@ import type { SectionTypes }        from "../../interfaces/types.sitesections";
 //|| Site Components
 //||------------------------------------------------------------------------------------------------||
 
-import BasicDataSection             from "../../components/members/Sites.BasicData";
-import ZonesEnforcementSection      from "../../components/members/Sites.Zones";
-import WebsiteManagerSection        from "../../components/members/Sites.Manager";
-import IntegrationSection           from "../../components/members/Sites.Integration";
-import CustomAgeGate                from "../../components/members/Sites.AgeGate";
-import OAuthSettingsSection         from "../../components/members/Sites.OAuth";
+import BasicDataSection             from "./sites/Sites.BasicData";
+import ZonesEnforcementSection      from "./sites/Sites.Zones";
+import WebsiteManagerSection        from "./sites/Sites.Manager";
+import IntegrationSection           from "./sites/Sites.Integration";
+import CustomAgeGate                from "./sites/Sites.AgeGate";
+import OAuthSettingsSection         from "./sites/Sites.OAuth";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default

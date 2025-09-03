@@ -4,23 +4,30 @@
 //||------------------------------------------------------------------------------------------------||
 
 import React, { useState, useRef, DragEvent, ChangeEvent }        from "react";
-import { XIcon }                                                  from "lucide-react";
+import { XIcon, IdCard, CreditCard, Smile, Image }                from "lucide-react";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Interfaces
+//||------------------------------------------------------------------------------------------------||
+
+import { Media }                                                  from "../../../interfaces/base/media";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
 //||------------------------------------------------------------------------------------------------||
 
 interface UploadProps {
-      onUpload: (file: File | Blob) => void;
-      onReset?: () => void;
-      onClose?: () => void;
+      which             : "front" | "back" | "selfie" | "other";
+      onUpload          : (file: File | Blob) => void;
+      getUpload?        : (which: string) => Media;
+      onClose?          : () => void;
 }
 
 //||------------------------------------------------------------------------------------------------||
 //|| Component
 //||------------------------------------------------------------------------------------------------||
 
-export default function Upload({ onUpload, onReset, onClose }: UploadProps) {
+export default function Upload({ which, onUpload, getUpload, onClose }: UploadProps) {
 
       //||------------------------------------------------------------------------------------------------||
       //|| Var
@@ -57,15 +64,19 @@ export default function Upload({ onUpload, onReset, onClose }: UploadProps) {
       };
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Handle Drag Events
+      //|| Handle Drag 
       //||------------------------------------------------------------------------------------------------||
 
-      const onDragOver = (e: DragEvent<HTMLDivElement>) => {
+      const onDragOver = (e: DragEvent<HTMLLabelElement>) => {
             e.preventDefault();
             e.stopPropagation();
       };
 
-      const onDrop = (e: DragEvent<HTMLDivElement>) => {
+      //||------------------------------------------------------------------------------------------------||
+      //|| Handle Drop
+      //||------------------------------------------------------------------------------------------------||
+
+      const onDrop = (e: DragEvent<HTMLLabelElement>) => {
             e.preventDefault();
             e.stopPropagation();
             const file = e.dataTransfer.files?.[0];
@@ -75,51 +86,82 @@ export default function Upload({ onUpload, onReset, onClose }: UploadProps) {
       //||------------------------------------------------------------------------------------------------||
       //|| Reset Selection
       //||------------------------------------------------------------------------------------------------||
-      const reset = () => {
+      
+      const handleReset = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             setPreview(null);
             if (inputRef.current) inputRef.current.value = "";
-            if (onReset) onReset();
+            if (onUpload) onUpload(null);
+
       };
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Upload Icon
+      //||------------------------------------------------------------------------------------------------||
+
+      const uploadIcon = (which: string) => {
+            switch (which) {
+                  case "front":
+                        return <IdCard className="max-w-full h-96 w-256 group-hover:text-blue-600" />
+                  case "back":
+                        return <CreditCard className="max-w-full h-96 w-256 group-hover:text-blue-600" />
+                  case "selfie":
+                        return <Smile className="max-w-full h-96 w-256 group-hover:text-blue-600" />
+                  default:
+                        return <Image className="max-w-full h-96 w-256 group-hover:text-blue-600" />
+            }
+      }
 
       //||------------------------------------------------------------------------------------------------||
       //|| JSX
       //||------------------------------------------------------------------------------------------------||
 
       return (
-            <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto">
-                  <button onClick={onClose} className="absolute top-20 right-4 rounded-xl bg-black/90 hover:text-gray-700 transition p-2"><XIcon className="w-8 h-8 text-white" /></button>                  
+            <div className="flex flex-col w-full relative items-center justify-center mx-auto">
 
-
-                  {preview ? (
-                        <div className="mt-4 flex flex-col items-center">
-                              <img
-                                    src={preview}
-                                    alt="Preview"
-                                    className="max-w-full max-h-64 rounded-lg shadow mb-3"
-                              />
-                              <button
-                                    type="button"
-                                    onClick={reset}
-                                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors mb-3"
-                              >Reset</button>
-                        </div>
-                  ) : (
-                        <div className="mt-4 flex flex-col items-center">
-                              <img
-                                    src="/img/id.png"
-                                    alt="Preview"
-                                    className="max-w-full max-h-64 rounded-lg shadow mb-3"
-                              />
-                        </div>                        
-                  )}
+                  <button onClick={onClose} className="absolute top-2 right-2 rounded-xl bg-black/90 hover:text-gray-700 transition p-2 cursor-pointer">
+                        <XIcon className="w-8 h-8 text-white" />
+                  </button>
 
                   <label
                         htmlFor="fileInput"
                         onDragOver={onDragOver}
                         onDrop={onDrop}
-                        className="w-full border-2 border-dashed border-gray-400 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 transition-colors"
+                        className={`group w-full border-4 border-dashed border-gray-400 rounded-2xl pt-3 pb-3 px-6 font-bold text-center cursor-pointer flex flex-col items-center justify-center transition-colors
+                              ${preview ? "bg-black/20" : "hover:border-blue-500"}
+                        `}
+                        style={{ minHeight: 300 }}
                   >
-                        <p className="mb-2">Drag & Drop an image here or click to select</p>
+                        {/* Image preview or default image */}
+                        <div className="w-full flex flex-col items-center mb-2">
+                              {preview ? (
+                                    <>
+                                          <img
+                                                src={preview}
+                                                alt="Preview"
+                                                className="max-w-full h-auto w-256 group-hover:text-blue-600"
+                                          />
+
+                                          <button
+                                                type="button"
+                                                onClick={(e) => { handleReset(e) }}
+                                                className="mt-5 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                          >
+                                                Reset
+                                          </button>
+                                    </>
+                              ) : (
+                                    <>
+                                          { uploadIcon(which) }
+                                          <p className="mb-2 text-gray-400 group-hover:text-blue-400">
+                                                Drag & Drop an image here or click to select
+                                          </p>
+                                    </>
+                                    
+                              )}
+                        </div>
+
                         <input
                               id="fileInput"
                               ref={inputRef}
@@ -129,9 +171,8 @@ export default function Upload({ onUpload, onReset, onClose }: UploadProps) {
                               className="hidden"
                         />
                   </label>
-
-                  <button className="btn btn-secondary mt-5 text-2xl px-5" onClick={ () => { inputRef.current.click() } }>Upload a File</button>
-
             </div>
       );
+
+
 }

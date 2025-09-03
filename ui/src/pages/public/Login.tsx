@@ -58,7 +58,7 @@ export default function Login() {
 
             const payload = {
                   captchaToken   : captchaToken,
-                  email          : email,
+                  identifier     : email,
                   password       : password,
             };
 

@@ -1,0 +1,7 @@
+This is OCR data from a identification card
+Identify and extract the date of birth (DOB) from this driver’s license OCR text. 
+The DOB is often next to or below "DOB" or is the oldest date shown. 
+Return only the DOB in YYYY-MM-DD format or "NONE":
+----------------
+[[OCRTEXT]]
+-----------
