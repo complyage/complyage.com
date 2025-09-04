@@ -10,12 +10,12 @@ import (
 
 func OptimizeSite(site models.Site) OptimizedSite {
 	return OptimizedSite{
-		Name:        site.SiteName,
-		Logo:        site.SiteLogo,
-		Description: site.SiteDescription,
-		URL:         site.SiteURL,
-		Redirect:    site.SiteRedirect,
-		Permissions: site.SitePermissions,
+		Name:        site.Name,
+		Logo:        site.Logo,
+		Description: site.Description,
+		URL:         site.URL,
+		Redirect:    site.Redirect,
+		Permissions: site.Permissions,
 	}
 }
 

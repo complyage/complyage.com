@@ -48,6 +48,7 @@ func InitRoutes() {
 	app.HTTP["api"].Router.HandleFunc("/v1/api/news", public.NewsHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/zones", public.ZoneHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/vpns", public.VPNHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/donate", public.DonateHandler).Methods("GET")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Member Sites
 	//||------------------------------------------------------------------------------------------------||

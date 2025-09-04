@@ -30,6 +30,7 @@ export default function NavMain() {
 
                         {/* Navigation Links */}
                         <div className="flex-none flex gap-4 items-center">
+                              <LinkQuery to="/donate" className={`btn btn-ghost text-xl ${pathname === "/donate" ? "text-orange-500" : ""}`}>Donate</LinkQuery>
                               <LinkQuery to="/about" className={`btn btn-ghost text-xl ${pathname === "/about" ? "text-orange-500" : ""}`}>About</LinkQuery>
                               <LinkQuery to="/vendors" className={`btn btn-ghost text-xl ${pathname === "/vendors" ? "text-orange-500" : ""}`}>Vendors</LinkQuery>
                               <LinkQuery to="/gilead" className={`btn btn-ghost text-xl ${pathname === "/gilead" ? "text-orange-500" : ""}`}>Enforcement</LinkQuery>

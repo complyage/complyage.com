@@ -15,8 +15,8 @@ import {CheckCircle, BadgeInfo, ArrowRight, CreditCard, MapPin, Mail, Phone, IdC
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import {VerificationStatus}   from "../../interfaces/verification/status";
-import {Identity}             from "../../interfaces/identity/identity";
+import {VerificationStatuses}   from "../../interfaces/models/model.verify";
+import {Identity}             from "../../interfaces/verify/identity/identity";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components
@@ -55,7 +55,7 @@ export default function Dashboard() {
 	//|| Const
 	//||------------------------------------------------------------------------------------------------||
 
-	const [verifications, setVerifications] = useState<VerificationStatus[]>([]);
+	const [verifications, setVerifications] = useState<VerificationStatuses[]>([]);
 	const [location, setLocation] = useState<LocationInfo | null>({
             minAge: 18,
       });
@@ -69,7 +69,7 @@ export default function Dashboard() {
 	//|| Base Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	const baseVerifications: VerificationStatus[] = [
+	const baseVerifications: VerificationStatuses[] = [
 		{type: "MAIL", label: "Email", blurb: "Confirm your email to receive account updates.", complete: false, icon: <Mail />},
 		{type: "IDEN", label: "ID / Age", blurb: "Verify your age with a government ID.", complete: false, icon: <IdCard />},
 		{type: "PHNE", label: "Phone", blurb: "Add and confirm your phone number.", complete: false, icon: <Phone />},

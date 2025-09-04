@@ -40,10 +40,10 @@ func OAuthSite(publicKey string) (oauth.OAuthSite, error) {
 		return oauth.OAuthSite{}, err
 	}
 	return oauth.OAuthSite{
-		Name:        s.SiteName,
-		URL:         s.SiteURL,
-		Logo:        s.SiteLogo,
-		Description: s.SiteDescription,
+		Name:        s.Name,
+		URL:         s.URL,
+		Logo:        s.Logo,
+		Description: s.Description,
 	}, nil
 }
 

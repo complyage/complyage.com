@@ -4,13 +4,8 @@
 //|| Identity Verification Data
 //||------------------------------------------------------------------------------------------------||
 
-import { VerificationTypes }                                from "../models/model.verify";
-import { CreditCard }                                       from "../base/transaction";
-import { Address }                                          from "../base/geo";
-import { DOB, EmailAddress, PhoneNumber, IDCard, Username}  from "../base/user";
-
 //||------------------------------------------------------------------------------------------------||
-//|| Identity (Epic Verified Profile) - TypeScript Interfaces
+//|| Identity Username
 //||------------------------------------------------------------------------------------------------||
 
 export interface IdentityUsername {
@@ -19,10 +14,18 @@ export interface IdentityUsername {
       verification      : string;
 }
 
+//||------------------------------------------------------------------------------------------------||
+//|| Record
+//||------------------------------------------------------------------------------------------------||
+
 export interface IdentityRecord {
       display           : string;
       verification      : string;
 }
+
+//||------------------------------------------------------------------------------------------------||
+//|| Full Identity
+//||------------------------------------------------------------------------------------------------||
 
 export interface Identity {
       email?            : IdentityRecord;
@@ -31,6 +34,7 @@ export interface Identity {
       address?          : IdentityRecord;
       creditCard?       : IdentityRecord;
       idCard?           : IdentityRecord;
+      face?             : IdentityRecord;
       usernames?        : Record<string, IdentityUsername>;
       approved?         : string[];
       verified          : boolean;

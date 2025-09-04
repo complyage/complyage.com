@@ -37,7 +37,7 @@ export default function Pricing() {
 				<div className="bg-base-200 rounded-lg shadow-lg p-8 flex flex-col justify-between">
 					<h2 className="text-3xl font-bold mb-4">For Platforms & Businesses</h2>
 					<p className="mb-6 text-lg">
-						<strong>Free.</strong>
+						<strong>Free!</strong>
 					</p>
 					<p className="mb-6">
 						We don't charge platforms or businesses for our core verification service. Stay compliant, protect user privacy, and scale
@@ -50,7 +50,7 @@ export default function Pricing() {
 				<div className="bg-base-200 rounded-lg shadow-lg p-8 flex flex-col justify-between">
 					<h2 className="text-3xl font-bold mb-4">For Consumers</h2>
 					<p className="mb-6 text-lg">
-						<strong>100% Free.</strong>
+						<strong>Free!</strong>
 					</p>
 					<p className="mb-6">
 						Age or ID verifications are free - forever. The only thing we charge for is optional address verification, which costs a
