@@ -119,7 +119,21 @@ func VerificationCodeCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//||------------------------------------------------------------------------------------------------||
+	//|| Update Update Age
+	//||------------------------------------------------------------------------------------------------||
+
+	if verifyRecord.Type == verify.DataTypeCRCD {
+		fmt.Println("Updating Age to 18 for", verifyRecord.UUID)
+		verifyRecord.UpdateAge(verify.DataTypeCRCD, 18, verifyRecord.UUID)
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Print
+	//||------------------------------------------------------------------------------------------------||
+
 	fmt.Println(verifyRecord.Type, "VerificationCodeCheck: Code verified for", verifyRecord.UUID, "Status now", verifyRecord.Status)
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Success
 	//||------------------------------------------------------------------------------------------------||

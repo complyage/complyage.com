@@ -51,7 +51,6 @@ func (v *Verification) TransactionPublicInit() {
 		Status:   TransactionPending,
 		Currency: "USD",
 	}
-	return
 }
 
 //||------------------------------------------------------------------------------------------------||

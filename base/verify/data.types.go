@@ -118,6 +118,16 @@ func (d *DataType) UnmarshalText(text []byte) error {
 	return fmt.Errorf("invalid DataType: %q (allowed: %s)", string(text), strings.Join(AllDataTypeStrings, ", "))
 }
 
+//||------------------------------------------------------------------------------------------------||
+//|| Get DataType from String
+//||------------------------------------------------------------------------------------------------||
+
+func StringToDataType(s string) (DataType, bool) {
+	key := strings.ToUpper(strings.TrimSpace(s))
+	v, ok := dataTypeFromString[key]
+	return v, ok
+}
+
 // ||------------------------------------------------------------------------------------------------||
 // || Dot notation namespace for DataType
 // ||------------------------------------------------------------------------------------------------||

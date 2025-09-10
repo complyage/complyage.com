@@ -1,4 +1,4 @@
-module agent
+module base
 
 go 1.24.5
 
@@ -118,7 +118,5 @@ require (
 	gorm.io/driver/mysql v1.6.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
 )
-
-replace base => ../base
 
 replace github.com/ralphferrara/aria => ../aria

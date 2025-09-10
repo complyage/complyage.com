@@ -1,13 +1,15 @@
 package verify
 
+import "github.com/ralphferrara/aria/app"
+
 //||------------------------------------------------------------------------------------------------||
 //|| Main Type Export
 //||------------------------------------------------------------------------------------------------||
 
 type Step struct {
-	Type      StepType      `json:"type"`
-	Timestamp UniversalDate `json:"timestamp"`
-	Details   string        `json:"details,omitempty"`
+	Type      app.ConstantsEntry `json:"type"`
+	Timestamp UniversalDate      `json:"timestamp"`
+	Details   string             `json:"details,omitempty"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -23,14 +25,14 @@ func (v *Verification) StepsInit() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add Initial Step
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.Initial, STEPTYPES.Initial.Description(""))
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("INITIAL"), "")
 }
 
 //||------------------------------------------------------------------------------------------------||
 //|| Add Step
 //||------------------------------------------------------------------------------------------------||
 
-func (v *Verification) AddStep(stepType StepType, details string) {
+func (v *Verification) AddStep(stepType app.ConstantsEntry, details string) {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create Step
 	//||------------------------------------------------------------------------------------------------||
@@ -63,10 +65,10 @@ func (v *Verification) IncrementStep() {
 //|| Count Steps of Type
 //||------------------------------------------------------------------------------------------------||
 
-func (v *Verification) CountStepsOfType(stepType StepType) int {
+func (v *Verification) CountStepsOfType(stepType app.ConstantsEntry) int {
 	count := 0
 	for _, step := range v.Steps {
-		if step.Type == stepType {
+		if step.Type.Name == stepType.Name {
 			count++
 		}
 	}

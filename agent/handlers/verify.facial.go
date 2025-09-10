@@ -8,25 +8,11 @@ import (
 	"agent/models"
 	"agent/publish"
 	"base/verify"
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/ralphferrara/aria/app"
 )
-
-//||------------------------------------------------------------------------------------------------||
-//|| Facial Struct
-//||------------------------------------------------------------------------------------------------||
-
-type Facial struct {
-	DOB      verify.DOB   `json:"dob,omitempty"`
-	DOBMatch bool         `json:"dob_match,omitempty"`
-	Selfie   verify.Media `json:"selfie,omitempty"`
-	Age      int          `json:"age,omitempty"`
-	Min      int          `json:"min,omitempty"`
-	Max      int          `json:"max,omitempty"`
-}
 
 //||------------------------------------------------------------------------------------------------||
 //|| Handlers
@@ -37,24 +23,27 @@ func HandleFacialAge(av publish.AgentVerification) error {
 	//|| Handler Start
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Printf("Handling VERIFY_FACE for %s (level %d)\n", av.Identifier, av.Level)
 	moderator := os.Getenv("AGENT_ID")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.AgentLoad(app.SQLDB["main"], app.Storages["verifications"], av.Identifier)
+	verifyRecord, err := verify.AgentLoad(app.SQLDB["main"], app.Storages["verifications"], av.Identifier, verify.DataTypeFACE)
 	if err != nil {
-		StepError("Verification record not found", err.Error())
-		return verifyRecord.UpdateStatusReject(moderator, "Verification record not found")
+		StepError(0, "Verification record not found", err.Error())
+		return err
 	}
+
+	StepInfo(0, "Verification record found", fmt.Sprintf("ID: %d, UUID: %s", verifyRecord.Type, verifyRecord.UUID))
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Mark as In Progress
 	//||------------------------------------------------------------------------------------------------||
 
 	verifyRecord.Step = 1
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("AGENT_L1"), moderator)
+	verifyRecord.UpdateStatusInProgress()
 	verifyRecord.Save()
 
 	//||------------------------------------------------------------------------------------------------||
@@ -68,80 +57,91 @@ func HandleFacialAge(av publish.AgentVerification) error {
 	}
 	dob := verifyRecord.Encrypted.Data.FACE.DOB
 	age := AgeFromMDY(dob.Month, dob.Day, dob.Year)
+	StepInfo(1, fmt.Sprintf("Provided [DOB: %s, AGE: %d]", dob.String(), age), "")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Step 1. Call Facial Age Model
 	//||------------------------------------------------------------------------------------------------||
 
-	StepInfo("STEP 1. Calling Facial Age model for Selfie", "")
+	StepInfo(2, "Calling Facial Age model for Selfie", "")
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("FACE_AGE"), "")
 	verifyRecord.IncrementStep()
-	faceResponse, err := models.ModelCallFaceDetect(selfieMedia, "Explain these faces age in years.")
+	faceResponse, err := models.ModelCallFaceDetect(selfieMedia, "")
 	if err != nil {
-		StepError("STEP 1: ", err.Error())
-		return verifyRecord.UpdateStatusReject(moderator, "RJT_FACE_SERVICE_FAIL")
+		StepError(2, "Failed Calling Age Model", err.Error())
+		switch err.Error() {
+		case "MODEL_FACE_DETECT_MARSHAL_FAIL":
+			verifyRecord.CanReset = false
+		case "MODEL_FACE_DETECT_MODEL_FAIL":
+			verifyRecord.CanReset = true
+			verifyRecord.ResetAttempts++
+		case "MODEL_FACE_DETECT_RESPONSE_FAIL":
+			verifyRecord.CanReset = true
+			verifyRecord.ResetAttempts++
+		case "MODEL_FACE_DETECT_NO_FACES":
+			verifyRecord.CanReset = false
+		default:
+			verifyRecord.CanReset = true
+			verifyRecord.ResetAttempts++
+		}
+		return verifyRecord.UpdateStatusReject(moderator, app.Err("agent").Get(err.Error()))
 	}
 
-	// Pretty-print faceResponse JSON to console
-	if jsonBytes, err := json.MarshalIndent(faceResponse, "", "   "); err == nil {
-		fmt.Printf("FaceResponse:\n%s\n", string(jsonBytes))
+	//||------------------------------------------------------------------------------------------------||
+	//|| Step 2. Fill Facial Struct, Verify Confidence & Age Range
+	//||------------------------------------------------------------------------------------------------||
+
+	conf := 0.0
+	if faceResponse.Confidence != nil {
+		conf = *faceResponse.Confidence
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Step 2. Create Facial Object
+	//||------------------------------------------------------------------------------------------------||
+
+	facial := verify.Facial{
+		DOB:    dob,
+		Selfie: selfie,
+		Age:    faceResponse.Age,
+		Min:    faceResponse.AgeMin,
+		Max:    faceResponse.AgeMax,
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Step 3. Verify Confidence & Age Range
+	//||------------------------------------------------------------------------------------------------||
+
+	StepInfo(2, fmt.Sprintf("Facial Age: %d, Range: %d-%d, Confidence: %.2f", faceResponse.Age, faceResponse.AgeMin, faceResponse.AgeMax, conf), "")
+	verifyRecord.IncrementStep()
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("FACE_AGE_EST"), fmt.Sprintf("%d", faceResponse.Age))
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Step 3. Verify Confidence & Age Range
+	//||------------------------------------------------------------------------------------------------||
+
+	if conf >= 0.66 {
+		facial.DOBMatch = age >= faceResponse.AgeMin && age <= faceResponse.AgeMax
 	} else {
-		fmt.Println("Failed to pretty print FaceResponse:", err)
+		facial.DOBMatch = false
 	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Response
-	//||------------------------------------------------------------------------------------------------||
-
-	if !faceResponse.Success || len(faceResponse.Faces) == 0 {
-		StepError("STEP 1: Face not detected", "")
-		return verifyRecord.UpdateStatusReject(moderator, "RJT_FACE_NOT_FOUND")
-	}
-	if len(faceResponse.Faces) != 1 {
-		StepError("STEP 2: Multiple Faces Detected", "")
-		return verifyRecord.UpdateStatusReject(moderator, "RJT_TOO_MANY_FACES")
-	}
+	verifyRecord.IncrementStep()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Step 3. Fill Facial Struct, Verify Confidence & Age Range
 	//||------------------------------------------------------------------------------------------------||
 
-	face := faceResponse.Faces[0]
-	conf := 0.0
-	if face.Confidence != nil {
-		conf = *face.Confidence
-	}
-	min, max := 0, 0
-	if face.AgeMin != nil {
-		min = *face.AgeMin
-	}
-	if face.AgeMax != nil {
-		max = *face.AgeMax
-	}
-
-	facial := Facial{
-		DOB:    dob,
-		Selfie: selfie,
-		Age:    age,
-		Min:    min,
-		Max:    max,
-	}
-	if conf >= 0.66 {
-		facial.DOBMatch = age >= min && age <= max
-	} else {
-		facial.DOBMatch = false
-	}
-
-	// Pretty-print the Facial struct to console
-	if jsonBytes, err := json.MarshalIndent(facial, "", "   "); err == nil {
-		fmt.Printf("FacialStruct:\n%s\n", string(jsonBytes))
-	}
-
 	if conf < 0.66 {
-		StepError("STEP 3: Confidence too low", "")
-		return verifyRecord.UpdateStatusReject(moderator, "RJT_FACE_CONFIDENCE_LOW")
+		StepError(3, "Confidence too low", "")
+		verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("FACE_AGE_EST"), fmt.Sprintf("%d", faceResponse.Age))
+		return verifyRecord.UpdateStatusReject(moderator, app.Err("agent").Get("RJT_FACE_CONFIDENCE_LOW"))
 	}
+
 	if !facial.DOBMatch {
-		StepError("STEP 3: Age not within predicted range", "")
+		StepError(3, "DOB not within predicted range", "")
+		verifyRecord.IncrementStep()
+		verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("DOB_MISMATCH"), fmt.Sprintf("%d <> [%d-%d]", age, faceResponse.AgeMin, faceResponse.AgeMax))
+		verifyRecord.UpdateAge(verify.DataTypeFACE, faceResponse.Age, verifyRecord.UUID)
 		return verifyRecord.UpdateStatusVerified(moderator)
 	}
 
@@ -149,7 +149,12 @@ func HandleFacialAge(av publish.AgentVerification) error {
 	//|| Verified by Agent
 	//||------------------------------------------------------------------------------------------------||
 
-	StepInfo("VERIFICATION COMPLETED!", "")
+	StepInfo(4, "VERIFICATION COMPLETED!", "")
+	verifyRecord.Display = facial.Mask()
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("DOB_MATCH"), "")
+	verifyRecord.Encrypted.Data.FACE = facial
+	verifyRecord.UpdateVerification(verify.DataTypeFACE, dob.Mask(), verifyRecord.UUID)
+	verifyRecord.UpdateDOB(verify.DataTypeFACE, dob, verifyRecord.UUID)
 	verifyRecord.IncrementStep()
 	return verifyRecord.UpdateStatusVerified(os.Getenv("AGENT_ID"))
 }

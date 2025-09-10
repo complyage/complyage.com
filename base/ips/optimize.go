@@ -25,10 +25,10 @@ func OptimizeSite(site models.Site) OptimizedSite {
 
 func OptimizeZone(z models.Zone) OptimizedZone {
 	return OptimizedZone{
-		State:       z.ZoneState,
-		Country:     z.ZoneCountry,
-		Law:         z.ZoneLaw,
-		Description: z.ZoneLawDescription,
-		Effective:   z.ZoneEffective,
+		Region:      z.Region,
+		Country:     z.Country,
+		Law:         z.Law,
+		Description: z.Description,
+		Effective:   z.Effective,
 	}
 }

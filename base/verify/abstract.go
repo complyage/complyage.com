@@ -66,7 +66,7 @@ func (v *Verification) DatabaseLoadIdentity() error {
 
 func (v *Verification) DatabaseSaveIdentity() error {
 	LogInfo("DATABASE :: SAVE IDENTITY")
-	bytes, err := json.Marshal(v.Identity)
+	bytes, err := json.Marshal(v.Identity.Save())
 	if err != nil {
 		LogInfo("Failed to marshal identity")
 		return err

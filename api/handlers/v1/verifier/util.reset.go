@@ -92,7 +92,7 @@ func TestingResetVerification(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	verifyRecord.Steps = []verify.Step{}
-	verifyRecord.AddStep(verify.STEPTYPES.StepAgentLevel1, verify.STEPTYPES.StepAgentLevel1.Description(""))
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("AGENT_L1"), "")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Update the Verification Status to Pending Verification

@@ -79,7 +79,7 @@ func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Verification
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Init(verify.DataTypePHNE, session.ID, app.Storages["verifications"], app.SQLDB["main"], session.Private, session.Public)
+	verifyRecord, err := verify.Create(verify.DataTypePHNE, session.ID, app.Storages["verifications"], app.SQLDB["main"], session.Private, session.Public)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return
@@ -89,7 +89,7 @@ func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| We are in progress
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord.AddStep(verify.STEPTYPES.StatusChange, verify.STEPTYPES.StatusChange.Description(verifyRecord.Status.Description()))
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_CHANGE"), verifyRecord.Status.Description())
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Send the Data
@@ -108,7 +108,7 @@ func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("Verification SMS sent successfully:", bodyTxt, verifyRecord.TwoFactor.Code)
-	verifyRecord.AddStep(verify.STEPTYPES.SentSMS, verify.STEPTYPES.SentSMS.Description(verifyRecord.Status.Description()))
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("SENT_SMS"), verifyRecord.Status.Description())
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Prepare Response

@@ -17,7 +17,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       import MembersLayout                                  from "../../../layouts/MembersLayout";
-      import ProgressSteps, { ProgessStep }                 from "../../../components/base/ProgressSteps";
+      import ProgressSteps, { ProgressStep }                 from "../../../components/base/ProgressSteps";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Pages
@@ -78,7 +78,7 @@
             //|| Stepper
             //||------------------------------------------------------------------------------------------------||
 
-            const steps: ProgessStep[] = [
+            const steps: ProgressStep[] = [
                   { label: "How it works", description: "A Valid credit card is required" },
                   { label: "Enter Credit Card", description: "Review and confirm your address." },
                   { label: "Processed", description: "Transaction Complete!" },

@@ -63,10 +63,10 @@ import PhoneVerification      from './pages/verification/phone/PhoneVerification
 import FaceVerification       from './pages/verification/face/FaceVerification'
 
 //||------------------------------------------------------------------------------------------------||
-//|| Test
+//|| Admin
 //||------------------------------------------------------------------------------------------------||
 
-import SelfiePage            from './pages/verification/Selfie'
+import AdminDashboard            from './pages/admin/AdminDashboard'
 
 //||------------------------------------------------------------------------------------------------||
 //|| App
@@ -108,7 +108,6 @@ export default function App() {
 			<Route path="/logout" element={<Logout />} />
 			<Route path="/exit" element={<Exit />} />
                   
-                  <Route path="/selfie" element={<SelfiePage />} />
 
 			<Route path="/members" element={<Dashboard />} />
 			<Route path="/members/sites" element={<Sites />} />
@@ -129,6 +128,8 @@ export default function App() {
                   <Route path="/verification/phone" element={<PhoneVerification />} />
                   <Route path="/verification/address" element={<AddressVerification />} />
                   
+
+                  <Route path="/admin" element={<AdminDashboard />} />
 		</Routes>
 	);
 }

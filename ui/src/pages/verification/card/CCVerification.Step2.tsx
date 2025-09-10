@@ -20,7 +20,7 @@
       //|| Props
       //||------------------------------------------------------------------------------------------------||
 
-      import { StepProps }                                 from "./AddressVerification";
+      import { CCStepProps }                               from "./CCVerification";
       
       //||------------------------------------------------------------------------------------------------||
       //|| Components
@@ -33,7 +33,7 @@
       //|| Component
       //||------------------------------------------------------------------------------------------------||
 
-      export default function CCVerificationStep2({ process, updateProcess }: StepProps) {
+      export default function CCVerificationStep2({ process, updateProcess }: CCStepProps) {
 
             //||------------------------------------------------------------------------------------------------||
             //|| Stripe
@@ -75,7 +75,6 @@
                         billingZip?   : string;
                         clientSecret  : string;
                         transactionId?: string;
-                        address       : Address;
                   } = {
                         identifier    : process.verificationUUID || "",
                         amount        : process.chargeAmount,
@@ -84,7 +83,6 @@
                         uuid          : process.verificationUUID || "",
                         clientSecret  : process.clientSecret || "",
                         transactionId : transactionId,
-                        address       : process.verifyAddress
                   };
                   //||------------------------------------------------------------------------------------------------||
                   //|| Pull
@@ -126,7 +124,7 @@
                               baseAmount={process.baseAmount}
                               currency={process.currency}
                               onSuccess={(paymentIntentId) => {  handleSuccess(paymentIntentId); }}
-                              onBack={() => { updateProcess({ ...process, step: 2 }); }}
+                              onBack={() => { updateProcess({ ...process, step: 1 }); }}
                               setZip={setZip}
                               billingZip={zip}
                         />) }

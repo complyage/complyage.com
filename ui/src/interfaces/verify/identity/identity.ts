@@ -4,6 +4,8 @@
 //|| Identity Verification Data
 //||------------------------------------------------------------------------------------------------||
 
+import { DOB }          from "../../base/user";
+
 //||------------------------------------------------------------------------------------------------||
 //|| Identity Username
 //||------------------------------------------------------------------------------------------------||
@@ -19,6 +21,9 @@ export interface IdentityUsername {
 //||------------------------------------------------------------------------------------------------||
 
 export interface IdentityRecord {
+      verified?         : boolean;
+      age?              : number;
+      dob?              : DOB;
       display           : string;
       verification      : string;
 }
@@ -28,15 +33,12 @@ export interface IdentityRecord {
 //||------------------------------------------------------------------------------------------------||
 
 export interface Identity {
-      email?            : IdentityRecord;
-      age?              : IdentityRecord;
-      phone?            : IdentityRecord;
-      address?          : IdentityRecord;
-      creditCard?       : IdentityRecord;
-      idCard?           : IdentityRecord;
-      face?             : IdentityRecord;
-      usernames?        : Record<string, IdentityUsername>;
-      approved?         : string[];
-      verified          : boolean;
-      verifiedAge?      : number;
+      MAIL?       : IdentityRecord;      
+      PHNE?       : IdentityRecord;
+      ADDR?       : IdentityRecord;
+      CRCD?       : IdentityRecord;
+      IDEN?       : IdentityRecord;
+      FACE?       : IdentityRecord;
+      usernames?  : Record<string, IdentityUsername>;
+      approved?   : string[];
 }

@@ -1,5 +1,7 @@
 package verify
 
+import "github.com/ralphferrara/aria/app"
+
 //||------------------------------------------------------------------------------------------------||
 //|| Pending Verification
 //||------------------------------------------------------------------------------------------------||
@@ -14,7 +16,7 @@ func (v *Verification) UpdateStatusPendingVerification() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add Step
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.StatusChange, STEPTYPES.StatusChange.Description(v.Status.Description()))
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_PEVF"), "")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Save
 	//||------------------------------------------------------------------------------------------------||
@@ -40,7 +42,7 @@ func (v *Verification) UpdateStatusInProgress() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add Step
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.StatusChange, STEPTYPES.StatusChange.Description(v.Status.Description()))
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_INPR"), "")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Save
 	//||------------------------------------------------------------------------------------------------||
@@ -66,7 +68,7 @@ func (v *Verification) UpdateStatusEscalate() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add Step
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.StatusChange, STEPTYPES.StatusChange.Description(v.Status.Description()))
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_ESCL"), "")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Save
 	//||------------------------------------------------------------------------------------------------||
@@ -99,15 +101,15 @@ func (v *Verification) UpdateStatusVerified(moderator string) error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Two Factor Approved
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.Moderate, "Approval: "+moderator)
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("APPROVAL"), moderator)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add Step
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.StatusChange, STEPTYPES.StatusChange.Description(v.Status.Description()))
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_VERF"), "")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Lock the Encrypted Data
 	//||------------------------------------------------------------------------------------------------||
-	v.Identity.UpdateVerification(v.Type, v.Encrypted.GetDataMasked(), v.UUID)
+	v.UpdateVerification(v.Type, v.Encrypted.GetDataMasked(), v.UUID)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Lock the Encrypted Data and Update the Database / Storage
 	//||------------------------------------------------------------------------------------------------||
@@ -124,7 +126,7 @@ func (v *Verification) UpdateStatusVerified(moderator string) error {
 //|| Escalate
 //||------------------------------------------------------------------------------------------------||
 
-func (v *Verification) UpdateStatusReject(moderator, reason string) error {
+func (v *Verification) UpdateStatusReject(moderator string, reason app.ErrorsEntry) error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Set Status
 	//||------------------------------------------------------------------------------------------------||
@@ -137,13 +139,12 @@ func (v *Verification) UpdateStatusReject(moderator, reason string) error {
 		Status:    "REJECTED",
 		Moderator: moderator,
 		Timestamp: UniversalNow().String(),
-		Details:   reason,
+		Details:   reason.Code,
 	}
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add Step
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.Moderate, reason)
-	v.AddStep(STEPTYPES.StatusChange, STEPTYPES.StatusChange.Description(v.Status.Description()))
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_RJCT"), reason.Code)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Testing
 	//||------------------------------------------------------------------------------------------------||
@@ -179,7 +180,7 @@ func (v *Verification) UpdateStatusExpired() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add Step
 	//||------------------------------------------------------------------------------------------------||
-	v.AddStep(STEPTYPES.StatusChange, STEPTYPES.StatusChange.Description(v.Status.Description()))
+	v.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_EXPD"), "")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Save
 	//||------------------------------------------------------------------------------------------------||

@@ -1,455 +1,443 @@
-/*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
+//||------------------------------------------------------------------------------------------------||
 //|| classes/client/call.ts
 //|| Call : Handles all calls to server-http
-//||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+//||------------------------------------------------------------------------------------------------||
 
-      /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-      //|| Interfaces
-      //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+      //||------------------------------------------------------------------------------------------------||
+      //|| Types
+      //||------------------------------------------------------------------------------------------------||
 
-      import ResponseDataPayload          from "~/interfaces/response.data.payload";
-      import { MockOptions }              from "~/interfaces/mock.options";
-      import { CallStatuses }             from "~/interfaces/client/types.client";
+      export type CallStatuses = "PENDING" | "SUCCESS" | "ERROR" | "POLLING";
 
-      /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+      //||------------------------------------------------------------------------------------------------||
+      //|| API Response
+      //||------------------------------------------------------------------------------------------------||
+      
+      type ApiResponse = {
+            success     : boolean;
+            data?       : Record<string, any>;
+            message?    : string;
+            redirect?   : string;
+      };
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Interfaces - Response Payload
+      //||------------------------------------------------------------------------------------------------||
+
+      export interface ResponseDataPayload {
+            status       : number;
+            message      : string;
+            headers?     : Record<string, string>;
+            redirect?    : string;
+            cookies?     : string[];
+            data         : Record<string, any>;
+            route        : string;
+            ttl?         : number;
+      }
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Mock Options
+      //||------------------------------------------------------------------------------------------------||
+
+      export interface MockOptions {
+            message?     : string;
+            headers?     : Record<string, string>;
+            redirect?    : string;
+            route?       : string;
+            ttl?         : number;
+            delay?       : number;
+      }
+
+      //||------------------------------------------------------------------------------------------------||
       //|| Class
-      //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+      //||------------------------------------------------------------------------------------------------||
 
       export default class Call {
-            
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Static
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-            public domain           : string;
-            public debug            : boolean   = false;
+            //||------------------------------------------------------------------------------------------------||
+            //|| Static / Constants
+            //||------------------------------------------------------------------------------------------------||
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            public domain                         : string;
+            public debug                          : boolean   = false;
+
+            //||------------------------------------------------------------------------------------------------||
             //|| Request
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-            
-            public method           : string    = "POST";
-            public contentType      : string    = "application/json";
-            public secure           : boolean   = true;
-            public server           : string    = "localhost:3000";
-            public route            : string    = "";
-            public url              : string    = "";   
-            public request          : Request | undefined = undefined;
-            public requestData      : { [key: string]: object | boolean | string | number | null | undefined; } = {};
-            public headers          : Headers   = new Headers();
+            //||------------------------------------------------------------------------------------------------||
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Response Payload 
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            public method                         : string    = "POST";
+            public contentType                    : string    = "application/json";
+            public secure                         : boolean   = true;
+            public server                         : string    = "http://localhost:3000";
+            public route                          : string    = "";
+            public url                            : string    = "";
+            public requestData                    : Record<string, object | boolean | string | number | null | undefined> = {};
+            public headers                        : Headers   = new Headers();
 
-            public responsePayload  : ResponseDataPayload = {
-                  status                  : 100,
-                  message                 : "PENDING",
-                  headers                 : {},
-                  redirect                : "",
-                  data                    : {},
-                  route                   : "",
-                  ttl                     : 0,
+            //||------------------------------------------------------------------------------------------------||
+            //|| Response Payload
+            //||------------------------------------------------------------------------------------------------||
+
+            public responsePayload                : ResponseDataPayload = {
+                  status       : 100,
+                  message      : "PENDING",
+                  headers      : {},
+                  redirect     : "",
+                  data         : {},
+                  route        : "",
+                  ttl          : 0,
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            //||------------------------------------------------------------------------------------------------||
             //|| State
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
 
-            public status           : CallStatuses = "PENDING";
-            public http             : number = 100;
+            public status                         : CallStatuses = "PENDING";
+            public http                           : number = 100;
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Authentication
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
+            //|| Assignable Status Callback
+            //||------------------------------------------------------------------------------------------------||
 
-            public authJWT          : string    = "";
-            public session          : string    = "";         
+            public onState                        : (status: CallStatuses, response: ResponseDataPayload) => void = () => { return; };
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Assignable Statuses
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
+            //|| Mocking
+            //||------------------------------------------------------------------------------------------------||
 
-            public onState          : (status: CallStatuses, response : ResponseDataPayload ) => void = () => { return; };
+            public mockStatus                     : number    = 200;
+            public mockMode                       : boolean   = false;
+            public mockData                       : any       = {};
+            public mockDelay                      : number    = 0;
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Handle Mocking Responses
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public mockStatus       : number    = 200;
-            public mockMode         : boolean   = false;
-            public mockData         : any       = {};
-            public mockDelay        : number    = 0;
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            //||------------------------------------------------------------------------------------------------||
             //|| Constructor
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
 
-            constructor(server : string, route : string, data: { [key: string]: object | boolean | string | number | null | undefined } = {}) {
+            constructor(route: string, data: Record<string, object | boolean | string | number | null | undefined> = {}) {
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Init Headers
+                  //||------------------------------------------------------------------------------------------------||
                   if (!this.headers || !(this.headers instanceof Headers)) this.headers = new Headers();
-                  this.server             = server;
-                  this.route              = route;
-                  this.requestData        = data;
-                  this.domain             = this.hostname();
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Setup the API Server
+                  //||------------------------------------------------------------------------------------------------||
+                  const envServer = import.meta.env.VITE_COMPLYAGE_API_URL;
+                  console.log(envServer);
+                  if (envServer && typeof envServer === "string" && envServer.trim() !== "") {
+                        this.server = this.normalizeServer(envServer);
+                  } else {
+                        const scheme  = this.secure ? "https://" : "http://";
+                        const host    = this.hostname();
+                        this.server   = this.normalizeServer(`${scheme}${host}`);
+                  }                  
+                  this.route                          = route.startsWith("/") ? route : `/${route}`;
+                  this.requestData                    = data;
+                  this.domain                         = this.hostname();
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            //||------------------------------------------------------------------------------------------------||
             //|| Set Payload
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
 
-            public setData( data: { [key: string]: object | boolean | string | number | null | undefined } = {} ) {
-                  this.requestData        = data;
+            public setData(data: Record<string, object | boolean | string | number | null | undefined> = {}) {
+                  this.requestData = data;
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            //||------------------------------------------------------------------------------------------------||
             //|| Mock Data
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
 
-            public mock( data : any, status = 200, options : MockOptions = {} ) {
-                  this.mockMode     = true;
-                  this.responsePayload = {
-                        status                  : status,
-                        message                 : options.message || "MOCK MESSAGE",
-                        headers                 : options.headers || {},
-                        redirect                : options.redirect || "",
-                        data                    : data,
-                        route                   : options.route || this.route,
-                        ttl                     : options.ttl || 0,
+            public mock(data: any, status = 200, options: MockOptions = {}) {
+                  this.mockMode                      = true;
+                  this.responsePayload               = {
+                        status    : status,
+                        message   : options.message || "MOCK MESSAGE",
+                        headers   : options.headers || {},
+                        redirect  : options.redirect || "",
+                        data      : data,
+                        route     : options.route || this.route,
+                        ttl       : options.ttl || 0,
                   }
-                  this.mockDelay    = options.delay || 1;
+                  this.mockDelay                     = options.delay ?? 1;
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            //||------------------------------------------------------------------------------------------------||
             //|| Delay on Mock
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
 
-            public delay( delay : number ) {
+            public delay(delay: number) {
                   this.mockDelay = delay;
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Auth
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-           public auth(authJWT : string, session  : string) { 
-                  this.authJWT       = authJWT;
-                  this.session       = session;
-           }
-              
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            //||------------------------------------------------------------------------------------------------||
             //|| Execute
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
 
-            public async execute(): Promise<Response | void> {
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Route URL
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  this.url = this.server + this.route;
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Debig 
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            public async execute(): Promise<ResponseDataPayload> {
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Route
+                  //||------------------------------------------------------------------------------------------------||
+
+                  this.url = this.joinUrl(this.server, this.route);
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Debug
+                  //||------------------------------------------------------------------------------------------------||
+
                   if (this.debug) {
                         console.log("");
                         console.log("||================== CHIRP BEGIN ======================||");
                         console.log("URL   : ", this.url);
                   }
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| TTL
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  const start = performance.now();
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Headers
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  this.headers.set("Content-Type", this.contentType);   
-                  this.headers.set("authJWT",      this.authJWT);
-                  this.headers.set("session",      this.session);
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| CSRF Support, must implmeent @babl.one/csrf on auth cookie set
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  this.csrf();
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Mock Mode
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  if (this.mockMode) {
-                        return new Promise((resolve) => {
-                              this.updateStatus("POLLING");
-                              setTimeout(() => {
-                                    this.updateStatus((this.responsePayload.status === 200) ? "SUCCESS" : "ERROR");
-                                    this.http                     = this.responsePayload.status;
-                                    this.responsePayload.message  = `MOCK[${this.responsePayload.message}]`;
-                                    this.debugPayload();
-                                    resolve(undefined);
-                              }, this.mockDelay);
-                        });
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Timing
+                  //||------------------------------------------------------------------------------------------------||
+
+                  const start = (typeof performance !== "undefined" ? performance.now() : Date.now());
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Content 
+                  //||------------------------------------------------------------------------------------------------||
+
+                  if (this.hasBody(this.method)) {
+                        this.headers.set("Content-Type", this.contentType);
                   }
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| In case we're sending a form
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  const plainObj                            = this.requestData;
-                  const formDataObj: Record<string, string> = {};                  
-                  for (const keyName in plainObj) {
-                        if (Object.prototype.hasOwnProperty.call(plainObj, keyName)) {
-                              const val = plainObj[keyName];
-                              if (val !== null && val !== undefined) formDataObj[keyName] = String(val);
-                        }
-                  }                  
-                  const encodedBody = new URLSearchParams(formDataObj).toString();                
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Mock Mode
+                  //||------------------------------------------------------------------------------------------------||
+
+                  if (this.mockMode) {
+                        this.updateStatus("POLLING");
+                        await this.sleep(this.mockDelay);
+                        this.http                          = this.responsePayload.status;
+                        this.responsePayload.message       = `MOCK[${this.responsePayload.message}]`;
+                        this.updateStatus((this.responsePayload.status === 200) ? "SUCCESS" : "ERROR");
+                        this.responsePayload.ttl           = (typeof performance !== "undefined" ? performance.now() : Date.now()) - start;
+                        this.debugPayload();
+                        return this.responsePayload;
+                  }
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Body
+                  //||------------------------------------------------------------------------------------------------||
+
+                  const encodedBody = this.encodeBody(this.requestData);
+
+                  //||------------------------------------------------------------------------------------------------||
                   //|| Fetch
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  let response: Response;
+                  //||------------------------------------------------------------------------------------------------||
+
+                  let response: Response | undefined;
                   try {
                         this.updateStatus("POLLING");
                         response = await fetch(this.url, {
                               method      : this.method,
                               headers     : this.headers,
                               credentials : "include",
-                              body        : this.method !== "POST" ? undefined : (this.contentType === "application/x-www-form-urlencoded") ? encodedBody : JSON.stringify(this.requestData)
+                              body        : this.hasBody(this.method) ? encodedBody : undefined,
                         });
-                        this.setCSRF();
                   } catch (error) {
-                        console.error("CHIRP FETCH ERROR:");
-                        console.log(error);
-                        console.log("||=================== CHIRP END =======================||");
-                        this.responsePayload.status                  = 501;
-                        this.responsePayload.message                 = "CHP_UNKNOWN";
-                        this.debugPayload();
-                        return;
-                  }
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Parse JSON
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  let responseJSON: any;
-                  try {
-                        responseJSON = await response.json();
-                  } catch (error) {
-                        console.error("CHIRP : INVALID JSON RESPONSE:");
-                        console.log(error);
-                        this.responsePayload.status    = response.status;
-                        this.responsePayload.message   = "CHP_BAD_JSON";
-                        this.responsePayload.headers   = this.makeHeaders(response.headers);
+                        if (this.debug) {
+                              console.error("CHIRP FETCH ERROR:", error);
+                              console.log("||=================== CHIRP END =======================||");
+                        }
+                        this.responsePayload.status    = 501;
+                        this.responsePayload.message   = "CHP_UNKNOWN";
+                        this.responsePayload.headers   = {};
+                        this.responsePayload.data      = {};
                         this.responsePayload.route     = this.route;
+                        this.responsePayload.ttl       = (typeof performance !== "undefined" ? performance.now() : Date.now()) - start;
                         this.updateStatus("ERROR");
-                        this.http                      = response.status;
-                        this.setCSRF();
                         this.debugPayload();
-                        return;
-                  }                  
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Map backend response to frontend ResponseDataPayload
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  if (responseJSON.success) {
+                        return this.responsePayload;
+                  }
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Parse JSON
+                  //||------------------------------------------------------------------------------------------------||
+
+                  let responseJSON: ApiResponse | undefined;
+                  try {
+                        responseJSON = await response!.json();
+                  } catch {
+                        try {
+                              const txt = await response!.text();
+                              this.responsePayload.message = txt || "CHP_BAD_JSON";
+                        } catch {
+                              this.responsePayload.message = "CHP_BAD_JSON";
+                        }
+                        this.responsePayload.status    = response!.status;
+                        this.responsePayload.headers   = this.makeHeaders(response!.headers);
+                        this.responsePayload.route     = this.route;
+                        this.responsePayload.ttl       = (typeof performance !== "undefined" ? performance.now() : Date.now()) - start;
+                        this.updateStatus("ERROR");
+                        this.http                      = response!.status;
+                        this.debugPayload();
+                        return this.responsePayload;
+                  }
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Map Response
+                  //||------------------------------------------------------------------------------------------------||
+
+                  if (responseJSON?.success) {
                         this.responsePayload = {
-                              status      : response.status,
-                              message     : "", // no message for success in Go response
-                              headers     : this.makeHeaders(response.headers),
-                              redirect    : "", // your backend doesn't send this, add if needed
-                              data        : responseJSON.data || {},
-                              route       : this.route,
-                              ttl         : performance.now() - start
+                              status   : response!.status,
+                              message  : "",
+                              headers  : this.makeHeaders(response!.headers),
+                              redirect : "",
+                              data     : (responseJSON.data || {}) as Record<string, any>,
+                              route    : this.route,
+                              ttl      : (typeof performance !== "undefined" ? performance.now() : Date.now()) - start,
                         };
                         this.updateStatus("SUCCESS");
                   } else {
                         this.responsePayload = {
-                              status      : response.status,
-                              message     : responseJSON.message || "Unknown error",
-                              headers     : this.makeHeaders(response.headers),
-                              redirect    : "",
-                              data        : {},
-                              route       : this.route,
-                              ttl         : performance.now() - start
+                              status   : response!.status,
+                              message  : responseJSON?.message || "Unknown error",
+                              headers  : this.makeHeaders(response!.headers),
+                              redirect : "",
+                              data     : {},
+                              route    : this.route,
+                              ttl      : (typeof performance !== "undefined" ? performance.now() : Date.now()) - start,
                         };
                         this.updateStatus("ERROR");
                   }
-                  this.setCSRF();
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Cone
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-                  this.updateStatus(response.status === 200 ? "SUCCESS" : "ERROR");
-                  this.http               = response.status;
-                  /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-                  //|| Done
-                  //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+
+                  //||------------------------------------------------------------------------------------------------||
+                  //|| Finalize
+                  //||------------------------------------------------------------------------------------------------||
+
+                  this.http = response!.status;
                   this.debugPayload();
-                  return;
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Get
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public async get() : Promise<Response | void> {
-                  this.method = "GET";
-                  return await this.execute();
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Post
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public async post() : Promise<Response | void> {
-                  this.method = "POST";
-                  return await this.execute();
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Put
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public async put() : Promise<Response | void> {
-                  this.method = "PUT";
-                  return await this.execute();
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Delete
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public async delete() : Promise<Response | void> {
-                  this.method = "DELETE";
-                  return await this.execute();
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Patch
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public async patch() : Promise<Response | void> {
-                  this.method = "PATCH";
-                  return await this.execute();
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Update State
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public updateStatus( state : ChirpStatuses ) {
-                  this.status = state;
-                  if (this.onState) return this.onState(this.status, this.responsePayload);
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Get CSRF
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public getCSRF() {
-                  if (typeof(window) === "undefined") return;
-                  const csrf = window.localStorage.getItem("csrf");
-                  if (!csrf) return;
-                  return csrf;
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Set CSRF token on request
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public csrf() {
-                  const csrf = this.getCSRF();
-                  if (csrf) this.headers.set("x-csrf-token", csrf);
-            }
-
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Set CSRF in localStorage
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public setCSRF() {
-                  if (this.responsePayload.headers === undefined) return;
-                  if (typeof(window) === "undefined" || typeof(window.localStorage) === "undefined") return;
-                  if (this.responsePayload.headers['x-chirp-csrf-token'] === undefined) return;
-                  window.localStorage.setItem("csrf", this.responsePayload.headers['x-chirp-csrf-token']);
-            }
-            
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Relay
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public relay() : ResponseDataPayload {
                   return this.responsePayload;
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Make Headers
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
+            //|| HTTP Verbs
+            //||------------------------------------------------------------------------------------------------||
+
+            public async get()    : Promise<ResponseDataPayload> { this.method = "GET";    return await this.execute(); }
+            public async post()   : Promise<ResponseDataPayload> { this.method = "POST";   return await this.execute(); }
+            public async put()    : Promise<ResponseDataPayload> { this.method = "PUT";    return await this.execute(); }
+            public async delete() : Promise<ResponseDataPayload> { this.method = "DELETE"; return await this.execute(); }
+            public async patch()  : Promise<ResponseDataPayload> { this.method = "PATCH";  return await this.execute(); }
+
+            //||------------------------------------------------------------------------------------------------||
+            //|| State Updates
+            //||------------------------------------------------------------------------------------------------||
+
+            public updateStatus(state: CallStatuses) {
+                  this.status = state;
+                  if (this.onState) this.onState(this.status, this.responsePayload);
+            }
+
+            //||------------------------------------------------------------------------------------------------||
+            //|| Headers -> Record
+            //||------------------------------------------------------------------------------------------------||
 
             public makeHeaders(headers: Headers): Record<string, string> {
                   const result: Record<string, string> = {};
-                  headers.forEach((value, key) => {
-                        result[key] = value;
-                  });
+                  headers.forEach((value, key) => { result[key] = value; });
                   return result;
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Data
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
+            //|| Data Helpers
+            //||------------------------------------------------------------------------------------------------||
 
-            public hostname = () => {
-                  if (typeof(window) === "undefined") return "";
-                  return window.location.hostname.replace(/^www\./i, '').toLowerCase()
+            public hostname = (): string => {
+                  if (typeof window === "undefined") return "";
+                  return window.location.hostname.replace(/^www\./i, "").toLowerCase();
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Ok
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public ok() : boolean {
+            public ok(): boolean {
                   if (this.status !== "SUCCESS") return false;
-                  if (this.responsePayload.status !== 200) return false;
-                  return true;
+                  return this.responsePayload.status >= 200 && this.responsePayload.status < 300;
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Error Message
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public error() : string {
+            public error(): string {
                   return this.responsePayload.message || "CHP_UNKNOWN";
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Data
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
-
-            public data( key : string ) : object | string  | undefined{
+            public data<T = any>(key: string): T | undefined {
                   if (this.status !== "SUCCESS") return undefined;
-                  if (this.responsePayload.data && this.responsePayload.data[key] !== undefined) return this.responsePayload.data[key];
+                  if (this.responsePayload.data && (this.responsePayload.data as any)[key] !== undefined) {
+                        return (this.responsePayload.data as any)[key] as T;
+                  }
                   return undefined;
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
+            //||------------------------------------------------------------------------------------------------||
             //|| Debug Payload
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
 
             public debugPayload() {
-                  if (this.debug) {
-                        console.groupCollapsed(`%c🐦 RESPONSE ${this.route} [${this.status}]`, 'color: dodgerblue; font-weight: bold;');
-                        console.log('%c→ URL     ', 'color: gray;', this.url);
-                        console.log('%c→ SERVER  ', 'color: gray;', this.server);
-                        console.log('%c→ HEADERS ', 'color: gray;', Object.fromEntries(this.headers.entries()));
-                        console.log('%c→ DATA    ', 'color: gray;', this.requestData);
-                        console.log('%c→ STATUS  ', 'color: gray;', this.status);
-                        console.log('%c→ PAYLOAD ', 'color: gray;', this.responsePayload);
-                        console.log('%c→ CSRF ', 'color: gray;', this.getCSRF());
-                        console.groupEnd();
-                        console.log("||=================== CHIRP END =======================||");
-                        console.log("");
-                  }                  
+                  if (!this.debug) return;
+                  console.groupCollapsed(`%c🐦 RESPONSE ${this.route} [${this.status}]`, "color: dodgerblue; font-weight: bold;");
+                  console.log("%c→ URL     ", "color: gray;", this.url);
+                  console.log("%c→ SERVER  ", "color: gray;", this.server);
+                  console.log("%c→ HEADERS ", "color: gray;", Object.fromEntries(this.headers.entries()));
+                  console.log("%c→ DATA    ", "color: gray;", this.requestData);
+                  console.log("%c→ STATUS  ", "color: gray;", this.status);
+                  console.log("%c→ PAYLOAD ", "color: gray;", this.responsePayload);
+                  console.groupEnd();
+                  console.log("||=================== CHIRP END =======================||");
+                  console.log("");
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| Response
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            //||------------------------------------------------------------------------------------------------||
+            //|| Static Response Helper
+            //||------------------------------------------------------------------------------------------------||
 
-            static response( status : number, message : string, data? : any) {
-                  return {
-                        status  : status,
-                        message : message,
-                        data    : data,
+            static response(status: number, message: string, data?: any) {
+                  return { status, message, data };
+            }
+
+            //||------------------------------------------------------------------------------------------------||
+            //|| Private / Internals
+            //||------------------------------------------------------------------------------------------------||
+
+            private hasBody(method: string): boolean {
+                  const m = method.toUpperCase();
+                  return m === "POST" || m === "PUT" || m === "PATCH" || m === "DELETE";
+            }
+
+            private encodeBody(payload: Record<string, any>): string | undefined {
+                  if (!this.hasBody(this.method)) return undefined;
+
+                  if (this.contentType === "application/x-www-form-urlencoded") {
+                        const formObj: Record<string, string> = {};
+                        for (const k in payload) {
+                              if (!Object.prototype.hasOwnProperty.call(payload, k)) continue;
+                              const val = payload[k];
+                              if (val !== null && val !== undefined) formObj[k] = String(val);
+                        }
+                        return new URLSearchParams(formObj).toString();
                   }
+
+                  // default json
+                  return JSON.stringify(payload ?? {});
             }
 
-            /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-|| 
-            //|| EOC
-            //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
+            private sleep(ms: number): Promise<void> {
+                  const delay = Math.max(0, Number(ms) || 0);
+                  return new Promise((resolve) => setTimeout(resolve, delay));
+            }
 
+            private normalizeServer(input: string): string {
+                  const trimmed = input.trim();
+                  if (/^https?:\/\//i.test(trimmed)) return trimmed.replace(/\/+$/,"");
+                  return `https://${trimmed.replace(/\/+$/,"")}`;
+            }
+
+            private joinUrl(base: string, path: string): string {
+                  const b = base.replace(/\/+$/,"");
+                  const p = path.startsWith("/") ? path : `/${path}`;
+                  return `${b}${p}`;
+            }
       }

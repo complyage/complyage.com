@@ -3,6 +3,7 @@ package verify
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -42,8 +43,8 @@ func (n *Name) Mask() string {
 //||------------------------------------------------------------------------------------------------||
 
 type DOB struct {
-	Month int `json:"month"`
-	Day   int `json:"day"`
+	Month int `json:"month,omitempty"`
+	Day   int `json:"day,omitempty"`
 	Year  int `json:"year,omitempty"`
 }
 
@@ -57,6 +58,21 @@ func (d *DOB) Mask() string {
 	}
 	// mask year fully, keep month/day
 	return fmt.Sprintf("%04d-**-**", d.Year)
+}
+
+func (d *DOB) Age() int {
+	if d == nil || d.Year == 0 || d.Month <= 0 || d.Day <= 0 {
+		return 0
+	}
+	now := time.Now()
+	age := now.Year() - d.Year
+	if int(now.Month()) < d.Month || (int(now.Month()) == d.Month && now.Day() < d.Day) {
+		age--
+	}
+	if age < 0 {
+		return 0
+	}
+	return age
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -80,7 +96,13 @@ func (f *Facial) Mask() string {
 	if f == nil {
 		return ""
 	}
-	return fmt.Sprintf("%04d-**-**", f.Age)
+	if f.DOB.Year != 0 {
+		return fmt.Sprintf("%04d", f.DOB.Year)
+	}
+	if f.Age != 0 {
+		return fmt.Sprintf("%d", f.Age)
+	}
+	return ""
 }
 
 //||------------------------------------------------------------------------------------------------||

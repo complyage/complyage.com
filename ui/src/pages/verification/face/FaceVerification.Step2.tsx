@@ -69,7 +69,7 @@
                         {media !== null ? (
                               <MediaPreview media={media} onEdit={() => setMedia(null)} />
                         ) : (
-                              <Face onUpload={ handleUpload } />
+                              <Face debug={ true } onUpload={ handleUpload } />
                         )}
                   </>
             );

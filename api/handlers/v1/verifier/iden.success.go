@@ -121,7 +121,7 @@ func VerifyIDSuccessHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Save
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord.AddStep(verify.STEPTYPES.StepAgentLevel1, verify.STEPTYPES.StepAgentLevel1.Description(""))
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("QUEUED_L1"), "")
 	verifyRecord.Save()
 
 	//||------------------------------------------------------------------------------------------------||

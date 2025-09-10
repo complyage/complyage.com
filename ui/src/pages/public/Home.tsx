@@ -114,7 +114,10 @@ export default function Home() {
 							</div>
 
 							<div className="flex flex-col items-center">
-                                                <button className="btn btn-tertiary text-3xl p-10 w-full">
+                                                <button 
+                                                      className="btn btn-tertiary text-3xl p-10 w-full"
+                                                      onClick={() => window.location.href = "/terms"}
+                                                >
 									View Our Terms
 								</button>
 							</div>
@@ -132,7 +135,10 @@ export default function Home() {
 				<p className="mb-6">
 					Start verifying ages in under 5 minutes.
 				</p>
-				<button className="btn btn-secondary text-2xl p-5 rounded-lg">
+				<button 
+                              className="btn btn-secondary text-2xl p-5 rounded-lg"
+                              onClick={() => window.location.href = "/signup"}
+                        >
 					Sign Up Now
 				</button>
 			</section>
@@ -141,76 +147,6 @@ export default function Home() {
                         <NewsStream />
                   </section>
 
-			{/* Carousel */}
-			<section className="py-12">
-				<div className="max-w-4xl mx-auto">
-					<div className="carousel w-full rounded-box">
-						<div
-							id="slide1"
-							className="carousel-item relative w-full">
-							<img
-								src="https://picsum.photos/id/237/800/400"
-								className="w-full object-cover"
-								alt="Security"
-							/>
-							<div className="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
-								<a
-									href="#slide3"
-									className="btn btn-circle">
-									❮
-								</a>
-								<a
-									href="#slide2"
-									className="btn btn-circle">
-									❯
-								</a>
-							</div>
-						</div>
-						<div
-							id="slide2"
-							className="carousel-item relative w-full">
-							<img
-								src="https://picsum.photos/id/238/800/400"
-								className="w-full object-cover"
-								alt="Verification"
-							/>
-							<div className="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
-								<a
-									href="#slide1"
-									className="btn btn-circle">
-									❮
-								</a>
-								<a
-									href="#slide3"
-									className="btn btn-circle">
-									❯
-								</a>
-							</div>
-						</div>
-						<div
-							id="slide3"
-							className="carousel-item relative w-full">
-							<img
-								src="https://picsum.photos/id/239/800/400"
-								className="w-full object-cover"
-								alt="Compliance"
-							/>
-							<div className="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
-								<a
-									href="#slide2"
-									className="btn btn-circle">
-									❮
-								</a>
-								<a
-									href="#slide1"
-									className="btn btn-circle">
-									❯
-								</a>
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
 
 			{/* Features Section */}
 			<section className="py-16 px-4 max-w-6xl mx-auto">
@@ -218,9 +154,9 @@ export default function Home() {
 					Why Choose ComplyAge?
 				</h2>
 				<div className="grid md:grid-cols-3 gap-8">
-					<div className="card bg-base-100 shadow-lg">
+					<div className="card bg-black/20 shadow-lg">
 						<div className="card-body">
-							<h3 className="card-title">
+							<h3 className="card-title text-orange-400">
 								Easy Integration
 							</h3>
 							<p>
@@ -230,9 +166,9 @@ export default function Home() {
 							</p>
 						</div>
 					</div>
-					<div className="card bg-base-100 shadow-lg">
+					<div className="card bg-black/20 shadow-lg">
 						<div className="card-body">
-							<h3 className="card-title">
+							<h3 className="card-title text-orange-400">
 								Global Compliance
 							</h3>
 							<p>
@@ -242,9 +178,9 @@ export default function Home() {
 							</p>
 						</div>
 					</div>
-					<div className="card bg-base-100 shadow-lg">
+					<div className="card bg-black/20 shadow-lg">
 						<div className="card-body">
-							<h3 className="card-title">
+							<h3 className="card-title text-orange-400">
 								Rock-Solid Security
 							</h3>
 							<p>

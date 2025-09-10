@@ -2,6 +2,7 @@ package verify
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -10,98 +11,133 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func (i *Identity) AddVerification(section DataType) {
+	key := section.String()
+	// Convert to set for fast duplicate check
+	set := make(map[string]struct{}, len(i.Approved))
 	for _, v := range i.Approved {
-		if v == string(section) {
-			return
-		}
+		set[v] = struct{}{}
 	}
-	i.Approved = append(i.Approved, section.String())
+	// Add and rebuild the slice
+	set[key] = struct{}{}
+	i.Approved = make([]string, 0, len(set))
+	for v := range set {
+		i.Approved = append(i.Approved, v)
+	}
 }
 
 //||------------------------------------------------------------------------------------------------||
 //|| Update Verification
 //||------------------------------------------------------------------------------------------------||
 
-func (i *Identity) UpdateVerification(section DataType, display, verification string) {
+func (v *Verification) UpdateVerification(section DataType, display, verification string) {
 	switch section {
 	case DataTypeADDR:
-		i.Address = IdentityRecord{
+		v.Identity.Address = IdentityRecord{
 			Display:      display,
 			Verification: verification,
 		}
 	case DataTypeCRCD:
-		i.CreditCard = IdentityRecord{
+		v.Identity.CreditCard = IdentityRecord{
 			Display:      display,
 			Verification: verification,
 		}
 	case DataTypeFACE:
-		i.Face = IdentityRecord{
+		v.Identity.Face = IdentityRecord{
 			Display:      display,
 			Verification: verification,
 		}
 	case DataTypeIDEN:
-		i.IDCard = IdentityRecord{
+		v.Identity.IDCard = IdentityRecord{
 			Display:      display,
 			Verification: verification,
 		}
 	case DataTypeMAIL:
-		i.Email = IdentityRecord{
+		v.Identity.Email = IdentityRecord{
 			Display:      display,
 			Verification: verification,
 		}
 	case DataTypePHNE:
-		i.Phone = IdentityRecord{
+		v.Identity.Phone = IdentityRecord{
 			Display:      display,
 			Verification: verification,
 		}
 	}
-	i.AddVerification(section)
-	i.Save()
+	v.Identity.AddVerification(section)
 }
 
 //||------------------------------------------------------------------------------------------------||
-//|| VerifyAge
+//|| VerifyDOB
 //||------------------------------------------------------------------------------------------------||
 
-func (i *Identity) UpdateAge(dataType DataType, dob DOB) {
+func (v *Verification) UpdateAge(dataType DataType, age int, verification string) {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Generate DOB
+	//||------------------------------------------------------------------------------------------------||
+	dobTime := time.Now().AddDate(-age, 0, 0)
+	dob := DOB{
+		Day:   dobTime.Day(),
+		Month: int(dobTime.Month()),
+		Year:  dobTime.Year(),
+	}
+	displayStr := fmt.Sprintf("%d", age)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Iden is top Tier but we got something else
 	//||------------------------------------------------------------------------------------------------||
-	if i.VerifiedType == DataTypeIDEN && dataType != DataTypeIDEN {
-		return
+	idRecord := IdentityRecord{
+		Verified:     true,
+		Age:          age,
+		DOB:          dob,
+		Display:      displayStr,
+		Verification: verification,
 	}
+	fmt.Println("Updating Age to", age, "for", dataType.String(), "->", displayStr)
+	fmt.Println("DOB:", dob.String())
+	fmt.Println("Verification:", verification)
+	fmt.Println(displayStr)
 	//||------------------------------------------------------------------------------------------------||
-	//|| Iden is top Tier Update
+	//|| Iden is top Tier but we got something else
 	//||------------------------------------------------------------------------------------------------||
-	if i.VerifiedType == DataTypeIDEN && dataType != DataTypeIDEN {
-		i.VerifiedDOB = dob
-		i.VerifiedType = DataTypeIDEN
-		return
+	switch dataType {
+	case DataTypeIDEN:
+		v.Identity.IDCard = idRecord
+	case DataTypeFACE:
+		v.Identity.Face = idRecord
+	case DataTypeCRCD:
+		v.Identity.CreditCard = idRecord
 	}
-	//||------------------------------------------------------------------------------------------------||
-	//|| Facial is second Tier but we got something else
-	//||------------------------------------------------------------------------------------------------||
-	if dataType == DataTypeFACE && dataType != DataTypeIDEN {
-		i.VerifiedType = DataTypeFACE
-		i.VerifiedDOB = dob
-		return
-	}
-	//||------------------------------------------------------------------------------------------------||
-	//|| Credit Card is third Tier but we got something else
-	//||------------------------------------------------------------------------------------------------||
-	if dataType == DataTypeCRCD && i.VerifiedType != DataTypeIDEN && i.VerifiedType != DataTypeFACE {
-		i.VerifiedType = DataTypeCRCD
-		day := time.Now().Day()
-		month := int(time.Now().Month())
-		year := time.Now().Year() - 18
-		i.VerifiedDOB = DOB{
-			Day:   day,
-			Month: month,
-			Year:  year,
-		}
-		return
-	}
+	v.DatabaseSaveIdentity()
+}
 
+//||------------------------------------------------------------------------------------------------||
+//|| dob
+//||------------------------------------------------------------------------------------------------||
+
+func (v *Verification) UpdateDOB(dataType DataType, dob DOB, verification string) {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Iden is top Tier but we got something else
+	//||------------------------------------------------------------------------------------------------||
+	idRecord := IdentityRecord{
+		Verified:     true,
+		Age:          dob.Age(),
+		DOB:          dob,
+		Display:      dob.Mask(),
+		Verification: verification,
+	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Iden is top Tier but we got something else
+	//||------------------------------------------------------------------------------------------------||
+	switch dataType {
+	case DataTypeIDEN:
+		v.Identity.IDCard = idRecord
+	case DataTypeFACE:
+		v.Identity.Face = idRecord
+	case DataTypeCRCD:
+		v.Identity.CreditCard = idRecord
+	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Save
+	//||------------------------------------------------------------------------------------------------||
+	v.DatabaseSaveIdentity()
 }
 
 //||------------------------------------------------------------------------------------------------||
