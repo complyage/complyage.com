@@ -67,10 +67,10 @@ func AgeFromMDY(month, day, year int) int {
 //|| Get Age
 //||------------------------------------------------------------------------------------------------||
 
-func StepInfo(status, info string) {
-	fmt.Println(status, info)
+func StepInfo(step int, status, info string) {
+	fmt.Printf("[STEP %d] - %s %s\n", step, status, info)
 }
 
-func StepError(status, info string) {
+func StepError(step int, status, info string) {
 	fmt.Println("ERROR:", status, info)
 }

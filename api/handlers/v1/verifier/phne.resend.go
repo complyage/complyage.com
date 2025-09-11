@@ -83,7 +83,7 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Check Count
 	//||------------------------------------------------------------------------------------------------||
 
-	sendCount := verifyRecord.CountStepsOfType(verify.STEPTYPES.SentSMS)
+	sendCount := verifyRecord.CountStepsOfType(app.Constants("VERIFY_STEP_TYPES").Get("SENT_SMS"))
 	if sendCount > 3 {
 		responses.Error(w, http.StatusBadRequest, "Maximum number of resend attempts reached")
 		return
@@ -107,7 +107,7 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord.AddStep(verify.STEPTYPES.SentSMS, verify.STEPTYPES.SentSMS.Description(verifyRecord.Status.Description()))
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("SENT_SMS"), verifyRecord.Status.Description())
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Prepare Response

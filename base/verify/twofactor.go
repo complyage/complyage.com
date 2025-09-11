@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/base/random"
 )
 
@@ -80,7 +81,7 @@ func (v *Verification) TwoFactorVerify(code string) error {
 	//|| Attempts
 	//||------------------------------------------------------------------------------------------------||
 	if v.TwoFactor.Attempts > 5 {
-		v.UpdateStatusReject("TWOFACTOR", "Too many attempts")
+		v.UpdateStatusReject("TWOFACTOR", app.Err("verify").Get("2FA_TOO_MANY"))
 		return fmt.Errorf("too many attempts")
 	}
 	//||------------------------------------------------------------------------------------------------||

@@ -6,6 +6,7 @@
       //|| Import
       //||------------------------------------------------------------------------------------------------||
 
+      import { ConstantsEntry }                              from "../../../interfaces/aria/constants";
       import { VerificationStatuses. VerificationTypes }     from "../../models/model.verify";
 
       //||------------------------------------------------------------------------------------------------||
@@ -13,10 +14,9 @@
       //||------------------------------------------------------------------------------------------------||
 
       export interface VerificationIDStatusStep {
-            stepName                      : string;
-            stepStatus                    : string;
-            stepDetails                   : string;
-            stepTimestamp                 : string;
+            type                      : ConstantsEntry;
+            details                   : string;
+            timestamp                 : string;
       }      
 
       //||------------------------------------------------------------------------------------------------||

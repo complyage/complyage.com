@@ -69,8 +69,8 @@ func CheckClientEnforcement(w http.ResponseWriter, r *http.Request) {
 	//|| Check if in a restricted territory
 	//||------------------------------------------------------------------------------------------------||
 	shouldEnforce := ips.ShouldEnforce(location.Country, location.State, site, *zone, zoneFound)
-	fmt.Println(site.SiteURL)
-	fmt.Println(zone.IDZone)
+	fmt.Println(site.URL)
+	fmt.Println(zone.ID)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Not allowed
 	//||------------------------------------------------------------------------------------------------||

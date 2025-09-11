@@ -123,14 +123,16 @@
                                           <div>
                                                 <span>
                                                       We’ll place a charge for&nbsp;
-                                                      <span className="font-bold text-white">
-                                                            {formatStripeAmount(baseAmount, currency)}{" "}
-                                                            {currency}
-                                                      </span>
+                                                      { baseAmount > 0 && (
+                                                            <span className="font-bold text-white">
+                                                                  {formatStripeAmount(baseAmount, currency)}{" "}
+                                                                  {currency}
+                                                            </span>
+                                                      )}
                                                 </span>
                                                 {donationAmount > 0 && (
                                                       <span>
-                                                            &nbsp;+ a donation of&nbsp;
+                                                            {baseAmount > 0 ? "&nbsp;+ a donation of&nbsp;" : ""}                                                            
                                                             <span className="font-bold">
                                                                   {formatStripeAmount(donationAmount, currency)}{" "}
                                                                   {currency}

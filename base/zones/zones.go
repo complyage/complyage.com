@@ -2,9 +2,11 @@ package zones
 
 import (
 	"fmt"
+	"strings"
 
 	"base/db/abstract"
 	"base/db/models"
+	"base/verify"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -35,7 +37,7 @@ func LoadZones() error {
 
 func FindZoneByID(id uint) (*models.Zone, bool) {
 	for i := range Zones {
-		if Zones[i].IDZone == id {
+		if Zones[i].ID == id {
 			return &Zones[i], true
 		}
 	}
@@ -50,7 +52,7 @@ func FindZoneByLocation(state, country string) (*models.Zone, bool) {
 	// unknown
 	if state == "" || country == "" {
 		for i := range Zones {
-			if Zones[i].IDZone == 9999 {
+			if Zones[i].ID == 9999 {
 				return &Zones[i], true
 			}
 		}
@@ -60,7 +62,7 @@ func FindZoneByLocation(state, country string) (*models.Zone, bool) {
 	// exact state match
 	for i := range Zones {
 		z := &Zones[i]
-		if z.ZoneState != nil && *z.ZoneState == state && z.ZoneCountry != nil && *z.ZoneCountry == country {
+		if z.Region != nil && *z.Region == state && z.Country != nil && *z.Country == country {
 			return z, true
 		}
 	}
@@ -68,11 +70,56 @@ func FindZoneByLocation(state, country string) (*models.Zone, bool) {
 	// fallback: country‑wide match (state null but country matches)
 	for i := range Zones {
 		z := &Zones[i]
-		if z.ZoneState == nil && z.ZoneCountry != nil && *z.ZoneCountry == country {
+		if z.Region == nil && z.Country != nil && *z.Country == country {
 			return z, true
 		}
 	}
 
 	// no specific match, but caller treats zoneFound==true as “no enforcement needed”
 	return nil, false
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Fetch Short Zone
+//||------------------------------------------------------------------------------------------------||
+
+func FetchShortZoneByLocation(state, country string) (*ShortZone, bool) {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Fetch Short Zone
+	//||------------------------------------------------------------------------------------------------||
+	zone, ok := FindZoneByLocation(state, country)
+	if !ok {
+		return nil, false
+	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Make Requirements Slice
+	//||------------------------------------------------------------------------------------------------||
+	if zone.Requirements == nil {
+		return nil, false
+	}
+	raw := *zone.Requirements
+	parts := strings.Split(raw, ",")
+	requirements := make([]verify.DataType, 0, len(parts))
+	for _, part := range parts {
+		dt, exists := verify.StringToDataType(strings.TrimSpace(part))
+		if exists {
+			requirements = append(requirements, dt)
+		}
+	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Make Requirements Slice
+	//||------------------------------------------------------------------------------------------------||
+	shortZone := ShortZone{
+		Law:          "",
+		Requirements: requirements,
+		Effective:    zone.Effective.String(),
+		MinAge:       zone.MinAge,
+	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Law
+	//||------------------------------------------------------------------------------------------------||
+	if zone.Law != nil {
+		shortZone.Law = *zone.Law
+	}
+	return &shortZone, true
 }

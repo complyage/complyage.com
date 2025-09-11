@@ -2,367 +2,359 @@
 //|| Import
 //||------------------------------------------------------------------------------------------------||
 
-import React, {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import React, { useEffect, useMemo, useState }           from "react";
+import { useNavigate }                                   from "react-router-dom";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Lucide
 //||------------------------------------------------------------------------------------------------||
 
-import {CheckCircle, BadgeInfo, ArrowRight, CreditCard, MapPin, Mail, Phone, IdCard, Smile, Image as ImageIcon, Shield} from "lucide-react";
+import { CheckCircle, Ban, MapPin, Shield, ArrowUpRight }   from "lucide-react";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import {VerificationStatus}   from "../../interfaces/verification/status";
-import {Identity}             from "../../interfaces/identity/identity";
+import { VerificationTypes }                                from "../../interfaces/models/model.verify";
+import { Identity }                                         from "../../interfaces/verify/identity/identity";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Data
+//||------------------------------------------------------------------------------------------------||
+
+import { getAllVerificationTypes, getVerificationType, 
+         getVerificationIcon, getVerificationDescription }  from "../../data/getVerificationData";
+import { isVerified }                                       from "../../data/getIdentity";
+import { BadgeVerified }                                    from "../../components/badges/BadgeStatuses";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Call
+//||------------------------------------------------------------------------------------------------||
+
+import Call                                                 from "../../classes/call";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
-import MembersLayout from "../../layouts/MembersLayout";
+import MembersLayout                                        from "../../layouts/MembersLayout";
+import SpinnerCircle                                        from "../../components/base/SpinnerCircle";
 
 //||------------------------------------------------------------------------------------------------||
-//|| API Verification Interface
+//|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-interface ApiVerification {
-	vType       : string;
-	vStatus     : string;
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Location Interfaces
-//||------------------------------------------------------------------------------------------------||
-
-interface LocationInfo {
-	ipAddress?        : string;
-	city?             : string;
-	region?           : string;
-	country?          : string;
-	types?            : string[];
-      minAge?           : number;
-}
+import { DashboardData }                                    from "../../interfaces/members/dashboard";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default
 //||------------------------------------------------------------------------------------------------||
 
 export default function Dashboard() {
-	//||------------------------------------------------------------------------------------------------||
-	//|| Const
-	//||------------------------------------------------------------------------------------------------||
 
-	const [verifications, setVerifications] = useState<VerificationStatus[]>([]);
-	const [location, setLocation] = useState<LocationInfo | null>({
-            minAge: 18,
-      });
-      const [identity, setIdentity] = useState<Identity>({
-            verified : false, 
-            verifiedAge: 0,
-      });
-	const navigate = useNavigate();
+      //||------------------------------------------------------------------------------------------------||
+      //|| Default Data
+      //||------------------------------------------------------------------------------------------------||
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Base Verification
-	//||------------------------------------------------------------------------------------------------||
+      const defaultData: DashboardData = {
+            isVerified        : false,
+            verifiedAge       : 0,
+            minimumType       : "IDEN",
+            ipAddress         : "---",
+            location: {
+                  city:      "---",
+                  region:    "---",
+                  country:   "---",
+                  latitude:   0,
+                  longitude:  0
+            },
+            zone: {
+                  laws:          "",
+                  requirements:  ["IDEN", "FACE", "CRCD"],
+                  effective   : "---",
+                  minAge:        0
+            },
+            identity: {}
+      }
 
-	const baseVerifications: VerificationStatus[] = [
-		{type: "MAIL", label: "Email", blurb: "Confirm your email to receive account updates.", complete: false, icon: <Mail />},
-		{type: "IDEN", label: "ID / Age", blurb: "Verify your age with a government ID.", complete: false, icon: <IdCard />},
-		{type: "PHNE", label: "Phone", blurb: "Add and confirm your phone number.", complete: false, icon: <Phone />},
-		{type: "ADDR", label: "Address", blurb: "Verify your billing or home address.", complete: false, icon: <MapPin />},
-		{type: "CRCD", label: "Credit Card", blurb: "Secure your account with a valid card on file.", complete: false, icon: <CreditCard />},
-		{type: "FACE", label: "Facial Age Estimation", blurb: "Complete a quick facial age scan.", complete: false, icon: <Smile />},
-	];
+      //||------------------------------------------------------------------------------------------------||
+      //|| Const
+      //||------------------------------------------------------------------------------------------------||
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Helpers: Map code -> label
-	//||------------------------------------------------------------------------------------------------||
+      const navigate                                          = useNavigate();
+      const [ data, setData ]                                 = useState<DashboardData>(defaultData);
+      const [ error, setError ]                               = useState<string | null>(null);
+      const [ loading, setLoading ]                           = useState<boolean>(true);
+      
+      //||------------------------------------------------------------------------------------------------||
+      //|| Base Verification
+      //||------------------------------------------------------------------------------------------------||
 
-	const codeToLabel = (code: string) => {
-		const found = baseVerifications.find((v) => v.type === code);
-		return found ? found.label : code;
-	};
+      const baseVerifications = useMemo(() => getAllVerificationTypes(), []);
+      
+      //||------------------------------------------------------------------------------------------------||
+      //|| Get Statuses
+      //||------------------------------------------------------------------------------------------------||
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Statuses
-	//||------------------------------------------------------------------------------------------------||
-
-	useEffect(() => {
-		const fetchStatuses = async () => {
-			try {
-				const res = await fetch("/auth/me", {credentials: "include"});
-				const json = await res.json();
-				if (json.success) {
-					// Identity parsing
-					let identity = json.data?.identity;
-					if (typeof identity === "string") {
-						try {
-							identity = JSON.parse(identity);
-						} catch {
-							identity = {};
-						}
-                                    setIdentity(identity);
-					}
-					// Approved array
-					let approved: string[] = [];
-					const rawApproved = identity?.approved;
-					if (Array.isArray(rawApproved)) {
-						approved = rawApproved as string[];
-					} else if (typeof rawApproved === "string" && rawApproved.trim() !== "" && rawApproved !== "undefined") {
-						try {
-							approved = JSON.parse(rawApproved);
-						} catch {
-							// ignore
-						}
-					}
-
-					// Set verification completion
-					const newVerifications = baseVerifications.map((v) => {
-						v.complete = approved.includes(v.type);
-						return v;
-					});
-					setVerifications(newVerifications);
-				} else {
-					setVerifications(baseVerifications);
-				}
-			} catch {
-				setVerifications(baseVerifications);
-			}
-		};
-		fetchStatuses();
-	}, []);
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch: Location + Zones (best-effort)
-	//||------------------------------------------------------------------------------------------------||
-
-	useEffect(() => {
-		const fetchLocationAndZones = async () => {
-                  const res = await fetch("/user/location", {credentials: "include"})
-                  try {
-                        const json = await res.json();
-                        if (json.success && json.data) {
-                              const loc = json.data as LocationInfo;
-                              json.data.types = json.data.types ?? json.data.types.split(',').map((s: string) => s.trim());
-                              setLocation(json.data);
-                        }
-                  } catch {
-                        // ignore
+      useEffect(() => {            
+            setLoading(true);
+            (async() => {
+                  const chirp = new Call("/user/dashboard", {});
+                  chirp.debug = true;
+                  chirp.method = "GET";
+                  await chirp.execute();
+                  if (!chirp.ok()) {
+                        setError(chirp.error());
+                        setLoading(false);
+                        return;
                   }
-            };
+                  if (!chirp.responsePayload.data)  {
+                        setError("No data received");
+                        setLoading(false);
+                        return;
+                  }
+                  console.log("LOADED DATA", chirp.responsePayload.data);
+                  setData(chirp.responsePayload.data as DashboardData);
+                  setLoading(false);
+            })();
+      }, []);
 
-		fetchLocationAndZones();
-
-	}, []);
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Allowed: build a set from loc.types (CSV or array), case-insensitive
+      //|| UI: Info Pill
       //||------------------------------------------------------------------------------------------------||
 
-      const allowedSet = React.useMemo(() => {
-            const raw = (location?.types ?? "");
-            const parts = Array.isArray(raw) ? raw : String(raw).split(",");
-            return new Set(parts.map(s => s.trim().toUpperCase()).filter(Boolean));
-      }, [location?.types]);      
+      const InfoPill: React.FC<{ label: string; value?: string }> = ({ label, value }) => (
+            <div className="w-full">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-base-content/60 mb-1">{label}</div>
+                  <div className="bg-base-200 rounded-lg px-3 py-2 text-sm font-medium border border-base-300 text-white">{value ?? "—"}</div>
+            </div>
+      );
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| UI: Location Card
-	//||------------------------------------------------------------------------------------------------||
+      //||------------------------------------------------------------------------------------------------||
+      //|| Header
+      //||------------------------------------------------------------------------------------------------||
 
-	const LocationCard: React.FC<{loc: LocationInfo}> = ({loc}) => {
+      const VerifiedHeader: React.FC = () => {
+            if (loading) return (
+                  <div className="flex items-center gap-3 mb-4 border-b border-gray-600 pb-2">
+                        <div className={`flex items-center gap-2 ${ data.isVerified ? "text-green-600" : "text-white" }`}>
+                                    <>
+                                          <SpinnerCircle className="w-6 h-6" />     
+                                          <h2 className="text-xl text-gray-500 font-bold">Checking Location and Verifications</h2>
+                                    </>
+                        </div>
+                  </div>                  
+            );
+            return (            
+                  
+                  <div className="flex items-center gap-3 mb-4 border-b border-gray-600 pb-2">
+                        <div className={`flex items-center gap-2 ${ data.isVerified ? "text-green-600" : "text-white" }`}>
+                              { data?.isVerified ? (
+                                    <>
+                                    <CheckCircle className="w-6 h-6" />
+                                    <h2 className="text-xl font-bold">Congrats You are Age Verified in this Region!</h2>
+                                    </>
+                              ) : (
+                                    <>
+                                    <CheckCircle className="w-6 h-6" />
+                                    <h2 className="text-xl font-bold">These methods are eligible for your region</h2>
+                                    </>
+                              ) }                        
+                        </div>
+                  </div>
+            )
+      };
 
-		return (
-			<div className="col-span-1 lg:col-span-3">
-				<div className="bg-base-100 rounded-2xl shadow-xl p-6 border border-base-200">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Left: Location + Allowed */}
-						<div className="space-y-4">
-							{/* Heading inside left column */}
-							<div className="flex items-center gap-3 mb-4 border-b border-gray-600 pb-2">
-								<div className="text-primary">
-									<MapPin className="w-6 h-6" />
-								</div>
-								<h2 className="text-xl font-bold">Your Location </h2>
-                                                <div className="ml-auto text-center p-2 rounded-lg bg-black/20 shadow-2xl border border-gray-600">
-                                                      <span className="block text-xs text-gray-400">Min. Age</span>
-                                                      <span className="block font-bold text-white">{loc.minAge ?? "—"}</span>
-                                                </div>
+      //||------------------------------------------------------------------------------------------------||
+      //|| Header
+      //||------------------------------------------------------------------------------------------------||
+
+      const AlertBanner: React.FC = () => {
+            if (loading) return null;
+            if (data.isVerified) return null;
+            return (
+                  <div className="flex items-center gap-3 p-2 bg-red-500/80 rounded-lg">
+                        <div className="flex mx-auto text-center items-center gap-2 text-white">
+                              <Ban className="w-6 h-6" />
+                              <h2 className="text-xl font-bold">Warning : You are NOT Age Verified!</h2>
+                        </div>
+                  </div>
+            )
+      } 
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Generate the Required Verification Methods
+      //||------------------------------------------------------------------------------------------------||
+
+      const VerifyMethod: React.FC<{ type: VerificationTypes }> = ({ type }) => {
+            //||------------------------------------------------------------------------------------------------||
+            //|| Const
+            //||------------------------------------------------------------------------------------------------||
+            const isAllowed         = data.zone.requirements.includes(type);
+            const userVerified      = isVerified(type, data.identity);
+            const Icon              = getVerificationIcon(type);
+            //||------------------------------------------------------------------------------------------------||
+            //|| Allowed
+            //||------------------------------------------------------------------------------------------------||
+            if (!isAllowed) return null;
+            //||------------------------------------------------------------------------------------------------||
+            //|| JSX
+            //||------------------------------------------------------------------------------------------------||
+            return (
+                  <div
+                        className={`w-full h-full p-4 rounded-lg border ${ userVerified ? " bg-green-500/10 text-green-500" : "border-base-300 bg-base-200" }`}
+                  >
+                        { loading ? (
+                              <div className="animate-pulse space-y-4 opacity-10">
+                                    {/* Header with icon and title */}
+                                    <div className="flex items-center gap-3">
+                                          <div className="bg-gray-300 rounded-full h-6 w-6" />
+                                          <div className="h-4 bg-gray-300 rounded w-1/3" />
+                                    </div>
+
+                                    {/* Description lines */}
+                                    <div className="space-y-2">
+                                          <div className="h-3 bg-gray-300 rounded w-full" />
+                                          <div className="h-3 bg-gray-300 rounded w-5/6" />
+                                          <div className="h-3 bg-gray-300 rounded w-4/6" />
+                                    </div>
+
+                                    {/* Button placeholder */}
+                                    <div className="mt-2 flex w-full justify-end">
+                                          <div className="h-8 w-32 bg-gray-300 rounded" />
+                                    </div>
+                              </div>
+
+                        ) : ( 
+                              <>
+                              <div className="flex items-center gap-3 mb-3">
+                                    <div className="text-primary">
+                                          {Icon ? <Icon className="text-white w-6 h-6" /> : null}
+                                    </div>
+                                    <h3 className="text-lg font-bold">{ getVerificationType(type) }</h3>
+                                    {userVerified && <CheckCircle className="w-5 h-5 text-green-400 ml-auto" />}
+                              </div>
+
+                              <p className="text-sm text-base-content/70 mb-4">
+                              {
+                                    getVerificationDescription(type)
+                              }
+                              </p>
+                              <div className="mt-2 flex w-full justify-end border-white">
+                                    {
+                                          !userVerified ? (
+                                                <button
+                                                      className="btn btn-secondary btn-md"
+                                                      onClick={() => navigate(`/verification/init?type=${encodeURIComponent(type)}`)}>
+                                                      Get Verified
+                                                      <ArrowUpRight className="w-4 h-4 ml-2" />
+                                                </button>
+                                          ) : (
+                                                <BadgeVerified />
+                                          )
+                                    }
+                              </div>
+                              </>
+                        )}
+                  </div>
+                  
+            );          
+      };  
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| JSX
+      //||------------------------------------------------------------------------------------------------||
+
+      return (
+		<MembersLayout>
+			<div className="w-full">
+				<AlertBanner />
+				<div className="col-span-1 lg:col-span-3 mt-2">
+					<div className="bg-base-100 rounded-2xl shadow-xl p-6 border border-base-200">
+					      
+                                    <VerifiedHeader />
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-6 w-full">
+                                          {baseVerifications.map((v) => (
+                                                <VerifyMethod key={v} type={v} />
+                                          ))}
+                                    </div>
+
+						{/* Heading inside left column */}
+						<div className="flex items-center gap-3 mb-4 border-b border-gray-600 pb-2">
+							<div className="text-primary">
+								<MapPin className="w-6 h-6" />
 							</div>
-
-							<div className="grid grid-cols-2 gap-3">
-								<InfoPill label="IP Address" value={loc.ipAddress ?? "—"} />
-								<InfoPill label="City" value={loc.city ?? "—"} />
-								<InfoPill label="State" value={loc.region ?? "—"} />
-								<InfoPill label="Country" value={loc.country ?? "—"} />
-							</div>
-
-							<div className="mt-4">
-								<div className="text-sm font-semibold text-base-content/70 mb-2">Verification Types Allowed</div>
-
-								<div className="flex flex-wrap gap-2">
-									{baseVerifications.map((v) => {
-										const isAllowed = allowedSet.has(v.type.toUpperCase());
-										return (
-											<span
-												key={v.type}
-												className={`badge px-3 py-3 text-xs rounded-lg ${
-													isAllowed ? "badge-primary bg-orange-400" : "badge-primary badge-outline"
-												}`}>
-												{codeToLabel(v.type)}
-											</span>
-										);
-									})}
-								</div>
+							<h2 className="text-xl font-bold">Your Location</h2>
+							<div className="ml-auto text-center p-2 rounded-lg bg-black/20 shadow-2xl border border-gray-600">
+								<span className="block text-xs text-gray-400">Min. Age</span>
+								<span className="block font-bold text-white">{data?.zone?.minAge}</span>
 							</div>
 						</div>
 
-						{/* Right: VPN Ad / Notice */}
-						<div className="relative overflow-hidden rounded-xl border border-base-200 bg-gradient-to-br from-base-200 to-base-100 p-4">
-							<div className="flex items-start gap-4">
-								<div className="shrink-0 text-primary">
-									<Shield className="w-24 h-24 outline-blue fill-blue-400" />
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+							{/* Left: Location + Allowed */}
+							<div className="space-y-4">
+								<div className="grid grid-cols-2 gap-3">
+									<InfoPill label="IP Address" value={data?.ipAddress} />
+									<InfoPill label="City" value={data?.location?.city} />
+									<InfoPill label="State" value={data?.location?.region} />
+									<InfoPill label="Country" value={data?.location?.country} />
 								</div>
-								<div className="flex-1">
-									<h3 className="text-lg font-bold leading-tight">Using a VPN?</h3>
-									<p className="text-sm text-base-content/70 mt-1">
-										VPNs and proxies can change your detected location and may limit which verification options are
-										available in your region.
-									</p>
-                                                      <h5 className="mt-2 font-bold">Why choosing a good VPN matters.</h5>
-                                                      <p className="text-sm text-base-content/70 mt-1">
-                                                            Shared VPN IPs often have poor reputation, which can lead to CAPTCHAs, extra identity prompts, or limited methods (e.g., card or ID only). Using a location that matches your real region keeps things fast and consistent.
-                                                      </p>
-									<div className="flex flex-wrap gap-2 mt-4">
-										<button
-											className="btn btn-primary btn-md bg-blue-400"
-											onClick={() => {
-												navigate("/members/vpns");
-											}}>
-											Recommended VPNs
-										</button>
+
+								<div className="mt-4">
+									<div className="text-sm font-semibold text-base-content/70 mb-2">Age Verification Types Allowed</div>
+									<div className="flex w-full gap-2">
+										{baseVerifications.map((v) => {
+											const isAllowed = data?.zone?.requirements.includes(v);
+											return (
+												<span
+													key={v}
+													className={`flex-1 flex justify-center items-center badge px-3 py-5 text-xs rounded-lg ${
+														isAllowed ? "badge-primary bg-orange-400" : "badge-primary badge-outline"
+													}`}
+													style={{minWidth: 0}}>
+													{(() => {
+														const Icon = getVerificationIcon(v);
+														return Icon ? <Icon className="w-5 h-5" /> : null;
+													})()}
+												</span>
+											);
+										})}
+									</div>
+								</div>
+							</div>
+
+							{/* Right: VPN Ad / Notice */}
+							<div className="relative overflow-hidden rounded-xl border border-base-200 bg-gradient-to-br from-base-200 to-base-100 p-4">
+								<div className="flex items-start gap-4">
+									<div className="shrink-0 text-primary">
+										<Shield className="w-24 h-24" />
+									</div>
+									<div className="flex-1">
+										<h3 className="text-lg font-bold leading-tight">Using a VPN?</h3>
+										<p className="text-sm text-base-content/70 mt-1">
+											VPNs and proxies can change your detected location and may limit which verification options
+											are available in your region.
+										</p>
+										<p className="text-sm text-base-content/70 mt-1">
+											<b className="text-white">Choose Wisely!</b> Low quality VPN IPs often have poor reputation,
+											which can lead to CAPTCHAs or slow access.
+										</p>
+										<div className="flex flex-wrap gap-2 mt-4">
+											<button
+												className="btn btn-primary btn-md bg-blue-400"
+												onClick={() => navigate("/members/vpns")}>
+												Recommended VPNs
+											</button>
+										</div>
 									</div>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-		);
-	};
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| UI: Info Pill
-	//||------------------------------------------------------------------------------------------------||
-
-	const InfoPill: React.FC<{label: string; value: string}> = ({label, value}) => (
-		<div className="w-full">
-			<div className="text-xs font-semibold uppercase tracking-wide text-base-content/60 mb-1">{label}</div>
-			<div className="bg-base-200 rounded-lg px-3 py-2 text-sm font-medium border border-base-300 text-orange-400">{value}</div>
-		</div>
-	);
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Required Banner
-	//||------------------------------------------------------------------------------------------------||
-
-	const VerifiedBanner: React.FC<{value: string}> = ({value}) => (
-		<div className="w-full">
-			<div className="bg-base-200 rounded-lg px-3 py-2 text-sm font-medium border border-base-300">Banner</div>
-		</div>
-	);
-
-      const UnverifiedBanner: React.FC<{methods?: string}> = ({methods}) => {
-            let minimumMethod = "IDEN";
-            if (location?.types?.includes("FACE")) minimumMethod = "FACE";
-            if (location?.types?.includes("CRCD")) minimumMethod = "CRCD";            
-            return (
-                  <div className="w-full">
-                        <div className="bg-base-200 rounded-lg px-3 py-2 text-sm font-medium border border-base-300 mb-3">
-                              <div className="flex items-center gap-3">
-                                    <BadgeInfo className="w-5 h-5 text-secondary shrink-0" />
-                                    <span className="text-secondary font-semibold">Action Required</span>
-                                    <span className="text-base-content/80">Your age is not verified.</span>
-
-                                    <span className="ml-auto text-xs text-base-content/60 whitespace-nowrap overflow-hidden text-ellipsis">
-                                          <button className="btn bg-green-600" onClick={ () => {
-                                                navigate(`/verification/init?type=${minimumMethod}`);
-                                                } }
-                                          >
-                                                <CheckCircle className="w-4 h-4 mr-1" />
-                                                Meet Minimum Verification Level Now!
-                                          </button>
-                                    </span>
-                             </div>
-                        </div>
-                  </div>
-            );
-      }
-
-
-      //||------------------------------------------------------------------------------------------------||
-	//|| Default
-	//||------------------------------------------------------------------------------------------------||
-
-	return (
-		<MembersLayout>
-                  <div>
-                        { (identity.verified && identity.verifiedAge && location && location.minAge && identity.verifiedAge > location.minAge) ? (
-                              <VerifiedBanner value={String(identity.verifiedAge ?? "")} />
-                        ) : (
-                              <UnverifiedBanner methods={identity?.approved ?? []} />
-                        ) }
-                  </div>
-
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-				<LocationCard loc={location ?? {allowed: baseVerifications.map((v) => v.type)}} />
-			</div>
-
-			<div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				{verifications.map((v, idx) => (
-					<div key={idx} className="flex flex-col justify-between p-4 bg-base-100 rounded-lg shadow border border-base-200">
-						{/* Top row: icon + text */}
-						<div className="flex items-start gap-3">
-							{v.complete ? (
-								<div className="p-2 rounded-full bg-success flex-grow-5">
-									{React.cloneElement(v.icon as React.ReactElement, {size: 28})}
-								</div>
-							) : (
-								<div className="p-2 rounded-full bg-white/20 flex-shrink-5ds">
-									{React.cloneElement(v.icon as React.ReactElement, {size: 28})}
-								</div>
-							)}
-
-							<div className="flex flex-col">
-								<h3 className="text-base font-semibold">{v.label}</h3>
-								<p className="text-sm text-base-content/70">{v.blurb}</p>
-							</div>
-						</div>
-
-                                    { identity.verified && identity.verifiedAge && identity.verifiedAge > 18 && (
-                                          <div className="mt-4">
-                                                <div className="text-sm font-semibold text-base-content/70 mb-2">Age Verified</div>
-                                                <div className="text-lg font-bold">{identity.verifiedAge}+</div>
-                                          </div>
-                                    ) }
-
-						{/* Bottom row: button */}
-						<div className="flex justify-end mt-3">
-							{v.complete ? (
-								<button className="btn btn-success btn-sm">
-									<CheckCircle className="w-4 h-4 mr-1" /> Verified
-								</button>
-							) : (
-								<button className="btn btn-primary btn-sm" onClick={() => navigate(`/verification/init/?type=${v.type}`)}>
-									Complete <ArrowRight className="w-4 h-4 ml-1" />
-								</button>
-							)}
-						</div>
-					</div>
-				))}
 			</div>
 		</MembersLayout>
 	);

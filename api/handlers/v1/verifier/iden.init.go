@@ -66,7 +66,7 @@ func IdentifierVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Init(verify.DataTypeIDEN, account.ID, app.Storages["verifications"], app.SQLDB["main"], account.Private, account.Public)
+	verifyRecord, err := verify.Create(verify.DataTypeIDEN, account.ID, app.Storages["verifications"], app.SQLDB["main"], account.Private, account.Public)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return

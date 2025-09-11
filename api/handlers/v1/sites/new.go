@@ -48,17 +48,19 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 
 	privKey := random.RandomString(32)
 	pubKey := random.RandomString(32)
+	agentKey := random.RandomString(32)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create New Site Model
 	//||------------------------------------------------------------------------------------------------||
 
 	site := models.Site{
-		FidAccount:      session.ID,
-		SiteStatus:      "PNEW",
-		SitePrivate:     privKey,
-		SitePublic:      pubKey,
-		SiteEnforcement: "ALLZ",
+		FidAccount:   session.ID,
+		Status:       "PNEW",
+		Private:      privKey,
+		Public:       pubKey,
+		Enforcement:  "ALLZ",
+		AgentPrivate: agentKey,
 	}
 
 	if err := app.SQLDB["main"].DB.Create(&site).Error; err != nil {
@@ -72,6 +74,6 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	responses.Success(w, http.StatusOK, map[string]any{
-		"id": site.IDSite,
+		"id": site.ID,
 	})
 }

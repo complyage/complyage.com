@@ -27,19 +27,9 @@ func SitesCopyHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	_, _, session, err := actions.LoadSessionAccount(r)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session Record
-	//||------------------------------------------------------------------------------------------------||
-
-	session, err := actions.FetchSession(cookie.Value)
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
+		responses.Error(w, http.StatusUnauthorized, "Invalid session. Please re-login")
 		return
 	}
 
@@ -72,25 +62,23 @@ func SitesCopyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Generate New Keys
+	//|| Update Fields
 	//||------------------------------------------------------------------------------------------------||
 
-	privKey := random.RandomString(32)
-	pubKey := random.RandomString(32)
+	newSite := source
+	newSite.Status = "PNEW"
+	newSite.Private = random.RandomString(32)
+	newSite.Public = random.RandomString(32)
+	newSite.AgentPrivate = random.RandomString(32)
+	if !strings.HasSuffix(newSite.Name, " - Copy") {
+		newSite.Name += " - Copy"
+	} else {
+		newSite.Name += " (" + random.RandomString(4) + ")"
+	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create New Copied Site
 	//||------------------------------------------------------------------------------------------------||
-
-	newSite := source
-	newSite.IDSite = 0
-	newSite.SiteStatus = "PNEW"
-	newSite.SitePrivate = privKey
-	newSite.SitePublic = pubKey
-
-	if !strings.HasSuffix(newSite.SiteName, " - Copy") {
-		newSite.SiteName += " - Copy"
-	}
 
 	if err := app.SQLDB["main"].DB.Create(&newSite).Error; err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to create copied site")
@@ -102,6 +90,6 @@ func SitesCopyHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	responses.Success(w, http.StatusOK, map[string]any{
-		"id": newSite.IDSite,
+		"id": newSite.ID,
 	})
 }

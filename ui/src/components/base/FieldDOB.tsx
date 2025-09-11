@@ -22,7 +22,7 @@
 
       interface FieldDOBProps {
             id          : string;
-            value?      : string;
+            value?      : DOB;
             minage      : number;
             onChange    : (DOB: DOB) => void;
       }
@@ -38,10 +38,19 @@
             //|| State
             //||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||*/
 
-            const initialDate = value && !isNaN(new Date(value).getTime()) ? new Date(value) : new Date();
-            const defaultY    = initialDate.getFullYear() - 18;
-            const defaultM    = initialDate.getMonth() + 1;
-            const defaultD    = initialDate.getDate();
+            let defaultY : number;
+            let defaultM : number;
+            let defaultD : number;
+            if (!value) {
+                  const initialDate = value && !isNaN(new Date(value).getTime()) ? new Date(value) : new Date();
+                  defaultY    = initialDate.getFullYear() - 18;
+                  defaultM    = initialDate.getMonth() + 1;
+                  defaultD    = initialDate.getDate();
+            } else {
+                  defaultY    = value?.year || 1981;
+                  defaultM    = value?.month || 5; 
+                  defaultD    = value?.day || 14;
+            }
 
             /*||=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-||
             //|| State

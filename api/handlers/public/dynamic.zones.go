@@ -20,7 +20,7 @@ import (
 
 type ZoneOutput struct {
 	ID             uint       `json:"id"`
-	State          *string    `json:"state"`
+	Region         *string    `json:"region"`
 	Country        *string    `json:"country"`
 	Law            *string    `json:"law"`
 	LawDescription *string    `json:"description"`
@@ -95,17 +95,17 @@ func ZoneHandler(w http.ResponseWriter, r *http.Request) {
 	outputZones := make([]ZoneOutput, len(dbZones))
 	for i, z := range dbZones {
 		outputZones[i] = ZoneOutput{
-			ID:             z.IDZone,
-			State:          z.ZoneState,
-			Country:        z.ZoneCountry,
-			Law:            z.ZoneLaw,
-			LawDescription: z.ZoneLawDescription,
-			Requirements:   z.ZoneRequirements,
-			Penalties:      z.ZonePenalties,
-			Effective:      z.ZoneEffective,
-			Meta:           z.ZoneMeta,
-			Latitude:       z.ZoneLatitude,
-			Longitude:      z.ZoneLongitude,
+			ID:             z.ID,
+			Region:         z.Region,
+			Country:        z.Country,
+			Law:            z.Law,
+			LawDescription: z.Description,
+			Requirements:   z.Requirements,
+			Penalties:      z.Penalties,
+			Effective:      z.Effective,
+			Meta:           z.Meta,
+			Latitude:       z.Latitude,
+			Longitude:      z.Longitude,
 		}
 	}
 

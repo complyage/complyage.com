@@ -41,6 +41,7 @@ import { FaceDirection }                                    from "../../interfac
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
+import FaceDebug                                             from "./Face.Debug";
 import ProgressSteps, { ProgressStep }                       from "../base/ProgressSteps";
 import ProgressBar                                           from "../base/ProgressBar";
 
@@ -55,6 +56,7 @@ const DEBUG = true;
 //||------------------------------------------------------------------------------------------------||
 
 interface FaceProps {
+      debug?      : boolean;
       onUpload    : (file: File | Blob) => void;
 }
 
@@ -62,7 +64,13 @@ interface FaceProps {
 //|| Component
 //||------------------------------------------------------------------------------------------------||
 
-export default function Face({ onUpload } : FaceProps) {
+export default function Face({ onUpload, debug = false } : FaceProps) {
+      
+      //||------------------------------------------------------------------------------------------------||
+      //|| Debug
+      //||------------------------------------------------------------------------------------------------||
+      
+      if (debug) return <FaceDebug onUpload={onUpload} />;
 
       //||------------------------------------------------------------------------------------------------||
 	//|| Steps

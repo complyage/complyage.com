@@ -8,9 +8,15 @@
 //||------------------------------------------------------------------------------------------------||*/
 
 import React                        from "react";
+
+/*||------------------------------------------------------------------------------------------------||
+//|| Components
+//||------------------------------------------------------------------------------------------------||*/
+
 import NavMain                      from "../../components/nav/NavMain";
 import FooterMain                   from "../../components/footer/FooterMain";
-import ProgressBar                  from "../../components/base/ProgressBar";
+import MainHero                     from "../../components/heroes/Main";
+import MonthlySupportHero           from "../../components/heroes/MonthlySupport";
 
 /*||------------------------------------------------------------------------------------------------||
 //|| Pricing
@@ -23,13 +29,14 @@ export default function Pricing() {
 			<NavMain />
 
 			{/* Hero */}
-			<section className="relative flex flex-col items-center justify-center text-center py-20 bg-primary text-primary-content px-4">
-				<h1 className="text-5xl font-extrabold mb-4 mt-[120px]">Simple, Transparent Pricing</h1>
-				<p className="text-lg max-w-2xl">
-					Protect your privacy and stay compliant — always free for platforms and free for individuals, with one small optional cost if you
-					choose physical address verification.
-				</p>
-			</section>
+
+                  <MainHero
+                        image="/img/hero/pricing.webp"
+                        title="Free. Simple."
+                        description="Protect your privacy and stay compliant - always free for platforms and free for individuals, with one small optional cost if you choose physical address verification or credit card verification."
+                        ctaLabel="Integrate Now"
+                        ctaHref="/signup"
+                  />                  
 
 			{/* Pricing Details */}
 			<section className="py-20 px-4 max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
@@ -37,7 +44,7 @@ export default function Pricing() {
 				<div className="bg-base-200 rounded-lg shadow-lg p-8 flex flex-col justify-between">
 					<h2 className="text-3xl font-bold mb-4">For Platforms & Businesses</h2>
 					<p className="mb-6 text-lg">
-						<strong>Free.</strong>
+						<strong>Free!</strong>
 					</p>
 					<p className="mb-6">
 						We don't charge platforms or businesses for our core verification service. Stay compliant, protect user privacy, and scale
@@ -50,7 +57,7 @@ export default function Pricing() {
 				<div className="bg-base-200 rounded-lg shadow-lg p-8 flex flex-col justify-between">
 					<h2 className="text-3xl font-bold mb-4">For Consumers</h2>
 					<p className="mb-6 text-lg">
-						<strong>100% Free.</strong>
+						<strong>Free!</strong>
 					</p>
 					<p className="mb-6">
 						Age or ID verifications are free - forever. The only thing we charge for is optional address verification, which costs a
@@ -62,10 +69,7 @@ export default function Pricing() {
 			</section>
 
 			{/* Donations Progress */}
-			<section className="py-8 px-4 bg-black text-base-content text-center">
-				<h3 className="text-2xl font-bold mb-4">Monthly Support Raised</h3>
-				<ProgressBar current={0} goal={4314} prefix="$" label="of goal" />
-			</section>
+			<MonthlySupportHero />
                   
 			{/* How It's Possible */}
 			<section className="py-20 px-4 max-w-4xl mx-auto text-center">
@@ -80,11 +84,8 @@ export default function Pricing() {
 				</p>
 				<p className="mb-6">If you’d like to support our mission, you can donate securely via PayPal or Bitcoin.</p>
 				<div className="flex flex-col md:flex-row justify-center gap-4">
-					<a href="https://www.paypal.com/donate" target="_blank" rel="noopener noreferrer" className="btn btn-primary px-8 py-4">
-						Donate with PayPal
-					</a>
-					<a href="bitcoin:YOUR-BITCOIN-ADDRESS" className="btn btn-secondary px-8 py-4">
-						Donate with Bitcoin
+					<a href="/donate" target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-lg px-8 py-4">
+						Donate and support the cause!
 					</a>
 				</div>
 			</section>

@@ -7,6 +7,7 @@ package ips
 import (
 	"base/db/abstract"
 	"errors"
+	"strings"
 
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/base/convert"
@@ -22,7 +23,7 @@ func GetLocationByIP(ipAddress string) (Location, error) {
 	//|| Convert IP
 	//||------------------------------------------------------------------------------------------------||
 
-	ipNum := convert.IpToUint32(ipAddress)
+	ipNum := convert.IpToUint32(strings.TrimSpace(ipAddress))
 	if ipNum == 0 {
 		return Location{}, errors.New("invalid IPv4 address: " + ipAddress)
 	}
@@ -38,7 +39,7 @@ func GetLocationByIP(ipAddress string) (Location, error) {
 		}
 		return Location{
 			City:      city,
-			State:     state,
+			Region:    state,
 			Country:   country,
 			Latitude:  lat,
 			Longitude: long,
@@ -60,7 +61,7 @@ func GetLocationByIP(ipAddress string) (Location, error) {
 
 	return Location{
 		City:      ipBlock.City,
-		State:     ipBlock.State,
+		Region:    ipBlock.State,
 		Country:   ipBlock.Country,
 		Latitude:  ipBlock.Latitude,
 		Longitude: ipBlock.Longitude,

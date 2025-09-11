@@ -167,7 +167,7 @@ func (v *Verification) LoadEncrypted() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Unmarshal
 	//||------------------------------------------------------------------------------------------------||
-	err = json.Unmarshal(decryptedData, v.Encrypted)
+	err = json.Unmarshal(decryptedData, &v.Encrypted)
 	if err != nil {
 		return fmt.Errorf("unmarshal %q failed: %w", v.ObjectName(true), err)
 	}

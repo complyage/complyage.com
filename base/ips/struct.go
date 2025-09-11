@@ -35,7 +35,7 @@ type IPLocationVerificationResponse struct {
 
 type Location struct {
 	City      string  `json:"city"`
-	State     string  `json:"state"`
+	Region    string  `json:"region"`
 	Country   string  `json:"country"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
@@ -46,7 +46,7 @@ type Location struct {
 //||------------------------------------------------------------------------------------------------||
 
 type OptimizedZone struct {
-	State       *string    `json:"state,omitempty"`
+	Region      *string    `json:"region,omitempty"`
 	Country     *string    `json:"country,omitempty"`
 	Law         *string    `json:"law,omitempty"`
 	Description *string    `json:"description,omitempty"`

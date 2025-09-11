@@ -23,15 +23,6 @@ import (
 func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Check Method
-	//||------------------------------------------------------------------------------------------------||
-
-	if r.Method != http.MethodPost {
-		responses.Error(w, http.StatusMethodNotAllowed, "Only POST allowed")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Get Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
@@ -57,7 +48,7 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.IDSite == 0 {
+	if input.ID == 0 {
 		responses.Error(w, http.StatusBadRequest, "Missing site ID")
 		return
 	}
@@ -68,7 +59,7 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	var original models.Site
 	if err := app.SQLDB["main"].DB.
-		Where("id_site = ? AND fid_account = ?", input.IDSite, session.ID).
+		Where("id_site = ? AND fid_account = ?", input.ID, session.ID).
 		Where("site_status NOT IN ('RMVD', 'BNND')").
 		First(&original).Error; err != nil {
 		responses.Error(w, http.StatusNotFound, "Site not found or access denied")
@@ -79,12 +70,12 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Determine Status Update Rules
 	//||------------------------------------------------------------------------------------------------||
 
-	newStatus := original.SiteStatus
+	newStatus := original.Status
 
-	if original.SiteStatus == "PNEW" {
+	if original.Status == "PNEW" {
 		newStatus = "PEND"
-	} else if (original.SiteStatus == "APPR" || original.SiteStatus == "ACTV") &&
-		(original.SiteName != input.SiteName || original.SiteURL != input.SiteURL) {
+	} else if (original.Status == "APPR" || original.Status == "ACTV") &&
+		(original.Name != input.Name || original.URL != input.URL) {
 		newStatus = "PEND"
 	}
 
@@ -92,32 +83,28 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Perform Update
 	//||------------------------------------------------------------------------------------------------||
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Perform Update
-	//||------------------------------------------------------------------------------------------------||
-
 	err = app.SQLDB["main"].DB.Model(&models.Site{}).
-		Where("id_site = ? AND fid_account = ?", input.IDSite, session.ID).
+		Where("id_site = ? AND fid_account = ?", input.ID, session.ID).
 		Updates(map[string]interface{}{
-			"site_name":         input.SiteName,
-			"site_description":  input.SiteDescription,
-			"site_url":          input.SiteURL,
+			"site_name":         input.Name,
+			"site_description":  input.Description,
+			"site_url":          input.URL,
 			"site_status":       newStatus,
-			"site_zones":        input.SiteZones,
-			"site_enforcement":  input.SiteEnforcement,
-			"site_domains":      input.SiteDomains,
-			"site_private":      input.SitePrivate,
-			"site_public":       input.SitePublic,
-			"site_redirect":     input.SiteRedirect,
-			"site_permissions":  input.SitePermissions,
-			"site_testmode":     input.SiteTestMode,
-			"site_gate_signup":  input.SiteGateSignup,
-			"site_gate_confirm": input.SiteGateConfirm,
-			"site_gate_exit":    input.SiteGateExit,
+			"site_zones":        input.Zones,
+			"site_enforcement":  input.Enforcement,
+			"site_domains":      input.Domains,
+			"site_private":      input.Private,
+			"site_public":       input.Public,
+			"site_redirect":     input.Redirect,
+			"site_permissions":  input.Permissions,
+			"site_testmode":     input.TestMode,
+			"site_gate_signup":  input.GateSignup,
+			"site_gate_confirm": input.GateConfirm,
+			"site_gate_exit":    input.GateExit,
 		}).Error
 
 	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, fmt.Sprintf("Database error while updating site %d: %v", input.IDSite, err))
+		responses.Error(w, http.StatusInternalServerError, fmt.Sprintf("Database error while updating site %d: %v", input.ID, err))
 		return
 	}
 
@@ -125,7 +112,7 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Response
 	//||------------------------------------------------------------------------------------------------||
 
-	input.SiteStatus = newStatus
+	input.Status = newStatus
 
 	responses.Success(w, http.StatusOK, map[string]any{
 		"site": input,

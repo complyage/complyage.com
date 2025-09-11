@@ -84,9 +84,9 @@ func SitesLoadHandler(w http.ResponseWriter, r *http.Request) {
 	host := os.Getenv("VITE_COMPLYAGE_MINIO_URL")
 	bucket := os.Getenv("VITE_MINIO_BUCKET")
 	hashSecret := os.Getenv("MINIO_HASH")
-	hashInput := fmt.Sprintf("%s%d%s", hashSecret, site.IDSite, hashSecret)
+	hashInput := fmt.Sprintf("%s%d%s", hashSecret, site.ID, hashSecret)
 	hashBytes := sha256.Sum256([]byte(hashInput))
-	hashHex := fmt.Sprintf("%d_%s", site.IDSite, hex.EncodeToString(hashBytes[:]))
+	hashHex := fmt.Sprintf("%d_%s", site.ID, hex.EncodeToString(hashBytes[:]))
 	logoURL := fmt.Sprintf("%s/%s/sites/logos/%s.webp", host, bucket, hashHex)
 
 	//||------------------------------------------------------------------------------------------------||

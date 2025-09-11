@@ -3,8 +3,8 @@ module api
 go 1.24.5
 
 require (
-	agent v0.0.0
-	base v0.0.0
+	agent v0.0.1
+	base v0.0.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.95
@@ -119,7 +119,7 @@ require (
 	gorm.io/datatypes v1.2.6 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
-	gorm.io/gorm v1.30.1 // indirect
+	gorm.io/gorm v1.30.1 // direct
 )
 
 replace agent => ../agent

@@ -23,6 +23,11 @@ export default function FooterMain() {
 							</LinkQuery>
 						</li>
 						<li>
+							<LinkQuery to="/contact" className="hover:underline">
+								Contact Us
+							</LinkQuery>
+						</li>
+						<li>
 							<LinkQuery to="/terms" className="hover:underline">
 								Terms of Service
 							</LinkQuery>
@@ -30,11 +35,6 @@ export default function FooterMain() {
 						<li>
 							<LinkQuery to="/privacy" className="hover:underline">
 								Privacy Policy
-							</LinkQuery>
-						</li>
-						<li>
-							<LinkQuery to="/support" className="hover:underline">
-								Support
 							</LinkQuery>
 						</li>
 					</ul>

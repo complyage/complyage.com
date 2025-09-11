@@ -21,6 +21,12 @@ import (
 
 func InitRoutes() {
 	//||------------------------------------------------------------------------------------------------||
+	//|| Public
+	//||------------------------------------------------------------------------------------------------||
+	app.HTTP["api"].Router.HandleFunc("/public/contact", public.ContactHandler).Methods("POST")
+	app.HTTP["api"].Router.HandleFunc("/public/donated", public.DonatedHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/public/img/qr", public.QRCodeHandler).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
 	//|| Auth
 	//||------------------------------------------------------------------------------------------------||
 	app.HTTP["api"].Router.HandleFunc("/auth/signup", sentry.SignupHandler).Methods("POST")
@@ -48,6 +54,9 @@ func InitRoutes() {
 	app.HTTP["api"].Router.HandleFunc("/v1/api/news", public.NewsHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/zones", public.ZoneHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/vpns", public.VPNHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/donate", public.DonateHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/donate/intent", public.CreatePaymentIntentHandler).Methods("POST")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/donate/complete", public.DonateComplete).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Member Sites
 	//||------------------------------------------------------------------------------------------------||
@@ -104,6 +113,9 @@ func InitRoutes() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Admin
 	//||------------------------------------------------------------------------------------------------||
-	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/json", verifier.TestingJSONVerification).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/verify/id/reset", verifier.TestingResetVerification).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Admin
+	//||------------------------------------------------------------------------------------------------||
+	InitAdminRoutes()
 }

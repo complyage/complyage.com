@@ -2,137 +2,178 @@
 //|| Import
 //||------------------------------------------------------------------------------------------------||
 
-import React, { useEffect, useState } from "react";
-import MembersLayout                  from "../../layouts/MembersLayout";
-import { getVerificationType }        from "../../data/getVerificationData";
-import { Mail, Phone, CreditCard, MapPin, User, IdCard, Smile, CheckCircle, XCircle, ChevronDown, ChevronRight } from "lucide-react";
+import React, { JSX, useEffect, useState, useRef }                      from "react";
+import { CheckCircle, CircleCheck, CircleX, Globe, User, ArrowUpRight } from "lucide-react";
+import { useNavigate }                                                  from "react-router-dom";
 
-// Types for new Identity structure
-interface IdentityRecord {
-      data?: string;
-      display?: string;
-      [key: string]: any;
-}
-interface Identity {
-      id?: number;
-      email?: IdentityRecord;
-      age?: IdentityRecord;
-      phone?: IdentityRecord;
-      address?: IdentityRecord;
-      creditCard?: IdentityRecord;
-      face?: IdentityRecord;
-      idCard?: IdentityRecord;
-      usernames?: { [key: string]: any };
-      approved?: string[];
-      verified?: boolean;
-      verifiedAge?: number;
-}
+//||------------------------------------------------------------------------------------------------||
+//|| Interfaces
+//||------------------------------------------------------------------------------------------------||
 
-interface ModelVerification {
-      id: number;
-      type: string;
-      encrypt: string;
-      data: string;
-      meta: string;
-      status: string;
-      complete: boolean;
-}
+import { VerificationTypes }                                            from "../../interfaces/models/model.verify";
+import { IdentityRecord }                                               from "../../interfaces/verify/identity/identity";
 
-// Icon mapping for each verification type
-const TYPE_ICON: Record<string, JSX.Element> = {
-      "IDEN":  <IdCard className="w-10 h-10 text-blue-400" />, // ID card
-      "CRCD":  <CreditCard className="w-8 h-8 text-pink-500" />,
-      "FACE":  <Smile className="w-8 h-8 text-yellow-400" />,
-      "MAIL":  <Mail className="w-8 h-8 text-purple-500" />,
-      "PHNE":  <Phone className="w-8 h-8 text-emerald-400" />,
-      "ADDR":  <MapPin className="w-8 h-8 text-red-400" />,
-      "AGE":   <User className="w-8 h-8 text-cyan-400" />,
-      "PROF":  <User className="w-8 h-8 text-gray-400" />,
-};
+//||------------------------------------------------------------------------------------------------||
+//|| Components
+//||------------------------------------------------------------------------------------------------||
 
-const TYPE_DESC: Record<string, string> = {
-      "IDEN": "Government-issued ID",
-      "CRCD": "Credit Card",
-      "FACE": "Selfie / Facial",
-      "MAIL": "Email Address",
-      "PHNE": "Phone Number",
-      "ADDR": "Mailing Address",
-      "AGE":  "Date of Birth",
-      "PROF": "Profile / Usernames",
-};
+import MembersLayout                                                    from "../../layouts/MembersLayout";
+import SpinnerCircle                                                    from "../../components/base/SpinnerCircle";
+import InlineAlert                                                      from "../../components/base/InlineAlert";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Dashboard Data
+//||------------------------------------------------------------------------------------------------||
+
+import { DashboardData }                                                from "../../interfaces/members/dashboard";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Call
+//||------------------------------------------------------------------------------------------------||
+
+import Call                                                             from "../../classes/call";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Data
+//||------------------------------------------------------------------------------------------------||
+
+import { getVerificationType, getVerificationIcon }                    from "../../data/getVerificationData";
+
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default Component
 //||------------------------------------------------------------------------------------------------||
 
-export default function Identity() {
+export default function MembersIdentity() {
 
-      const [verifications, setVerifications]         = useState<ModelVerification[]>([]);
-      const [page, setPage]                           = useState<number>(1);
-      const [pageSize]                                = useState<number>(10);
-      const [total, setTotal]                         = useState<number>(0);
-      const [loading, setLoading]                     = useState<boolean>(true);
-      const [showEncrypted, setShowEncrypted]         = useState<string[]>([]);
+      //||------------------------------------------------------------------------------------------------||
+      //|| Navigate
+      //||------------------------------------------------------------------------------------------------||
 
-      // Animated caret for encrypted toggle
-      function Caret({ open }: { open: boolean }) {
-            return open
-                  ? <ChevronDown className="inline w-4 h-4 transition-transform" />
-                  : <ChevronRight className="inline w-4 h-4 transition-transform" />;
-      }
+      const navigate                                                    = useNavigate();
 
-      const toggleEncrypted = (type: string) => {
-            setShowEncrypted(prev =>
-                  prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-            );
+      //||------------------------------------------------------------------------------------------------||
+      //|| Default Data
+      //||------------------------------------------------------------------------------------------------||
+
+      const defaultData: DashboardData = {
+            isVerified        : false,
+            verifiedAge       : 0,
+            minimumType       : "IDEN",
+            ipAddress         : "---",
+            location          : {
+                  city        : "---",
+                  region      : "---",
+                  country     : "---",
+                  latitude    : 0,
+                  longitude   : 0
+            },
+            zone              : {
+                  laws        : "",
+                  requirements: ["IDEN", "FACE", "CRCD"],
+                  effective   : "---",
+                  minAge      : 0
+            },
+            identity          : {}
       };
 
-      // Fetch Verifications
-      const fetchVerifications = async () => {
+      //||------------------------------------------------------------------------------------------------||
+      //|| Use State
+      //||------------------------------------------------------------------------------------------------||
+
+      const [ data, setData ]                                           = useState<DashboardData>(defaultData);
+      const [ error, setError ]                                         = useState<any>(null);
+      const [ loading, setLoading ]                                     = useState<boolean>(false);
+      const didFetchRef                                                 = useRef(false);
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Get Statuses
+      //||------------------------------------------------------------------------------------------------||
+
+      useEffect(() => {
+            if (didFetchRef.current) return;
+            didFetchRef.current = true;
             setLoading(true);
-            try {
-                  const res = await fetch(`/auth/me`, { credentials: "include" });
-                  const json = await res.json();
-
-                  if (json.success) {
-                        let identity: Identity = json.data.identity;
-                        if (typeof identity === "string") {
-                              try { identity = JSON.parse(identity); } catch { identity = {}; }
-                        }
-                        let approved: string[] = [];
-                        const rawApproved = identity?.approved;
-                        if (Array.isArray(rawApproved)) approved = rawApproved;
-                        else if (typeof rawApproved === "string") {
-                              try { approved = JSON.parse(rawApproved); } catch { approved = []; }
-                        }
-
-                        const baseVerifications: ModelVerification[] = [
-                              { id: 1, type: "IDEN", encrypt: identity?.idCard?.data || "",      data: identity?.idCard?.display || "",     meta: "", status: "", complete: false },
-                              { id: 2, type: "CRCD", encrypt: identity?.creditCard?.data || "",  data: identity?.creditCard?.display || "", meta: "", status: "", complete: false },
-                              { id: 3, type: "FACE", encrypt: identity?.face?.data || "",        data: identity?.face?.display || "",       meta: "", status: "", complete: false },
-                              { id: 4, type: "MAIL", encrypt: identity?.email?.data || "",       data: identity?.email?.display || "",      meta: "", status: "", complete: false },
-                              { id: 5, type: "PHNE", encrypt: identity?.phone?.data || "",       data: identity?.phone?.display || "",      meta: "", status: "", complete: false },
-                              { id: 6, type: "ADDR", encrypt: identity?.address?.data || "",     data: identity?.address?.display || "",    meta: "", status: "", complete: false },
-                              { id: 7, type: "AGE",  encrypt: identity?.age?.data || "",         data: identity?.age?.display || "",        meta: "", status: "", complete: false },
-                              { id: 8, type: "PROF", encrypt: "",                                data: identity?.usernames ? Object.keys(identity.usernames).length + " usernames" : "", meta: "", status: "PEND", complete: false }
-                        ];
-                        const updatedVerifications = baseVerifications.map(v => ({
-                              ...v,
-                              complete: approved.includes(v.type)
-                        }));
-                        setVerifications(updatedVerifications);
-                        setTotal(updatedVerifications.length);
+            const fetchData = (async() => {
+                  console.log("======> Fetching Dashboard Data");
+                  const chirp = new Call("/user/dashboard", {});
+                  chirp.debug  = true;
+                  chirp.method = "GET";
+                  await chirp.execute();
+                  if (!chirp.ok()) {
+                        setError(chirp.error());
+                        setLoading(false);
+                        return;
                   }
-            } catch (err) {
-                  console.error("❌ Failed to load identity:", err);
-            } finally {
+                  if (!chirp.responsePayload.data)  {
+                        setError("No data received");
+                        setLoading(false);
+                        return;
+                  }
+                  console.log("LOADED DATA", chirp.responsePayload.data);
+                  setData(chirp.responsePayload.data as DashboardData);
                   setLoading(false);
-            }
-      };
+            });
+            fetchData();
+      }, []);
 
-      useEffect(() => { fetchVerifications(); }, []);
+      //||------------------------------------------------------------------------------------------------||
+      //|| identityRow
+      //||------------------------------------------------------------------------------------------------||
 
-      const totalPages = Math.ceil(total / pageSize);
+      function identityRow(verifyType: VerificationTypes, v?: IdentityRecord) : JSX.Element {
+            const isVerified  = !!(v && typeof v.verified !== "undefined" && v.verified === true);
+            const rowBg       = isVerified ? "bg-black p-4 shadow-lg border-b border-gray-700" : "bg-gray-800 text-gray-400";
+            const desc        = getVerificationType(verifyType) || verifyType;
+            const Icon        = getVerificationIcon(verifyType) || User;
+
+            return (
+                  <React.Fragment key={verifyType}>
+                        <tr className={`${rowBg} transition-colors`}>
+                              <td className="w-5"><Icon className="w-5 h-5" /></td>
+                              <td>
+                                    <span className="font-semibold">{desc}</span>
+                              </td>
+                              <td>
+                                    <span className={!isVerified ? "opacity-50" : ""}>
+                                          <pre className="whitespace-pre-wrap font-mono">
+                                                {v?.display || <span className="italic text-base-content/40">—</span>}
+                                          </pre>
+                                    </span>
+                              </td>
+                              <td className="text-center">
+                                    {["FACE","IDEN"].includes(verifyType) ? (
+                                          <span className="flex flex-col items-center gap-0.5 rounded px-3 py-1 text-sm font-semibold">
+                                                <CircleCheck className="w-8 h-8 text-green-400 mb-1" />
+                                          </span>
+                                    ) : verifyType === "CRCD" ? (
+                                          <span className="flex flex-col items-center gap-0.5 rounded px-3 py-1 text-sm font-semibold">
+                                                <Globe className="w-8 h-8 text-blue-400 mb-1" />
+                                          </span>
+                                    ) : (
+                                          <span className="flex flex-col items-center gap-0.5 rounded px-3 py-1 text-sm font-semibold">
+                                                <CircleX className="w-8 h-8 text-red-400 mb-1" />
+                                          </span>
+                                    )}
+                              </td>
+                              <td className="text-center">
+                                    {isVerified ? (
+                                          <span className="inline-flex items-center gap-1 rounded-lg px-5 py-2 border-2 bg-green-400/20 border-green-400 text-green-400">
+                                                <CheckCircle className="w-6 h-6" />
+                                          </span>
+                                    ) : (
+                                          <button
+                                                onClick={() => navigate(`/verification/init?type=${encodeURIComponent(verifyType)}`)}
+                                                className="btn btn-secondary btn-md"
+                                          >
+                                                Verify <ArrowUpRight className="w-4 h-4" />
+                                          </button>
+                                    )}
+                              </td>
+                        </tr>
+                  </React.Fragment>
+            );
+      }
 
       //||------------------------------------------------------------------------------------------------||
       //|| JSX
@@ -141,88 +182,51 @@ export default function Identity() {
       return (
             <MembersLayout title="Your Verified Identity">
                   <div className="max-w-4xl mx-auto px-2 md:px-0">
-                        <div className="mb-5 p-5 bg-base-200 rounded-lg text-base leading-loose shadow">
-                              <b>We take your privacy seriously.</b> All sensitive data you provide—emails, phone numbers, and verification documents—is encrypted before it ever reaches our servers. <br />
-                              Even we can't see your private data. Click <b>"See what we see"</b> to inspect your encrypted entries.
-                        </div>
-                        <div className="overflow-x-auto">
-                              <table className="table w-full bg-base-100 rounded-xl text-lg">
-                                    <tbody>
-                                          {loading ? (
-                                                <tr>
-                                                      <td colSpan={5} className="text-center p-6 text-base-content/60">
-                                                            Loading identity records…
-                                                      </td>
-                                                </tr>
-                                          ) : verifications.length === 0 ? (
-                                                <tr>
-                                                      <td colSpan={5} className="text-center p-6 text-base-content/60">
-                                                            No stored identity data.
-                                                      </td>
-                                                </tr>
-                                          ) : (
-                                                verifications.map((v, i) => {
-                                                      const rowBg = v.complete ? "bg-black p-4 shadow-lg border-b border-gray-700" : "opacity-30";
-                                                      const desc = TYPE_DESC[v.type] || v.type;
-                                                      const icon = TYPE_ICON[v.type] || <User className="w-5 h-5" />;
-                                                      const statusChip = v.complete
-                                                            ? <span className="inline-flex items-center gap-1 rounded bg-green-400 px-5 py-2 text-black font-semibold"><CheckCircle className="w-4 h-4" /> Verified</span>
-                                                            : <></>;
-                                                      return (
-                                                            <React.Fragment key={v.id}>
-                                                                  <tr className={`${rowBg} transition-colors`}>
-                                                                        <td>{icon}</td>
-                                                                        <td>
-                                                                              <span className="font-semibold">{desc}</span>
-                                                                              {v.type === "PROF" && !!v.data && (
-                                                                                    <span className="block  text-base-content/70">{v.data}</span>
-                                                                              )}
-                                                                        </td>
-                                                                        <td>
-                                                                              <span className={(!v.complete) ? "opacity-50" : ""}>
-                                                                                    <pre className="whitespace-pre-wrap  font-mono">{v.data || <span className="italic text-base-content/40">—</span>}</pre>
-                                                                              </span>
-                                                                        </td>
-                                                                        <td>{statusChip}</td>
-                                                                        <td className="text-right">
-                                                                              {v.complete ? (
-                                                                                    <button
-                                                                                          className="btn btn-primary btn-md"
-                                                                                          onClick={() => { toggleEncrypted(v.type); }}
-                                                                                    >
-                                                                                          <Caret open={showEncrypted.includes(v.type)} /> See what we see
-                                                                                    </button>
-                                                                              ) : (
-                                                                                    <button className="btn btn-secondary btn-md" disabled>Verify</button>
-                                                                              )}
-                                                                        </td>
-                                                                  </tr>
-                                                                  {v.encrypt && showEncrypted.includes(v.type) && (
-                                                                        <tr>
-                                                                              <td colSpan={5} className="bg-black/80">
-                                                                                    <textarea
-                                                                                          readOnly={true}
-                                                                                          className="w-full h-28 rounded font-mono bg-black/70 text-yellow-400 p-3"
-                                                                                    >{v.encrypt}</textarea>
-                                                                              </td>
-                                                                        </tr>
-                                                                  )}
-                                                            </React.Fragment>
-                                                      )
-                                                })
-                                          )}
-                                    </tbody>
-                              </table>
-                        </div>
+                        <div className="overflow-x-auto rounded-lg">
 
-                        {/* Paging Controls */}
-                        {totalPages > 1 && (
-                              <div className="flex justify-center mt-4 gap-2">
-                                    <button disabled={page === 1} className="btn btn-sm" onClick={() => setPage(page - 1)}>Prev</button>
-                                    <span className="px-2">Page {page} of {totalPages}</span>
-                                    <button disabled={page === totalPages} className="btn btn-sm" onClick={() => setPage(page + 1)}>Next</button>
-                              </div>
-                        )}
+                              {/* Spinner (loading, no error) */}
+                              {loading && !error && (
+                                    <div className="flex justify-center items-center h-64">
+                                    <SpinnerCircle />
+                                    </div>
+                              )}
+
+                              {/* Error Alert (not loading, has error) */}
+                              {!loading && error && (
+                                    <InlineAlert isError message={error} />
+                              )}
+
+                              {/* Identity Verified/Not Verified & Table (not loading, no error) */}
+                              {!loading && !error && (
+                                    <>
+                                          { /* <textarea
+                                                defaultValue={JSON.stringify(data, null, 2)}
+                                                className="w-full h-64 bg-gray-800 text-gray-200 p-4 rounded-lg font-mono mb-5"
+                                                readOnly
+                                          /> */ }
+
+                                          <table className="table w-full bg-base-100 rounded-xl text-lg">
+                                                <thead>
+                                                      <tr className="bg-base-200 p-4 shadow-lg border-b border-gray-700">
+                                                            <th colSpan={2}>Type</th>
+                                                            <th>Details</th>
+                                                            <th className="text-center">Verifies Age</th>
+                                                            <th className="text-center">Status</th>
+                                                      </tr>
+                                                </thead>
+                                                <tbody>
+                                                      {identityRow("IDEN", data.identity.IDEN)}
+                                                      {identityRow("FACE", data.identity.FACE)}
+                                                      {identityRow("CRCD", data.identity.CRCD)}
+                                                      {identityRow("MAIL", data.identity.MAIL)}
+                                                      {identityRow("PHNE", data.identity.PHNE)}
+                                                      {identityRow("ADDR", data.identity.ADDR)}
+                                                </tbody>
+                                          </table>
+
+                                    </>
+                              )}
+                        </div>
                   </div>
             </MembersLayout>
       );

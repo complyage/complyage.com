@@ -103,7 +103,7 @@ func GetSiteByPublic(publicKey string) (models.Site, error) {
 	defer sitesMutex.RUnlock()
 
 	for i := range Sites {
-		if Sites[i].SitePublic == publicKey {
+		if Sites[i].Public == publicKey {
 			return Sites[i], nil
 		}
 	}
@@ -118,7 +118,7 @@ func GetSiteByAgentKey(agentKey string) *models.Site {
 	sitesMutex.RLock()
 	defer sitesMutex.RUnlock()
 	for i := range Sites {
-		if Sites[i].SiteAgentPrivate == agentKey {
+		if Sites[i].AgentPrivate == agentKey {
 			return &Sites[i]
 		}
 	}

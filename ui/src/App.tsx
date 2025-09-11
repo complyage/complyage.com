@@ -10,6 +10,10 @@ import { Routes, Route }      from 'react-router-dom'
 //||------------------------------------------------------------------------------------------------||
 
 import Home                   from './pages/public/Home'
+import Donate                 from './pages/public/Donate'
+import Contact                from './pages/public/Contact'
+import TOS                    from './pages/public/TOS'
+import PrivacyPolicy          from './pages/public/PrivacyPolicy'
 import About                  from './pages/public/About'
 import Pricing                from './pages/public/Pricing'
 import EnforcementZones       from './pages/public/EnforcementZones'
@@ -59,10 +63,10 @@ import PhoneVerification      from './pages/verification/phone/PhoneVerification
 import FaceVerification       from './pages/verification/face/FaceVerification'
 
 //||------------------------------------------------------------------------------------------------||
-//|| Test
+//|| Admin
 //||------------------------------------------------------------------------------------------------||
 
-import SelfiePage            from './pages/verification/Selfie'
+import AdminDashboard            from './pages/admin/AdminDashboard'
 
 //||------------------------------------------------------------------------------------------------||
 //|| App
@@ -89,6 +93,11 @@ export default function App() {
 			<Route path="/about" element={<About />} />
 			<Route path="/pricing" element={<Pricing />} />
 			<Route path="/vendors" element={<Vendors />} />
+                  <Route path="/donate" element={<Donate />} />
+                  <Route path="/terms" element={<TOS />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/contact" element={<Contact />} />
+
 
 			<Route path="/signup" element={<Signup />} />
                   <Route path="/forgot" element={<Forgot />} />
@@ -99,7 +108,6 @@ export default function App() {
 			<Route path="/logout" element={<Logout />} />
 			<Route path="/exit" element={<Exit />} />
                   
-                  <Route path="/selfie" element={<SelfiePage />} />
 
 			<Route path="/members" element={<Dashboard />} />
 			<Route path="/members/sites" element={<Sites />} />
@@ -120,6 +128,8 @@ export default function App() {
                   <Route path="/verification/phone" element={<PhoneVerification />} />
                   <Route path="/verification/address" element={<AddressVerification />} />
                   
+
+                  <Route path="/admin" element={<AdminDashboard />} />
 		</Routes>
 	);
 }

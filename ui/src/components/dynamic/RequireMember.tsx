@@ -13,6 +13,7 @@ import SpinnerCircle                                  from "../base/SpinnerCircl
 export type User = {
 	id                : number;
 	email?            : string;
+      username?         : string;
 	status            : string;
 	type              : string;
 	level             : number;

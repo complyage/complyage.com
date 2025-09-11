@@ -41,7 +41,7 @@
             //||------------------------------------------------------------------------------------------------||
             return (
                   <div className="w-full mx-auto text-center p-6 items-center justify-center gap-6 rounded-xl shadow-lg bg-black/50">
-                        <FieldDOB minage={16} id="dob" onChange={ (dob : DOB) => {
+                        <FieldDOB value="1981-05-14" minage={16} id="dob" onChange={ (dob : DOB) => {
                               updateProcess({
                                     ...process,
                                     dob: dob

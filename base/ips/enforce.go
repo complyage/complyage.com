@@ -22,7 +22,7 @@ func ShouldEnforce(city string, state string, site models.Site, zone models.Zone
 	//|| All Traffic
 	//||------------------------------------------------------------------------------------------------||
 
-	if site.SiteEnforcement == "ALLZ" {
+	if site.Enforcement == "ALLZ" {
 		return true
 	}
 
@@ -30,8 +30,8 @@ func ShouldEnforce(city string, state string, site models.Site, zone models.Zone
 	//|| Regulated Zones
 	//||------------------------------------------------------------------------------------------------||
 
-	if site.SiteEnforcement == "REGZ" && zoneFound {
-		if zone.IDZone == 9999 {
+	if site.Enforcement == "REGZ" && zoneFound {
+		if zone.ID == 9999 {
 			return false
 		}
 		return true
@@ -41,13 +41,13 @@ func ShouldEnforce(city string, state string, site models.Site, zone models.Zone
 	//|| Custom Zones
 	//||------------------------------------------------------------------------------------------------||
 
-	if site.SiteEnforcement == "CSTM" && zoneFound {
+	if site.Enforcement == "CSTM" && zoneFound {
 		// stringify the zone ID to look it up in the JSON map
-		key := strconv.Itoa(int(zone.IDZone))
+		key := strconv.Itoa(int(zone.ID))
 
 		// Zones is datatypes.JSONMap (map[string]interface{})
 		var zonesMap datatypes.JSONMap
-		if zm, ok := any(site.SiteZones).(datatypes.JSONMap); ok {
+		if zm, ok := any(site.Zones).(datatypes.JSONMap); ok {
 			zonesMap = zm
 		} else {
 			// parsing error or wrong type: enforce by default
@@ -55,7 +55,7 @@ func ShouldEnforce(city string, state string, site models.Site, zone models.Zone
 		}
 
 		// handle the “unknown” zone default
-		if zone.IDZone == 9999 {
+		if zone.ID == 9999 {
 			if raw, exists := zonesMap[key]; exists {
 				// raw will typically be float64 (JSON numbers) or string
 				val := fmt.Sprintf("%v", raw)

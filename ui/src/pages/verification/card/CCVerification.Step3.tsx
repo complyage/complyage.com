@@ -81,7 +81,7 @@
                                           <tr className="bg-yellow-400/20 ring-2 ring-yellow-400 rounded-md  shadow-lg scale-105 transition-transform duration-200 z-10 relative px-4 text-[1.4rem] leading-[2.8rem]">
                                                 <td className="py-3 font-extrabold text-lg text-yellow-300 pl-2 align-middle">08/13</td>
                                                 <td className="py-3 font-extrabold text-xl text-yellow-200 tracking-wide align-middle">{descriptor}</td>
-                                                <td className="py-3 text-right font-extrabold text-xl text-yellow-200 pr-2 align-middle"> { formatStripeAmount(process.chargeAmount.amount, process.chargeAmount.currency) || "0.99"}</td>
+                                                <td className="py-3 text-right font-extrabold text-xl text-yellow-200 pr-2 align-middle"> { formatStripeAmount(process.baseAmount, process.currency) || "0.99"}</td>
                                           </tr>
 							<tr>
 								<td className="py-1">08/13</td>

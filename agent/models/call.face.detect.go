@@ -7,11 +7,13 @@ package models
 import (
 	"agent/publish"
 	"encoding/json"
-	"fmt"
+	"math"
+
+	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| Level 1
+//|| Request/Response Structs
 //||------------------------------------------------------------------------------------------------||
 
 // ModelFaceDetectRequest is the request struct for face detection.
@@ -21,7 +23,7 @@ type ModelFaceDetectRequest struct {
 }
 
 // ModelFaceDetectResponse matches the /face/detect endpoint response.
-type ModelFaceDetectResponse struct {
+type ModelFaceResponse struct {
 	Success bool                  `json:"success"`
 	Error   string                `json:"error"`
 	Faces   []ModelFaceDetectFace `json:"faces"`
@@ -30,8 +32,6 @@ type ModelFaceDetectResponse struct {
 type ModelFaceDetectFace struct {
 	BoundingBox ModelFaceBoundingBox `json:"bounding_box"`
 	Age         int                  `json:"age"`
-	AgeMin      *int                 `json:"age_min"` // nullable (pointer so you can check for missing)
-	AgeMax      *int                 `json:"age_max"` // nullable
 	Gender      string               `json:"gender"`
 	Confidence  *float64             `json:"confidence"`
 }
@@ -41,6 +41,38 @@ type ModelFaceBoundingBox struct {
 	Y      float64 `json:"y"`
 	Width  float64 `json:"width"`
 	Height float64 `json:"height"`
+}
+
+type ModelFaceDetectResponse struct {
+	Success     bool                 `json:"success"`
+	BoundingBox ModelFaceBoundingBox `json:"bounding_box,omitempty"`
+	Age         int                  `json:"age,omitempty"`
+	AgeMin      int                  `json:"age_min,omitempty"`
+	AgeMax      int                  `json:"age_max,omitempty"`
+	Gender      string               `json:"gender,omitempty"`
+	Confidence  *float64             `json:"confidence,omitempty"`
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Min/Max Age
+//||------------------------------------------------------------------------------------------------||
+
+func AgeRange(age int) (min, max int) {
+	if age < 0 {
+		return 0, 0
+	}
+	if age < 18 {
+		min, max = age-1, age+1
+	} else {
+		// Growth ([larger] -1.5-2 [smaller])
+		const growth = 1.5
+		window := int(1 + math.Sqrt(float64(age-18))/growth)
+		min, max = age-window, age+window
+	}
+	if min < 0 {
+		min = 0
+	}
+	return min, max
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -64,7 +96,7 @@ func ModelCallFaceDetect(media publish.AgentMedia, prompt string) (*ModelFaceDet
 
 	payload, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal face detect request: %w", err)
+		return nil, app.Err("agent").Error("MODEL_FACE_DETECT_MARSHAL_FAIL")
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -73,17 +105,48 @@ func ModelCallFaceDetect(media publish.AgentMedia, prompt string) (*ModelFaceDet
 
 	respBytes, err := ModelCall("/face/detect", string(payload))
 	if err != nil {
-		return nil, fmt.Errorf("model call failed: %w", err)
+		return nil, app.Err("agent").Error("MODEL_FACE_DETECT_MODEL_FAIL")
 	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Response
 	//||------------------------------------------------------------------------------------------------||
 
-	var resp ModelFaceDetectResponse
-	if err := json.Unmarshal(respBytes, &resp); err != nil {
-		return nil, fmt.Errorf("failed to parse model response: %w", err)
+	var modelResp ModelFaceResponse
+	if err := json.Unmarshal(respBytes, &modelResp); err != nil {
+		return nil, app.Err("agent").Error("MODEL_FACE_DETECT_RESPONSE_FAIL")
 	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Success
+	//||------------------------------------------------------------------------------------------------||
+
+	if (!modelResp.Success || len(modelResp.Faces) == 0) && modelResp.Error == "" {
+		return nil, app.Err("agent").Error("MODEL_FACE_DETECT_NO_FACE")
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Get Min Max
+	//||------------------------------------------------------------------------------------------------||
+
+	min, max := AgeRange(modelResp.Faces[0].Age)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Return Response
+	//||------------------------------------------------------------------------------------------------||
+
+	resp := ModelFaceDetectResponse{
+		BoundingBox: modelResp.Faces[0].BoundingBox,
+		Age:         modelResp.Faces[0].Age,
+		AgeMin:      min,
+		AgeMax:      max,
+		Gender:      modelResp.Faces[0].Gender,
+		Confidence:  modelResp.Faces[0].Confidence,
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Parse Response
+	//||------------------------------------------------------------------------------------------------||
 
 	return &resp, nil
 }

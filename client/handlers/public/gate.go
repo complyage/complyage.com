@@ -6,7 +6,6 @@ package public
 
 import (
 	"base/ips"
-	"base/loaders"
 	"base/sites"
 	"base/zones"
 	"crypto/sha256"
@@ -108,7 +107,8 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get the Translations
 	//||------------------------------------------------------------------------------------------------||
 
-	translations, _ := loaders.GetTranslations(lang)
+	//translations, _ := loaders.GetTranslations(lang)
+	translations := make(map[string]string)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get The Template
@@ -151,9 +151,9 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	hashSecret := os.Getenv("MINIO_HASH")
 	host := os.Getenv("VITE_COMPLYAGE_MINIO_URL")
 	bucket := os.Getenv("VITE_MINIO_BUCKET")
-	hashInput := fmt.Sprintf("%s%d%s", hashSecret, site.IDSite, hashSecret)
+	hashInput := fmt.Sprintf("%s%d%s", hashSecret, site.ID, hashSecret)
 	hashBytes := sha256.Sum256([]byte(hashInput))
-	hashHex := fmt.Sprintf("%d_%s", site.IDSite, hex.EncodeToString(hashBytes[:]))
+	hashHex := fmt.Sprintf("%d_%s", site.ID, hex.EncodeToString(hashBytes[:]))
 	logoURL := fmt.Sprintf("%s/%s/sites/logos/%s.webp", host, bucket, hashHex)
 	//||------------------------------------------------------------------------------------------------||
 	//|| City/State
@@ -177,10 +177,10 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	//||----------------------------------------------------------------------------------------------||
 	//|| Site URL/Zone
 	//||----------------------------------------------------------------------------------------------||
-	vars["SITE_URL"] = site.SiteURL
-	vars["SITE_NAME"] = site.SiteName
+	vars["SITE_URL"] = site.URL
+	vars["SITE_NAME"] = site.Name
 	vars["SITE_LOGO"] = logoURL
-	vars["ZONE_ID"] = strconv.Itoa(int(zone.IDZone))
+	vars["ZONE_ID"] = strconv.Itoa(int(zone.ID))
 	//||----------------------------------------------------------------------------------------------||
 	//|| Local
 	//||----------------------------------------------------------------------------------------------||

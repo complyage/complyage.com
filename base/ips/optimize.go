@@ -10,12 +10,12 @@ import (
 
 func OptimizeSite(site models.Site) OptimizedSite {
 	return OptimizedSite{
-		Name:        site.SiteName,
-		Logo:        site.SiteLogo,
-		Description: site.SiteDescription,
-		URL:         site.SiteURL,
-		Redirect:    site.SiteRedirect,
-		Permissions: site.SitePermissions,
+		Name:        site.Name,
+		Logo:        site.Logo,
+		Description: site.Description,
+		URL:         site.URL,
+		Redirect:    site.Redirect,
+		Permissions: site.Permissions,
 	}
 }
 
@@ -25,10 +25,10 @@ func OptimizeSite(site models.Site) OptimizedSite {
 
 func OptimizeZone(z models.Zone) OptimizedZone {
 	return OptimizedZone{
-		State:       z.ZoneState,
-		Country:     z.ZoneCountry,
-		Law:         z.ZoneLaw,
-		Description: z.ZoneLawDescription,
-		Effective:   z.ZoneEffective,
+		Region:      z.Region,
+		Country:     z.Country,
+		Law:         z.Law,
+		Description: z.Description,
+		Effective:   z.Effective,
 	}
 }

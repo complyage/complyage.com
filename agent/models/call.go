@@ -44,7 +44,7 @@ func ModelCall(endpoint string, jsonBody string) ([]byte, error) {
 	//|| Failed
 	//||------------------------------------------------------------------------------------------------||
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 120 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request failed: %w", err)

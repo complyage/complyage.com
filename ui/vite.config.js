@@ -19,6 +19,11 @@ export default defineConfig({
             changeOrigin: true,
             secure: false,
          },         
+         '/public': {
+            target: 'http://localhost:8081',
+            changeOrigin: true,
+            secure: false,
+         },         
          '/verify': {
             target: 'http://localhost:8081',
             changeOrigin: true,
