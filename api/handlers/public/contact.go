@@ -5,8 +5,10 @@ package public
 //||------------------------------------------------------------------------------------------------||
 
 import (
+	"base/adapters"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/ralphferrara/aria/responses"
@@ -17,9 +19,10 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type ContactRequest struct {
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Message string `json:"message"`
+	Name           string `json:"name"`
+	Email          string `json:"email"`
+	Message        string `json:"message"`
+	TurnstileToken string `json:"turnstileToken"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -27,21 +30,29 @@ type ContactRequest struct {
 //||------------------------------------------------------------------------------------------------||
 
 func ContactHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		responses.Error(w, http.StatusMethodNotAllowed, "Invalid request method")
-		return
-	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Contact Request
+	//||------------------------------------------------------------------------------------------------||
 
 	var req ContactRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		responses.Error(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Fields
+	//||------------------------------------------------------------------------------------------------||
+
 	req.Name = strings.TrimSpace(req.Name)
 	req.Email = strings.TrimSpace(req.Email)
 	req.Message = strings.TrimSpace(req.Message)
 
-	// Basic validation
+	//||------------------------------------------------------------------------------------------------||
+	//|| Basic Validation
+	//||------------------------------------------------------------------------------------------------||
+
 	if req.Name == "" || req.Email == "" || req.Message == "" {
 		responses.Error(w, http.StatusBadRequest, "Name, email, and message are required")
 		return
@@ -51,12 +62,38 @@ func ContactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Implement your mail sending logic here
-	// err := sendMail(req.Name, req.Email, req.Message)
-	// if err != nil {
-	//     responses.Error(w, http.StatusInternalServerError, "Failed to send message")
-	//     return
-	// }
+	//||------------------------------------------------------------------------------------------------||
+	//|| Turnstile Captcha
+	//||------------------------------------------------------------------------------------------------||
+
+	ip := r.RemoteAddr
+	if err := adapters.VerifyTurnstile(req.TurnstileToken, ip); err != nil {
+		responses.Error(w, http.StatusBadRequest, "Captcha verification failed: "+err.Error())
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Generate the Message
+	//||------------------------------------------------------------------------------------------------||
+
+	message := "You have received a new contact form submission:\n\n"
+	message += "Name: \n" + req.Name + "\n"
+	message += "Email: \n" + req.Email + "\n"
+	message += "Message:\n" + req.Message + "\n"
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Send Email
+	//||------------------------------------------------------------------------------------------------||
+
+	adapters.SendGridSendEmail(
+		os.Getenv("CONTACT_EMAIL_ADDRESS"),
+		"New Contact Form Submission : complyage.com",
+		message,
+	)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Success Response
+	//||------------------------------------------------------------------------------------------------||
 
 	responses.Success(w, http.StatusOK, map[string]any{
 		"success": true,

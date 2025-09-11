@@ -16,6 +16,7 @@ import (
 type DonateCryptoOption struct {
 	Name    string `json:"name"`
 	Symbol  string `json:"symbol"`
+	Prefix  string `json:"prefix"`
 	Address string `json:"address"`
 	QR      string `json:"qr"`
 	Color   string `json:"color"`
@@ -82,6 +83,7 @@ func DonateHandler(w http.ResponseWriter, r *http.Request) {
 		cryptoOptions = append(cryptoOptions, DonateCryptoOption{
 			Name:    c.Name,
 			Symbol:  symbol,
+			Prefix:  c.Prefix,
 			Address: c.Address,
 			QR:      qr,
 			Color:   color,

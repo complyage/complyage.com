@@ -95,15 +95,14 @@ export default function Signup() {
 
                   <div className="relative flex-1">
                         <img
-                              src="https://picsum.photos/1920/1080"
+                              src="/img/hero/signup.webp"
                               alt="Background"
                               className="absolute inset-0 w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-black/70"></div>
 
-                        <div className="relative z-10 flex flex-col md:flex-row min-h-[calc(100vh-60px)]">
+                        <div className="relative z-10 flex flex-col md:flex-row min-h-[calc(100vh-60px)] mt-[60px]">
                               {/* Left Side */}
-                              <div className="flex-1 flex items-center justify-center bg-primary/80 text-primary-content p-12">
+                              <div className="flex-1 flex max-w-xl items-center justify-center bg-black/60 text-primary-content p-12">
                                     <div className="max-w-md">
                                           <h1 className="text-3xl font-bold mb-6">
                                                 Privacy. Freedom. Compliance.
@@ -119,7 +118,7 @@ export default function Signup() {
 
                               {/* Right Side */}
                               <div className="flex-1 flex items-center justify-center p-12">
-                                    <div className="w-full max-w-lg bg-black/40 p-8">
+                                    <div className="w-full max-w-lg bg-black/80 border-gray-700 rounded-lg border p-8">
                                           <h2 className="text-3xl font-bold mb-6 text-center border-b border-base-content/20 pb-4">
                                                 Sign Up
                                           </h2>
@@ -135,12 +134,12 @@ export default function Signup() {
 
                                           <div className="flex justify-center gap-4 mb-4">
                                                 <button
-                                                      className={`text-md btn btn-sm ${tab === "USER" ? "btn-primary" : "btn-ghost"}`}
+                                                      className={`text-lg btn btn-sm ${tab === "USER" ? "btn-primary" : "btn-ghost"}`}
                                                       onClick={() => setTab("USER")}>
                                                       User
                                                 </button>
                                                 <button
-                                                      className={`text-md btn btn-sm ${tab === "VNDR" ? "btn-primary" : "btn-ghost"}`}
+                                                      className={`text-lg btn btn-sm ${tab === "VNDR" ? "btn-primary" : "btn-ghost"}`}
                                                       onClick={() => setTab("VNDR")}>
                                                       Vendor / Website Owner
                                                 </button>
@@ -174,8 +173,8 @@ export default function Signup() {
                                                       )}
 
                                                       <Turnstile
-                                                            siteKey={import.meta.env.VITE_TURNSTILE_SITEKEY || ""}
-                                                            onSuccess={handleVerify}
+                                                            siteKey={import.meta.env.VITE_TURNSTILE_PUBLIC || ""}
+                                                            onVerify={handleVerify}
                                                       />
                                                 </div>
                                           </form>

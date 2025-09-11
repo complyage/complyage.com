@@ -25,11 +25,12 @@ export default function Forgot() {
       //|| State
       //||------------------------------------------------------------------------------------------------||
 
-      const navigate                = useNavigate();
-      const [captchaToken, setCaptchaToken] = useState("asdasd");
-      const [tab, setTab]          = useState<"USER" | "VNDR">("USER");
-      const [email, setEmail]      = useState("");
-      const [statusMessage, setStatusMessage] = useState("");
+      const navigate                            = useNavigate();
+      const [captchaToken, setCaptchaToken]     = useState("asdasd");
+      const [tab, setTab]                       = useState<"USER" | "VNDR">("USER");
+      const [email, setEmail]                   = useState("");
+      const [statusMessage, setStatusMessage]   = useState("");
+      const [captcha, setCaptcha]               = useState<string | null>(null);      
 
       //||------------------------------------------------------------------------------------------------||
       //|| Extract oauth query param from current URL
@@ -159,10 +160,8 @@ export default function Forgot() {
                                                             </span>
                                                       )}
 
-                                                      <Turnstile
-                                                            siteKey={import.meta.env.VITE_TURNSTILE_SITEKEY || ""}
-                                                            onSuccess={handleVerify}
-                                                      />
+                                                      <Turnstile siteKey={ import.meta.env.VITE_TURNSTILE_PUBLIC } onVerify={ (token) => setCaptcha(token) } />
+
                                                 </div>
                                           </form>
 

@@ -1,198 +1,231 @@
 //||------------------------------------------------------------------------------------------------||
-//|| Interfaces : Verification
-//|| Model Verification
+//|| EnforcementZones.tsx
+//|| src/pages/EnforcementZones.tsx
 //||------------------------------------------------------------------------------------------------||
 
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import type { LatLngExpression } from "leaflet";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Components
+//||------------------------------------------------------------------------------------------------||
+
+import NavMain from "../../components/nav/NavMain";
+import FooterMain from "../../components/footer/FooterMain";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Hooks & Data
+//||------------------------------------------------------------------------------------------------||
+
+import { useCountryFullName } from "../../hooks/useCountry";
+import { getZoneRequirement } from "../../data/getZoneData";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Interface
+//||------------------------------------------------------------------------------------------------||
+
+import { ZoneRequirement } from "../../interfaces/models/model.zones";
+
+//||------------------------------------------------------------------------------------------------||
+//|| CSS
+//||------------------------------------------------------------------------------------------------||
+
+import "leaflet/dist/leaflet.css";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Types
+//||------------------------------------------------------------------------------------------------||
+
+interface Zone {
+      id?: string | number;
+      state?: string;
+      country?: string;
+      law?: string;
+      effective?: string;
+      requirements?: string;
+      penalties?: string;
+      lat?: string;
+      long?: string;
+      latitude?: string;
+      longitude?: string;
+      coords?: LatLngExpression | null;
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Component
+//||------------------------------------------------------------------------------------------------||
+
+export default function EnforcementZones() {
       //||------------------------------------------------------------------------------------------------||
-      //|| Model
+      //|| State
       //||------------------------------------------------------------------------------------------------||
 
-      import React, {useEffect, useState}                         from "react";
-      import {MapContainer, TileLayer, Marker, Popup}             from "react-leaflet";
+      const [zones, setZones] = useState<Zone[]>([]);
+      const countryFullName = useCountryFullName();
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Components
+      //|| Fetch Zones
       //||------------------------------------------------------------------------------------------------||
 
-      import NavMain                                              from "../../components/nav/NavMain";
-      import FooterMain                                           from "../../components/footer/FooterMain";
+      useEffect(() => {
+            const fetchZones = async () => {
+                  try {
+                        const response = await fetch("/v1/api/zones");
+                        if (!response.ok) throw new Error("Network response was not ok");
+
+                        const data = await response.json();
+
+                        const mapped: Zone[] = (data.data || []).map((zone: any) => {
+                              const lat = parseFloat(zone.lat || zone.latitude);
+                              const lng = parseFloat(zone.long || zone.longitude);
+
+                              return {
+                                    ...zone,
+                                    coords: !isNaN(lat) && !isNaN(lng) ? ([lat, lng] as LatLngExpression) : null,
+                              };
+                        });
+
+                        setZones(mapped);
+                  } catch (error) {
+                        console.error("Failed to fetch zones:", error);
+                  }
+            };
+
+            fetchZones();
+      }, []);
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Components
+      //|| JSX
       //||------------------------------------------------------------------------------------------------||
 
-      import { useCountryFullName }                               from "../../hooks/useCountry";
-      import { getZoneRequirement }                               from "../../data/getZoneData";
+      return (
+            <main className="min-h-screen bg-gray-700 text-base-content">
+                  <NavMain />
 
-      //||------------------------------------------------------------------------------------------------||
-      //|| CSS
-      //||------------------------------------------------------------------------------------------------||
-
-      import "leaflet/dist/leaflet.css";
-
-      //||------------------------------------------------------------------------------------------------||
-      //|| Model
-      //||------------------------------------------------------------------------------------------------||
-
-      export default function EnforcementZones() {
-
-            //||------------------------------------------------------------------------------------------------||
-            //|| State
-            //||------------------------------------------------------------------------------------------------||
-
-            const [zones, setZones] = useState([]); 
-
-            //||------------------------------------------------------------------------------------------------||
-            //|| Use Effect
-            //||------------------------------------------------------------------------------------------------||
-
-            useEffect(() => {
-                  const fetchZones = async () => {
-                        try {
-                              const response = await fetch("/v1/api/zones");
-                              if (!response.ok) throw new Error("Network response was not ok");
-                              
-                              const data = await response.json();
-
-                              const mapped = (data.data || []).map((zone: any) => {
-                                    const lat = parseFloat(zone.lat || zone.latitude);
-                                    const lng = parseFloat(zone.long || zone.longitude);
-
-                                    return {
-                                          ...zone,
-                                          coords: !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
-                                    };
-                              });
-
-                              console.log(mapped);
-                              setZones(mapped);
-                        } catch (error) {
-                              console.error("Failed to fetch zones:", error);
-                        }
-                  };
-                  fetchZones();
-            }, []);
-
-            //||------------------------------------------------------------------------------------------------||
-            //|| JSX
-            //||------------------------------------------------------------------------------------------------||
-
-            return (
-                  <main className="min-h-screen bg-gray-700 text-base-content">
-                        <NavMain />
-
+                  {/* Hero Section */}
+                  <div
+                        className="relative flex flex-col items-center justify-center text-center px-6"
+                        style={{
+                              backgroundImage: `url(${"/img/hero/gilead.webp"})`,
+                              backgroundSize: "cover",
+                              backgroundPosition: "center",
+                        }}
+                  >
                         <section className="py-5 text-center mt-[80px]">
                               <h1 className="text-5xl font-extrabold mb-4">Enforcement Zones/Laws</h1>
-                              <p className="text-lg max-w-2xl mx-auto">Interactive map of countries and states with active or pending age verification laws.</p>
+                              <p className="text-lg max-w-2xl mx-auto">
+                                    Interactive map of countries and states with active or pending age verification laws.
+                              </p>
                         </section>
 
                         {/* Map */}
-                        <section className="px-4 mb-12 max-w-7xl mx-auto">
+                        <section className="px-4 mb-12 max-w-7xl mx-auto w-full">
                               <MapContainer
-                                    center={[20, 0]}
+                                    center={[20, 0] as LatLngExpression}
                                     zoom={2}
                                     scrollWheelZoom={false}
                                     doubleClickZoom={false}
                                     boxZoom={false}
                                     dragging={false}
                                     zoomControl={false}
-                                    style={{height: "500px", width: "100%"}}
-                                    className="rounded-lg shadow-lg">
-                                    <TileLayer
-                                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                                    />
+                                    style={{ height: "500px", width: "100%" }}
+                                    className="rounded-lg shadow-lg"
+                              >
+                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
                                     {zones.map(
-                                          (zone) => zone.coords && zone.coords.length === 2 && (
-                                                <Marker key={zone.id} position={zone.coords} className="text-xs">
-                                                      <Popup>
-                                                            <span className="text-xs">
-                                                                  <strong>{zone.state || zone.country || "Unknown Zone"}</strong> -{" "}
-                                                                  {zone.law || "No Law Specified"}
-                                                                  <br />
-                                                                  <strong>Effective:</strong> {zone.effective || "N/A"}
-                                                                  <br />
-                                                                  <strong>Requirements:</strong>
-                                                                  <ul>
-                                                                        {zone.requirements &&
-                                                                              zone.requirements.split(",").map((item, idx) => (
-                                                                                    <li className="ml-4 list-disc" key={idx}>
-                                                                                          {getZoneRequirement(item.trim())}
-                                                                                    </li>
-                                                                              ))}
-                                                                        {!zone.requirements && <li>No specific requirements.</li>}
-                                                                  </ul>
-                                                                  {zone.penalties && (
-                                                                        <>
-                                                                              <strong>Penalties:</strong> {zone.penalties}
-                                                                        </>
-                                                                  )}
-                                                            </span>
-                                                      </Popup>
-                                                </Marker>
-                                          )
+                                          (zone) =>
+                                                zone.coords && (
+                                                      <Marker key={zone.id} position={zone.coords}>
+                                                            <Popup>
+                                                                  <div className="text-xs">
+                                                                        <strong>{zone.state || zone.country || "Unknown Zone"}</strong>
+                                                                        {" – "}
+                                                                        {zone.law || "No Law Specified"}
+                                                                        <br />
+                                                                        <strong>Effective:</strong> {zone.effective || "N/A"}
+                                                                        <br />
+                                                                        <strong>Requirements:</strong>
+                                                                        <ul>
+                                                                              {zone.requirements
+                                                                                    ? zone.requirements
+                                                                                              .split(",")
+                                                                                              .map((item, idx) => (
+                                                                                                    <li className="ml-4 list-disc" key={idx}>
+                                                                                                          {getZoneRequirement(item.trim() as ZoneRequirement)}
+                                                                                                    </li>
+                                                                                              ))
+                                                                                    : <li>No specific requirements.</li>}
+                                                                        </ul>
+                                                                        {zone.penalties && (
+                                                                              <div>
+                                                                                    <strong>Penalties:</strong> {zone.penalties}
+                                                                              </div>
+                                                                        )}
+                                                                  </div>
+                                                            </Popup>
+                                                      </Marker>
+                                                )
                                     )}
                               </MapContainer>
                         </section>
+                  </div>
 
-                        {/* List */}
-                        <section className="px-4 mb-20 max-w-7xl mx-auto">
-                              {" "}
-                              {/* Adjusted max-w to match map section for consistency */}
-                              <h2 className="text-3xl font-bold mb-6 text-center">Zone Details</h2>
-                              {/* This is the new grid container */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {zones.map((zone, idx) => (
-                                          <div key={zone.id || idx} className="card bg-base-100 shadow-sm">
-                                                {" "}
-                                                {/* Removed w-[50%] from here */}
-                                                <figure
-                                                      className="bg-cover bg-center h-32"
-                                                      style={{backgroundImage: `url(https://flagcdn.com/256x192/${zone.country?.toLowerCase()}.png)`}}>
-                                                      <div className="bg-black/70 w-full h-full flex justify-center items-center font-bold text-2xl text-white">
-                                                            {" "}
-                                                            {/* Added text-white for visibility */}
-                                                            {zone.state ? `${zone.state}, ${useCountryFullName(zone.country)}` : zone.country}
-                                                      </div>
-                                                </figure>
-                                                <div className="card-body">
-                                                      <h2 className="card-title border-b border-gray-500 p-2">
-                                                            <b className="text-gray-200">{zone.law}</b>
-                                                            {new Date(zone.effective || "") > new Date(new Date().setMonth(new Date().getMonth() - 6)) && (
+                  {/* Zone List */}
+                  <section className="px-4 mb-20 max-w-7xl mx-auto">
+                        <h2 className="text-3xl font-bold mb-6 text-center">Zone Details</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {zones.map((zone, idx) => (
+                                    <div key={zone.id || idx} className="card bg-base-100 shadow-sm">
+                                          <figure
+                                                className="bg-cover bg-center h-32"
+                                                style={{
+                                                      backgroundImage: `url(https://flagcdn.com/256x192/${zone.country?.toLowerCase()}.png)`,
+                                                }}
+                                          >
+                                                <div className="bg-black/70 w-full h-full flex justify-center items-center font-bold text-2xl text-white">
+                                                      {zone.state
+                                                            ? `${zone.state}, ${countryFullName(zone.country)}`
+                                                            : countryFullName(zone.country)}
+                                                </div>
+                                          </figure>
+                                          <div className="card-body">
+                                                <h2 className="card-title border-b border-gray-500 p-2">
+                                                      <b className="text-gray-200">{zone.law}</b>
+                                                      {zone.effective &&
+                                                            new Date(zone.effective) >
+                                                                  new Date(new Date().setMonth(new Date().getMonth() - 6)) && (
                                                                   <div className="ml-auto badge badge-secondary justify-end">NEW</div>
                                                             )}
-                                                      </h2>
-                                                      <p>
-                                                            <strong className="text-gray-400 mr-2 inline-block">Effective:</strong>
-                                                            <b>{zone.effective ? new Date(zone.effective).toLocaleDateString() : "N/A"}</b> <br />
-                                                            <strong className="text-gray-400 mr-2 inline-block">Requirements:</strong>{" "}
-                                                            <ul className="leading-5">
-                                                                  {zone.requirements &&
-                                                                        zone.requirements.split(",").map((item, reqIdx) => {
-                                                                              return (
-                                                                                    <li className="ml-4 list-disc text-xs leading-5" key={reqIdx}>
-                                                                                          {" "}
-                                                                                          {/* Use reqIdx for key within inner map */}
-                                                                                          {getZoneRequirement(item.trim())}
-                                                                                    </li>
-                                                                              );
-                                                                        })}
-                                                                  {!zone.requirements && <li>No specific requirements.</li>}
-                                                            </ul>
-                                                      </p>
-                                                      {zone.penalties && (
-                                                            <div>
-                                                                  <b className="text-gray-400 mr-2">Penalties:</b> {zone.penalties}{" "}
-                                                            </div>
-                                                      )}
-                                                </div>
+                                                </h2>
+                                                <p>
+                                                      <strong className="text-gray-400 mr-2 inline-block">Effective:</strong>
+                                                      <b>{zone.effective ? new Date(zone.effective).toLocaleDateString() : "N/A"}</b>
+                                                      <br />
+                                                      <strong className="text-gray-400 mr-2 inline-block">Requirements:</strong>
+                                                      <ul className="leading-5">
+                                                            {zone.requirements
+                                                                  ? zone.requirements.split(",").map((item, reqIdx) => (
+                                                                              <li className="ml-4 list-disc text-xs leading-5" key={reqIdx}>
+                                                                                    {getZoneRequirement(item.trim() as ZoneRequirement)}
+                                                                              </li>
+                                                                        ))
+                                                                  : <li>No specific requirements.</li>}
+                                                      </ul>
+                                                </p>
+                                                {zone.penalties && (
+                                                      <div>
+                                                            <b className="text-gray-400 mr-2">Penalties:</b> {zone.penalties}
+                                                      </div>
+                                                )}
                                           </div>
-                                    ))}
-                              </div>
-                        </section>
+                                    </div>
+                              ))}
+                        </div>
+                  </section>
 
-                        <FooterMain />
-                  </main>
-            );
-      }
+                  <FooterMain />
+            </main>
+      );
+}

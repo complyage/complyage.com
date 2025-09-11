@@ -4,6 +4,8 @@ import {ShieldCheck, EyeOff, FileText, Lock, Ban, UserX} from "lucide-react";
 import NavMain          from "../../components/nav/NavMain";
 import FooterMain       from "../../components/footer/FooterMain";
 import NewsStream       from "../../components/dynamic/NewsStream";
+import CorePrinciplesHero from "../../components/heroes/CorePrinciples";
+import SignupHero from "../../components/heroes/Signup";
 
 export default function Home() {
 	return (
@@ -26,7 +28,7 @@ export default function Home() {
 				<div className="relative z-10 text-white px-4 text-center w-full mt-[100px]">
 					<div className="max-w-6xl mx-auto">
 						<img
-							src="/public/img/logo-white.png"
+							src="/img/logo-white.png"
 							alt="ComplyAge Logo"
 							className="mx-auto mb-4 w-24 h-24"
 						/>
@@ -102,20 +104,26 @@ export default function Home() {
 
 							{/* 3 Buttons in their own row */}
 							<div className="flex flex-col items-center">
-                                                <button className="btn btn-primary text-3xl p-10 w-full">
+                                                <button 
+                                                      className="btn btn-primary text-3xl h-auto p-4 w-full"
+                                                      onClick={() => window.location.href = "/signup"}
+                                                >
 									Get Started
 								</button>
 							</div>
 
 							<div className="flex flex-col items-center">
-								<button className="btn btn-secondary text-3xl p-10 w-full">
+								<button 
+                                                      className="btn btn-secondary text-3xl h-auto p-4 w-full"
+                                                      onClick={() => window.open("https://github.com/complyage/complyage.com", "_blank")}
+                                                >
 									View Our Code
 								</button>
 							</div>
 
 							<div className="flex flex-col items-center">
                                                 <button 
-                                                      className="btn btn-tertiary text-3xl p-10 w-full"
+                                                      className="btn btn-tertiary text-3xl h-auto p-4 w-full"
                                                       onClick={() => window.location.href = "/terms"}
                                                 >
 									View Our Terms
@@ -127,72 +135,14 @@ export default function Home() {
 			</section>
 
 
-			{/* Call To Action */}
-			<section className="py-16 bg-primary text-primary-content text-center">
-				<h2 className="text-3xl md:text-4xl font-bold mb-4">
-					Ready to protect your platform?
-				</h2>
-				<p className="mb-6">
-					Start verifying ages in under 5 minutes.
-				</p>
-				<button 
-                              className="btn btn-secondary text-2xl p-5 rounded-lg"
-                              onClick={() => window.location.href = "/signup"}
-                        >
-					Sign Up Now
-				</button>
-			</section>
+			<SignupHero />
 
 			<section className="py-12 bg-black">
                         <NewsStream />
                   </section>
 
 
-			{/* Features Section */}
-			<section className="py-16 px-4 max-w-6xl mx-auto">
-				<h2 className="text-4xl font-bold text-center mb-12">
-					Why Choose ComplyAge?
-				</h2>
-				<div className="grid md:grid-cols-3 gap-8">
-					<div className="card bg-black/20 shadow-lg">
-						<div className="card-body">
-							<h3 className="card-title text-orange-400">
-								Easy Integration
-							</h3>
-							<p>
-								Plug & play API and SDKs for any
-								stack. Get up and running in
-								minutes.
-							</p>
-						</div>
-					</div>
-					<div className="card bg-black/20 shadow-lg">
-						<div className="card-body">
-							<h3 className="card-title text-orange-400">
-								Global Compliance
-							</h3>
-							<p>
-								Stay ahead of local and
-								international age restriction
-								laws automatically.
-							</p>
-						</div>
-					</div>
-					<div className="card bg-black/20 shadow-lg">
-						<div className="card-body">
-							<h3 className="card-title text-orange-400">
-								Rock-Solid Security
-							</h3>
-							<p>
-								All data encrypted,
-								privacy-first. We never store
-								sensitive user IDs longer than
-								needed.
-							</p>
-						</div>
-					</div>
-				</div>
-			</section>
+			<CorePrinciplesHero />
 
                   <FooterMain />
 		</main>

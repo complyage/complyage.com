@@ -187,7 +187,7 @@
 					<div className="flex items-center justify-between border-b border-gray-400 py-2 mb-4">
 						<div className="font-bold">We run solely on donations, please help keep this private service running!</div>
 					</div>
-					<Donation currency={process.currency} donation={process.donationAmount} setDonation={setDonation} />
+					<Donation baseAmount={ process.baseAmount } currency={process.currency} donation={process.donationAmount} setDonation={setDonation} />
 				</div>
 
 				<div className="flex items-center justify-between">

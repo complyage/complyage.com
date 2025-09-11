@@ -27,11 +27,12 @@ export default function Login() {
       //|| Var
       //||------------------------------------------------------------------------------------------------||
 
-      const navigate                          = useNavigate();
-      const [captchaToken, setCaptchaToken]   = useState("asd");
-      const [email, setEmail]                 = useState("");
-      const [password, setPassword]           = useState("");
-      const [statusMessage, setStatusMessage] = useState("");
+      const navigate                            = useNavigate();
+      const [captchaToken, setCaptchaToken]     = useState("asd");
+      const [email, setEmail]                   = useState("");
+      const [password, setPassword]             = useState("");
+      const [statusMessage, setStatusMessage]   = useState("");
+      const [captcha, setCaptcha]               = useState<string | null>(null);      
 
       //||------------------------------------------------------------------------------------------------||
       //|| Extract oauth query param from current URL
@@ -40,14 +41,6 @@ export default function Login() {
       const location      = useLocation();
       const params        = new URLSearchParams(location.search);
       const oauthParam    = params.get("oauth");
-
-      //||------------------------------------------------------------------------------------------------||
-      //|| Verify
-      //||------------------------------------------------------------------------------------------------||
-
-      const handleVerify = (token: string) => {
-            setCaptchaToken(token);
-      };
 
       //||------------------------------------------------------------------------------------------------||
       //|| Submit
@@ -98,15 +91,17 @@ export default function Login() {
                   {/* Background wrapper */}
                   <div className="relative flex-1">
                         {/* Background Image */}
-                        <img src="https://picsum.photos/1920/1080" alt="Background"
-                             className="absolute inset-0 w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/70"></div>
+                        <img 
+                              src="/img/hero/login.webp"
+                              alt="Background"
+                             className="absolute inset-0 w-full h-full object-cover" 
+                        />
 
                         {/* 50/50 Split */}
-                        <div className="relative z-10 flex flex-col md:flex-row min-h-[calc(100vh-60px)]">
+                        <div className="relative z-10 flex flex-col md:flex-row min-h-[calc(100vh-60px)] mt-[60px]">
 
                               {/* Left Side */}
-                              <div className="flex-1 flex items-center justify-center bg-primary/80 text-primary-content p-12">
+                              <div className="flex-1 flex max-w-xl items-center justify-center bg-black/60 text-primary-content p-12">
                                     <div className="max-w-md">
                                           <h1 className="text-3xl font-bold mb-6">Privacy. Freedom. Compliance.</h1>
                                           <ul className="list-disc list-inside space-y-4 text-md">
@@ -120,7 +115,7 @@ export default function Login() {
 
                               {/* Right Side */}
                               <div className="flex-1 flex items-center justify-center p-12">
-                                    <div className="w-full max-w-lg bg-black/40 p-8">
+                                    <div className="w-full max-w-lg bg-black/80 border-gray-700 rounded-lg border p-8">
                                           <h2 className="text-3xl font-bold mb-6 text-center border-b border-base-content/20 pb-4">Log In</h2>
 
                                           {statusMessage && (
@@ -155,7 +150,8 @@ export default function Login() {
                                                             </span>
                                                       )}
 
-                                                      <Turnstile siteKey={import.meta.env.VITE_TURNSTILE_SITEKEY || ""} onSuccess={handleVerify} />
+                                                      <Turnstile siteKey={ import.meta.env.VITE_TURNSTILE_PUBLIC } onVerify={ (token) => setCaptcha(token) } />
+                                                      
                                                 </div>
                                           </form>
 

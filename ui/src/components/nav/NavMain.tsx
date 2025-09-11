@@ -45,7 +45,7 @@ export default function NavMain() {
                               ) : (
                                     <>
                                           <LinkQuery to="/login" className={`btn btn-ghost text-xl ${location.pathname === "/login" ? "text-orange-500" : ""}`}>Login</LinkQuery>
-                                          <LinkQuery to="/signup" className="btn btn-primary">Sign Up</LinkQuery>
+                                          <LinkQuery to="/signup" className={`btn btn-primary text-xl ${pathname === "/signup" ? "text-orange-500" : ""}`}>Sign Up</LinkQuery>
                                     </>
                               )}
                         </div>

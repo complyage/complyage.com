@@ -6,6 +6,7 @@ export interface DonateCryptoOption {
       name    : string;
       symbol  : string;
       address : string;
+      prefix  : string;
       qr      : string;
       color?  : string;
 }
@@ -21,6 +22,6 @@ export interface DonateAddress {
 }
 
 export interface DonateApiResponse {
-      crypto: DonateCryptoOption[];
-      address: DonateAddress;
+      crypto      : DonateCryptoOption[];
+      address     : DonateAddress;
 }

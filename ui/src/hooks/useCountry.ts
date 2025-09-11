@@ -1,26 +1,33 @@
+import { useCallback } from "react";
 
-export function useCountryFullName(code: string | undefined | null): string | undefined {
-      if (!code) return undefined;
-      const upperCode = code.toUpperCase();
+//||------------------------------------------------------------------------------------------------||
+//|| Hook: useCountryFullName
+//||------------------------------------------------------------------------------------------------||
 
-      switch (upperCode) {
-            case "US":
-                  return "United States";
-            case "FR":
-                  return "France";
-            case "GB":
-                  return "United Kingdom";
-            case "AU":
-                  return "Australia";
-            case "DE":
-                  return "Germany";
-            case "EU":
-                  return "European Union"; // Note: EU is a political/economic union, not a country.
-            case "IE":
-                  return "Ireland";
-            case "IT":
-                  return "Italy";
-            default:
-                  return undefined;
-      }
+export function useCountryFullName() {
+      return useCallback((code: string | undefined | null): string | undefined => {
+            if (!code) return undefined;
+            const upperCode = code.toUpperCase();
+
+            switch (upperCode) {
+                  case "US":
+                        return "United States";
+                  case "FR":
+                        return "France";
+                  case "GB":
+                        return "United Kingdom";
+                  case "AU":
+                        return "Australia";
+                  case "DE":
+                        return "Germany";
+                  case "EU":
+                        return "European Union"; // Note: EU is a political/economic union, not a country.
+                  case "IE":
+                        return "Ireland";
+                  case "IT":
+                        return "Italy";
+                  default:
+                        return undefined;
+            }
+      }, []);
 }
