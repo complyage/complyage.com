@@ -5,10 +5,11 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/abstract"
-	"base/verify"
 	"fmt"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
@@ -63,10 +64,20 @@ func FaceVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Encrypt
+	//||------------------------------------------------------------------------------------------------||
+
+	encrypt, err := abstract.GetKeyByAccount(uint(account.ID))
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to get encryption keys")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Create(verify.DataTypeFACE, account.ID, app.Storages["verifications"], app.SQLDB["main"], account.Private, account.Public)
+	verifyRecord, err := verify.Create(verify.DataTypeFACE, account.ID, app.Storages["verifications"], app.SQLDB["main"], encrypt.Private, encrypt.Public)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return

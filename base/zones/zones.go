@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"base/db/abstract"
-	"base/db/models"
-	"base/verify"
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/db/models"
+	"github.com/complyage/base/verify"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -110,6 +110,7 @@ func FetchShortZoneByLocation(state, country string) (*ShortZone, bool) {
 	//|| Make Requirements Slice
 	//||------------------------------------------------------------------------------------------------||
 	shortZone := ShortZone{
+		ID:           int(zone.ID),
 		Law:          "",
 		Requirements: requirements,
 		Effective:    zone.Effective.String(),

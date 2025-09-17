@@ -33,7 +33,7 @@ import { RefreshCcw }                           from "lucide-react";
 
 interface WebsiteManagerSectionProps {
       data              : ModelSite | null;
-      onCopy            : (site: Website | null) => void;
+      onCopy            : (site: ModelSite | null) => void;
       onAddNew          : () => void;
       loadSite          : (id: number) => void;
 }
@@ -47,7 +47,7 @@ export default function WebsiteManagerSection({ data, onCopy, onAddNew, loadSite
 	//|| State
 	//||------------------------------------------------------------------------------------------------||
 
-	const [websites, setWebsites] = useState<Website[]>([]);
+	const [websites, setWebsites] = useState<ModelSite[]>([]);
 	const [selected, setSelected] = useState<number | null>(null);
 	const [loading, setLoading]   = useState(true);      
 
@@ -69,12 +69,17 @@ export default function WebsiteManagerSection({ data, onCopy, onAddNew, loadSite
 
       const fetchWebsites = async () => {
             try {
-                  const res = await fetch("/v1/api/sites/list", {credentials: "include"});
-                  console.log(res);
+                  const res = await fetch("/v1/api/sites/list", { credentials: "include" });
                   const json = await res.json();
-                  console.log(json);
                   if (Array.isArray(json.data.sites)) {
                         setWebsites(json.data.sites);
+
+                        // Auto-select first if nothing currently selected
+                        if (json.data.sites.length > 0 && !selected) {
+                              const firstId = json.data.sites[0].id;
+                              setSelected(firstId);
+                              loadSite(firstId);
+                        }
                   }
             } catch (err) {
                   console.error("Failed to load websites:", err);
@@ -82,6 +87,7 @@ export default function WebsiteManagerSection({ data, onCopy, onAddNew, loadSite
                   setLoading(false);
             }
       };
+
 
       //||------------------------------------------------------------------------------------------------||
 	//|| Load Websites
@@ -109,7 +115,7 @@ export default function WebsiteManagerSection({ data, onCopy, onAddNew, loadSite
 	//||------------------------------------------------------------------------------------------------||
 
       const handleOnCopy = async () => {
-            const id = await onCopy();
+            const id = await onCopy(data);
             if (typeof id === "number") {
                   await fetchWebsites();
                   loadSite(id);
@@ -138,7 +144,7 @@ export default function WebsiteManagerSection({ data, onCopy, onAddNew, loadSite
                                           }}
                                     >
                                           <option disabled value="">Select a website</option>
-                                          {websites.map((site : Site) => (
+                                          {websites.map((site : ModelSite) => (
                                                 <option key={site.id} value={site.id}>
                                                       {site.url + `-` + site.name }
                                                 </option>
@@ -149,8 +155,8 @@ export default function WebsiteManagerSection({ data, onCopy, onAddNew, loadSite
                                     <button className="btn btn-neutral" onClick={() => { fetchWebsites() } }><RefreshCcw /></button>                                    
                               </div>
 					<div className="flex gap-2 w-[40%] justify-end">
-                                    <button className="btn btn-neutral"  onClick={handleOnCopy}>Copy</button>
-					      <button className="btn btn-primary" onClick={handleOnNew}>Add New</button>
+                                    <button className="btn btn-primary"  onClick={handleOnCopy}>Copy</button>
+					      <button className="btn btn-secondary" onClick={handleOnNew}>Add New</button>
 					</div>
 				</div>
 			)}

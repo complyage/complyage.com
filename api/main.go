@@ -2,14 +2,17 @@ package main
 
 import (
 	"api/handlers"
-	"base/adapters"
-	"base/ips"
-	"base/zones"
 	"fmt"
+
+	"github.com/complyage/base/adapters"
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/ips"
+	"github.com/complyage/base/zones"
 
 	"github.com/joho/godotenv"
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/auth"
+	"github.com/ralphferrara/aria/auth/setup"
 	"github.com/ralphferrara/aria/http"
 )
 
@@ -33,7 +36,9 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Initialize Auth
 	//||------------------------------------------------------------------------------------------------||
-	auth.Init()
+	setup.Setup.Functions.OnAccountComplete = abstract.OnAccountComplete
+	setup.Setup.Functions.OnAuthCheck = abstract.AuthMe
+	auth.Init(app.SQLDB["main"].DB, app.Config.Auth)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Cors
 	//||------------------------------------------------------------------------------------------------||

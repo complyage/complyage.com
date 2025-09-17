@@ -1,10 +1,11 @@
 package verifier
 
 import (
-	"base/db/abstract"
-	"base/verify"
 	"fmt"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
@@ -76,10 +77,20 @@ func VerificationCodeLoad(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Encrypt
+	//||------------------------------------------------------------------------------------------------||
+
+	encrypt, err := abstract.GetKeyByAccount(uint(account.ID))
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to get encryption keys")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
+	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, encrypt.Private, encrypt.Public)
 	if err != nil {
 		responses.Error(w, http.StatusNotFound, "Verification record not found."+err.Error())
 		return

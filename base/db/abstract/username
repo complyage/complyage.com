@@ -1,0 +1,20 @@
+package abstract
+
+import (
+	"base/db/models"
+
+	"github.com/ralphferrara/aria/app"
+)
+
+//||------------------------------------------------------------------------------------------------||
+//|| GenerateUsername
+//||------------------------------------------------------------------------------------------------||
+
+func UsernameExists(username string) bool {
+	var count int64
+	err := app.SQLDB["main"].DB.
+		Model(&db.ModelAccount{}).
+		Where("account_username = ?", username).
+		Count(&count).Error
+	return err == nil && count > 0
+}

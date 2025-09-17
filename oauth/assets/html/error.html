@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>ComplyAge :: {{::DEFAULT:ERROR}}</title>
+      <link href="/static/css/output.css" rel="stylesheet" />
+</head>
+
+<body class="relative font-sans h-screen w-screen bg-gray-800 flex items-center justify-center bg-cover bg-center" style="background-image: url('/static/img/error.webp');">
+      <!-- Black overlay -->
+      <div class="absolute inset-0 bg-black/20"></div>
+
+      <!-- Content -->
+      <div class="relative bg-black/90 shadow-lg rounded-xl p-10 w-full max-w-xl text-center mx-auto border-10 border-gray-400">
+            <!-- Logo -->
+            <img class="mx-auto mb-4 w-auto h-20" src="/static/img/complyage-w.webp" alt="{{::DEFAULT:LOGO}}" />
+
+            <!-- Tagline -->
+            <h2 class="text-gray-100 text-lg mb-2 font-bold">
+                  {{::DEFAULT:TAKEBACKPRIVACY}} {{::DEFAULT:KEEPPRIVACY}}
+            </h2>
+
+            <!-- Error Message -->
+            <p class="text-red-600 font-semibold mt-10 rounded-lg bg-white/10 text-3xl py-5">
+                  {{ERROR_MESSAGE}}
+            </p>
+      </div>
+</body>
+
+</html>

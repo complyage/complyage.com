@@ -68,6 +68,7 @@ export default function SignupComplete() {
       //||------------------------------------------------------------------------------------------------||
       //|| Extract oauth query param from current URL
       //||------------------------------------------------------------------------------------------------||
+
       const location      = useLocation();
       const params        = new URLSearchParams(location.search);
       const oauthParam    = params.get("oauth");
@@ -80,6 +81,7 @@ export default function SignupComplete() {
                   try {
                         const res = await fetch("/auth/me", { method: "GET", credentials: "include" });
                         const json = await res.json();
+                        console.log("JSON DATA", json);
                         if (!json.success) setCheckStatus("FAIL");
                         if (json.data.status === "ACTV") {
                               if (oauthParam) {
@@ -88,8 +90,7 @@ export default function SignupComplete() {
                                     navigate("/members");
                               }
                         }
-                        if (json.data.status === "VERF") setCheckStatus("VERF");
-                        if (json.data.status === "ACTV") setCheckStatus(json.data.status);
+                        setCheckStatus(json.data.status);
                   } catch (err) {
                         setCheckStatus("FAIL");
                   }
@@ -100,6 +101,7 @@ export default function SignupComplete() {
       //||------------------------------------------------------------------------------------------------||
       //|| Handle Submit
       //||------------------------------------------------------------------------------------------------||
+
       const handleSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
             const payload = new URLSearchParams({
@@ -130,6 +132,7 @@ export default function SignupComplete() {
       //||------------------------------------------------------------------------------------------------||
       //|| Check Status: Checking
       //||------------------------------------------------------------------------------------------------||
+
       if (checkStatus === "CHECK") {
             return (
                   <main className="flex flex-col h-[70vw]">
@@ -147,6 +150,7 @@ export default function SignupComplete() {
       //||------------------------------------------------------------------------------------------------||
       //|| Check Status: Failed
       //||------------------------------------------------------------------------------------------------||
+
       if (checkStatus === "FAIL") {
             return (
                   <main className="flex flex-col min-h-screen">
@@ -167,6 +171,7 @@ export default function SignupComplete() {
       //||------------------------------------------------------------------------------------------------||
       //|| JSX / FORM
       //||------------------------------------------------------------------------------------------------||
+
       return (
             <main className="min-h-screen flex flex-col">
                   <NavMain />
@@ -259,7 +264,7 @@ export default function SignupComplete() {
                                                 </div>
                                           )}
 
-                                          <button className="btn btn-secondary text-xl p-5 py-5 mt-6" disabled={loading}>
+                                          <button className="btn btn-secondary btn-lg p-5 py-5 mt-6" disabled={loading}>
                                                 {loading ? <SpinnerCircle /> : "Complete Signup"}
                                           </button>
                                     </form>

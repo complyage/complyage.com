@@ -5,11 +5,12 @@ package public
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/adapters"
 	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/complyage/base/adapters"
 
 	"github.com/ralphferrara/aria/responses"
 )

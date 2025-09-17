@@ -5,12 +5,14 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/abstract"
-	"base/verify"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/types"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
@@ -97,10 +99,20 @@ func VerifyFaceMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Encrypt
+	//||------------------------------------------------------------------------------------------------||
+
+	encrypt, err := abstract.GetKeyByAccount(uint(account.ID))
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to get encryption keys")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Load Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
+	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, encrypt.Private, encrypt.Public)
 	if err != nil {
 		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
 		return
@@ -110,16 +122,16 @@ func VerifyFaceMediaUpload(w http.ResponseWriter, r *http.Request) {
 	//|| Create Media
 	//||------------------------------------------------------------------------------------------------||
 
-	var mediaRecord verify.Media
+	var mediaRecord types.Media
 	if len(content) == 0 {
-		mediaRecord = verify.Media{
+		mediaRecord = types.Media{
 			Exists: false,
 			Size:   0,
 			Mime:   "",
 			Base64: "",
 		}
 	} else {
-		mediaRecord = verify.Media{
+		mediaRecord = types.Media{
 			Exists: true,
 			Size:   int64(len(content)),
 			Mime:   mime,

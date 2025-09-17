@@ -1,9 +1,10 @@
 package verify
 
 import (
-	"base/db/models"
 	"encoding/json"
 	"fmt"
+
+	"github.com/complyage/base/db/models"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -22,41 +23,6 @@ func (v *Verification) DatabaseUpdate() error {
 		fmt.Println("Failed to update identity:", err)
 		return err
 	}
-	return nil
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Database
-//||------------------------------------------------------------------------------------------------||
-
-func (v *Verification) DatabaseLoadIdentity() error {
-	LogInfo("DATABASE :: LOAD IDENTITY")
-	//||------------------------------------------------------------------------------------------------||
-	//|| Pull from DB
-	//||------------------------------------------------------------------------------------------------||
-	var identityJSON string
-	result := v.Database.DB.Raw("SELECT account_identity FROM accounts WHERE id_account = ?", v.FidAccount).Scan(&identityJSON)
-	if result.Error != nil {
-		LogInfo("Verify: Failed to load identity from database, resetting to empty")
-		return result.Error
-	}
-	if identityJSON == "" {
-		LogInfo("Verify: No identity found, resetting to empty")
-		v.Identity = Identity{}
-		return nil
-	}
-	//||------------------------------------------------------------------------------------------------||
-	//|| Unmarshal the JSON string into v.Identity
-	//||------------------------------------------------------------------------------------------------||
-	err := json.Unmarshal([]byte(identityJSON), &v.Identity)
-	if err != nil {
-		LogInfo("Verify: Identity is invalid JSON, resetting to empty")
-		v.Identity = Identity{}
-		return err
-	}
-	//||------------------------------------------------------------------------------------------------||
-	//|| Done
-	//||------------------------------------------------------------------------------------------------||
 	return nil
 }
 

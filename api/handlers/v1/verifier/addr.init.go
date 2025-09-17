@@ -5,12 +5,14 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/adapters"
-	"base/db/abstract"
-	"base/verify"
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/complyage/base/adapters"
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/types"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
@@ -23,11 +25,11 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type addressInitRequest struct {
-	Base     float64        `json:"baseAmount"`
-	Donation float64        `json:"donationAmount"`
-	Total    float64        `json:"totalAmount"`
-	Currency string         `json:"currency"`
-	Address  verify.Address `json:"address"`
+	Base     float64       `json:"baseAmount"`
+	Donation float64       `json:"donationAmount"`
+	Total    float64       `json:"totalAmount"`
+	Currency string        `json:"currency"`
+	Address  types.Address `json:"address"`
 }
 
 type addressInitResponse struct {
@@ -86,10 +88,20 @@ func AddressVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Encrypt
+	//||------------------------------------------------------------------------------------------------||
+
+	encrypt, err := abstract.GetKeyByAccount(uint(account.ID))
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to get encryption keys")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Verification Record matches Account
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Create(verify.DataTypeADDR, account.ID, app.Storages["verifications"], app.SQLDB["main"], account.Private, account.Public)
+	verifyRecord, err := verify.Create(verify.DataTypeADDR, account.ID, app.Storages["verifications"], app.SQLDB["main"], encrypt.Private, encrypt.Public)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
 		return

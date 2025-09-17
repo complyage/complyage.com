@@ -109,7 +109,7 @@ func (v *Verification) UpdateStatusVerified(moderator string) error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Lock the Encrypted Data
 	//||------------------------------------------------------------------------------------------------||
-	v.UpdateVerification(v.Type, v.Encrypted.GetDataMasked(), v.UUID)
+	v.Identity.SetVerification(v.Type.String(), true, v.Encrypted.GetDataMasked(), v.UUID)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Lock the Encrypted Data and Update the Database / Storage
 	//||------------------------------------------------------------------------------------------------||

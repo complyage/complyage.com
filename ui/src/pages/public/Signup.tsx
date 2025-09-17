@@ -25,11 +25,11 @@ export default function Signup() {
       //|| State
       //||------------------------------------------------------------------------------------------------||
 
-      const navigate                = useNavigate();
-      const [captchaToken, setCaptchaToken] = useState("asdasd");
-      const [tab, setTab]          = useState<"USER" | "VNDR">("USER");
-      const [email, setEmail]      = useState("");
-      const [statusMessage, setStatusMessage] = useState("");
+      const navigate                            = useNavigate();
+      const [captchaToken, setCaptchaToken]     = useState("asdasd");
+      const [email, setEmail]                   = useState("");
+      const [statusMessage, setStatusMessage]   = useState("");
+      
 
       //||------------------------------------------------------------------------------------------------||
       //|| Extract oauth query param from current URL
@@ -58,7 +58,6 @@ export default function Signup() {
                   area              : "SIGNUP",
                   captchaToken      : captchaToken,
                   email             : email,
-                  type              : tab,
             };
 
             try {
@@ -132,19 +131,6 @@ export default function Signup() {
                                                 </div>
                                           )}
 
-                                          <div className="flex justify-center gap-4 mb-4">
-                                                <button
-                                                      className={`text-lg btn btn-sm ${tab === "USER" ? "btn-primary" : "btn-ghost"}`}
-                                                      onClick={() => setTab("USER")}>
-                                                      User
-                                                </button>
-                                                <button
-                                                      className={`text-lg btn btn-sm ${tab === "VNDR" ? "btn-primary" : "btn-ghost"}`}
-                                                      onClick={() => setTab("VNDR")}>
-                                                      Vendor / Website Owner
-                                                </button>
-                                          </div>
-
                                           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                                                 <label className="label">Email Address</label>
                                                 <input
@@ -163,7 +149,7 @@ export default function Signup() {
                                                                   type="submit"
                                                                   className="btn btn-secondary w-full"
                                                                   disabled={!captchaToken}>
-                                                                  Sign Up as {tab === "USER" ? "User" : "Vendor"}
+                                                                  Create an Account
                                                             </button>
                                                       ) : (
                                                             <span className="flex items-center gap-x-2 text-base-content/60">

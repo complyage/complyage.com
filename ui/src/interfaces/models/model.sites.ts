@@ -3,7 +3,30 @@
 //|| Model Site
 //||------------------------------------------------------------------------------------------------||
 
-      export interface ModelSite {
+//||------------------------------------------------------------------------------------------------||
+//|| Site Scope
+//||------------------------------------------------------------------------------------------------||
+
+export interface SiteScope {
+	code    : string;
+	status  : string;
+	granted : boolean;
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Site Zone
+//||------------------------------------------------------------------------------------------------||
+
+export interface SiteZone {
+	zone     : number;
+	enforced : boolean;
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Model
+//||------------------------------------------------------------------------------------------------||
+
+export interface ModelSite {
             id                : number;
             fid_account       : string;
             name              : string;
@@ -12,12 +35,12 @@
             url               : string;
             status            : string;
             enforcement       : "ALLZ" | "REGU" | "CSTM";
-            zones             : Record<number, number> | null;
+            zones             : SiteZone[];
             domains           : string;
             private           : string;
             public            : string;
             redirect          : string;
-            permissions       : string;
+            scopes            : SiteScope[];
             created           : string;
             gateSignup        : boolean;
             gateConfirm       : string;

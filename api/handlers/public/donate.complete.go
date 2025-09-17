@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"base/db/abstract"
+	"github.com/complyage/base/db/abstract"
 
 	"github.com/ralphferrara/aria/responses"
 

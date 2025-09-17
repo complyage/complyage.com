@@ -5,12 +5,13 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"api/send"
-	"base/verify"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/complyage/base/send"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/locale"
 	"github.com/ralphferrara/aria/responses"

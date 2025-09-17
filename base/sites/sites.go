@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"base/db/abstract"
-	"base/db/models"
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/db/models"
 
 	"github.com/ralphferrara/aria/app"
 )
@@ -83,8 +83,13 @@ func GetSites() []models.Site {
 //||------------------------------------------------------------------------------------------------||
 
 func FetchSiteByPublic(publicKey string) (models.Site, error) {
-	if app.Config.App.Env == "development" {
-		return abstract.GetSiteByPublic(publicKey)
+	if app.Config.App.Env != "production" {
+		fmt.Println("Fetching site from database by public key:", publicKey)
+		site, err := abstract.GetSiteByPublic(publicKey)
+		if err != nil {
+			return models.Site{}, fmt.Errorf("site not found")
+		}
+		return site, nil
 	} else {
 		local, err := GetSiteByPublic(publicKey)
 		if err != nil {

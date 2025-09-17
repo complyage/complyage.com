@@ -1,9 +1,10 @@
 package public
 
 import (
-	"base/db/models"
 	"net/http"
 	"time"
+
+	"github.com/complyage/base/db/models"
 
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/responses"

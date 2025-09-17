@@ -5,11 +5,13 @@ package user
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/ips"
-	"base/verify"
-	"base/zones"
 	"fmt"
 	"net/http"
+
+	"github.com/complyage/base/identity"
+	"github.com/complyage/base/ips"
+	"github.com/complyage/base/verify"
+	"github.com/complyage/base/zones"
 
 	ariaHTTP "github.com/ralphferrara/aria/http"
 	"github.com/ralphferrara/aria/responses"
@@ -23,13 +25,13 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type UserDashboardData struct {
-	IsVerified  bool             `json:"isVerified"`
-	VerifiedAge int              `json:"verifiedAge"`
-	IPAddress   string           `json:"ipAddress"`
-	MinimumType verify.DataType  `json:"minimumType"`
-	Location    ips.Location     `json:"location"`
-	Zone        *zones.ShortZone `json:"zone"`
-	Identity    verify.Identity  `json:"identity"`
+	IsVerified  bool              `json:"isVerified"`
+	VerifiedAge int               `json:"verifiedAge"`
+	IPAddress   string            `json:"ipAddress"`
+	MinimumType verify.DataType   `json:"minimumType"`
+	Location    ips.Location      `json:"location"`
+	Zone        *zones.ShortZone  `json:"zone"`
+	Identity    identity.Identity `json:"identity"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -93,7 +95,7 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 	//|| Get Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	identity, err := verify.LoadIdentityFromJSON(account.Identity)
+	identity, err := identity.Load(account.ID)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Unable to parse account identity")
 		return

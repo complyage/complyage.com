@@ -1,9 +1,10 @@
-CREATE TABLE `myapp`.`bills` (
-  `id_bill` INT NOT NULL,
-  `bill_transaction` VARCHAR(64) NULL,
-  `bill_type` VARCHAR(16) NULL,
-  `bill_vendor` VARCHAR(16) NULL,
-  `bill_amount` FLOAT(7,2) NULL,
-  `bill_timestamp` TIMESTAMP NULL,
-  `bill_meta` TEXT NULL,
-  PRIMARY KEY (`id_bill`));
+CREATE TABLE `bills` (
+  `id_bill` int(11) NOT NULL AUTO_INCREMENT,
+  `bill_transaction` varchar(64) DEFAULT NULL,
+  `bill_type` varchar(16) DEFAULT NULL,
+  `bill_vendor` varchar(16) DEFAULT NULL,
+  `bill_amount` float(7,2) DEFAULT NULL,
+  `bill_timestamp` timestamp NULL DEFAULT NULL,
+  `bill_meta` text DEFAULT NULL,
+  PRIMARY KEY (`id_bill`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;

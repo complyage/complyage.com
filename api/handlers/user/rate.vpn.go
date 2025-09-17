@@ -5,10 +5,11 @@ package user
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/models"
 	"errors"
 	"net/http"
 	"strconv"
+
+	"github.com/complyage/base/db/models"
 
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/auth/actions"

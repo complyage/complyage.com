@@ -188,9 +188,10 @@ export default function Dashboard() {
       //||------------------------------------------------------------------------------------------------||
 
       const VerifyMethod: React.FC<{ type: VerificationTypes }> = ({ type }) => {
+            if (!data || !data.zone || !data.zone.requirements) return null;
             //||------------------------------------------------------------------------------------------------||
             //|| Const
-            //||------------------------------------------------------------------------------------------------||
+            //||------------------------------------------------------------------------------------------------||            
             const isAllowed         = data.zone.requirements.includes(type);
             const userVerified      = isVerified(type, data.identity);
             const Icon              = getVerificationIcon(type);
@@ -307,6 +308,8 @@ export default function Dashboard() {
 									<div className="text-sm font-semibold text-base-content/70 mb-2">Age Verification Types Allowed</div>
 									<div className="flex w-full gap-2">
 										{baseVerifications.map((v) => {
+                                                                  if (!data.zone || !data.zone.requirements) return null; 
+                                                                  console.log(data?.zone?.requirements);
 											const isAllowed = data?.zone?.requirements.includes(v);
 											return (
 												<span

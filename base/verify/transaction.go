@@ -1,5 +1,7 @@
 package verify
 
+import "github.com/complyage/base/types"
+
 //||------------------------------------------------------------------------------------------------||
 //|| Transaction
 //||------------------------------------------------------------------------------------------------||
@@ -16,8 +18,8 @@ type TransactionPrivate struct {
 	CardType     string            `json:"cardType,omitempty"`
 	LastFour     string            `json:"lastFour,omitempty"`
 	ClientSecret string            `json:"clientSecret,omitempty"`
-	Billing      Address           `json:"billing,omitempty"`
-	Shipping     Address           `json:"shipping,omitempty"`
+	Billing      types.Address     `json:"billing,omitempty"`
+	Shipping     types.Address     `json:"shipping,omitempty"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -77,7 +79,7 @@ func (e *Encrypted) TransactionPrivateInit() {
 //|| Transaction Private
 //||------------------------------------------------------------------------------------------------||
 
-func (v *Verification) TransactionApproved(transactionType TransactionType, base int64, donation int64, currency string, cardType string, lastFour string, clientSecret string, billing Address, shipping Address) {
+func (v *Verification) TransactionApproved(transactionType TransactionType, base int64, donation int64, currency string, cardType string, lastFour string, clientSecret string, billing types.Address, shipping types.Address) {
 	LogInfo("Verify: Transaction Approval")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Only add for Credit Card and Address
@@ -93,7 +95,7 @@ func (v *Verification) TransactionApproved(transactionType TransactionType, base
 	//|| Add Public Transaction
 	//||------------------------------------------------------------------------------------------------||
 	v.Transaction = TransactionPublic{
-		Display:  "CC-" + CreditCard{LastFour: lastFour, CardType: cardType}.Mask(),
+		Display:  "CC-" + types.CreditCard{LastFour: lastFour, CardType: cardType}.Mask(),
 		Type:     transactionType,
 		Status:   TransactionApproved,
 		Amount:   total,

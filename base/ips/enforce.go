@@ -5,9 +5,10 @@ package ips
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/models"
 	"fmt"
 	"strconv"
+
+	"github.com/complyage/base/db/models"
 
 	"gorm.io/datatypes"
 )

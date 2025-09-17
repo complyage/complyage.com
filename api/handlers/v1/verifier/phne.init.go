@@ -5,12 +5,15 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"api/send"
-	"base/verify"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/complyage/base/send"
+	"github.com/complyage/base/types"
+
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/locale"
 	"github.com/ralphferrara/aria/responses"
@@ -95,7 +98,7 @@ func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Send the Data
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord.SetDataPhone(verify.PhoneNumber{CountryCode: req.CountryCode, Number: req.Phone})
+	verifyRecord.SetDataPhone(types.PhoneNumber{CountryCode: req.CountryCode, Number: req.Phone})
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Send the verification SMS

@@ -5,9 +5,10 @@ package ips
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/abstract"
 	"errors"
 	"strings"
+
+	"github.com/complyage/base/db/abstract"
 
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/base/convert"

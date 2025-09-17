@@ -1,8 +1,9 @@
 package ips
 
 import (
-	"base/db/models"
 	"fmt"
+
+	"github.com/complyage/base/db/models"
 
 	"github.com/ralphferrara/aria/app"
 )

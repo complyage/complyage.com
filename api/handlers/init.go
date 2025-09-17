@@ -32,9 +32,9 @@ func InitRoutes() {
 	app.HTTP["api"].Router.HandleFunc("/auth/signup", sentry.SignupHandler).Methods("POST")
 	app.HTTP["api"].Router.HandleFunc("/auth/forgot", sentry.ForgotPasswordHandler).Methods("POST")
 	app.HTTP["api"].Router.HandleFunc("/auth/twofactor", sentry.TwoFactorHandler).Methods("POST")
-	app.HTTP["api"].Router.HandleFunc("/auth/me", sentry.AuthMeHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/complete", sentry.CompleteHandler).Methods("POST", "GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/login", sentry.LoginHandler).Methods("POST")
+	app.HTTP["api"].Router.HandleFunc("/auth/me", sentry.AuthMeHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/logout", sentry.LogoutHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/generate", sentry.GenerateKeyPairHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/reset", sentry.ResetPasswordHandler).Methods("POST")
@@ -44,6 +44,7 @@ func InitRoutes() {
 	//|| User Routes
 	//||------------------------------------------------------------------------------------------------||
 	app.HTTP["api"].Router.HandleFunc("/user/dashboard", user.UserDashboard).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/user/record", user.UserRecord).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/verifications", user.UserVerifications).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/shared", user.UserSharedHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/location", user.LocationUserDashboard).Methods("GET")

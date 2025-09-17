@@ -1,9 +1,10 @@
 package verifier
 
 import (
-	"base/db/models"
-	"base/verify"
 	"net/http"
+
+	"github.com/complyage/base/db/models"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 

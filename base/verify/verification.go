@@ -3,6 +3,7 @@ package verify
 import (
 	"time"
 
+	"github.com/complyage/base/identity"
 	"github.com/ralphferrara/aria/db"
 	"github.com/ralphferrara/aria/storage"
 )
@@ -49,11 +50,11 @@ type Verification struct {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Private Data
 	//||------------------------------------------------------------------------------------------------||
-	Database  *db.GormWrapper `json:"-"`
-	Identity  Identity        `json:"identity,omitempty"`
-	Keys      PrivatePublic   `json:"keys,omitempty"`
-	Storage   storage.Storage `json:"-"`
-	Encrypted Encrypted       `json:"encrypted,omitempty"`
+	Database  *db.GormWrapper   `json:"-"`
+	Identity  identity.Identity `json:"-"`
+	Keys      PrivatePublic     `json:"keys,omitempty"`
+	Storage   storage.Storage   `json:"-"`
+	Encrypted Encrypted         `json:"encrypted,omitempty"`
 }
 
 //||------------------------------------------------------------------------------------------------||

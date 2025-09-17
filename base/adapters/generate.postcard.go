@@ -1,7 +1,6 @@
 package adapters
 
 import (
-	"base/verify"
 	"bytes"
 	"fmt"
 	"image/png"
@@ -9,11 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/complyage/base/types"
 	"github.com/fogleman/gg"
 	"github.com/skip2/go-qrcode"
 )
 
-func GeneratePostcardBack(addr verify.Address, uuid string, checkCode string) ([]byte, error) {
+func GeneratePostcardBack(addr types.Address, uuid string, checkCode string) ([]byte, error) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Generate the Verify URL
