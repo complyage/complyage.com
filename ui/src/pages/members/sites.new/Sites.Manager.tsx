@@ -27,7 +27,7 @@ import { RefreshCcw }                           from "lucide-react";
 //||------------------------------------------------------------------------------------------------||
 
 interface SiteManagerProps {
-      fetchWebsites   : () => void;
+      fetchWebsites     : () => void;
       websites          : ModelSite[];
       site              : ModelSite | null;
       onCopy            : (site: ModelSite | null) => void;
@@ -39,7 +39,7 @@ interface SiteManagerProps {
 //|| Default
 //||------------------------------------------------------------------------------------------------||
 
-export default function SiteManager({ websites, site, onCopy, onAddNew, loadSite }: SiteManagerProps) {
+export default function SiteManager({ fetchWebsites, websites, site, onCopy, onAddNew, loadSite }: SiteManagerProps) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| State

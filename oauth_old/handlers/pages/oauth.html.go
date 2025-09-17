@@ -5,7 +5,6 @@ package pages
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/sites"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -15,10 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/complyage/base/verify"
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
-	"github.com/ralphferrara/aria/auth/types"
 	"github.com/ralphferrara/aria/base/encrypt"
 	"github.com/ralphferrara/aria/base/template"
 	"github.com/ralphferrara/aria/responses"
@@ -31,117 +27,6 @@ import (
 // ||------------------------------------------------------------------------------------------------||
 
 func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Serves the HTML file with dynamic replacements
-	//||------------------------------------------------------------------------------------------------||
-
-	clientID := r.URL.Query().Get("client_id")
-	scope := r.URL.Query().Get("scope")
-	state := r.URL.Query().Get("state")
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| APIKey
-	//||------------------------------------------------------------------------------------------------||
-
-	if clientID == "" {
-		responses.ErrorHTML(w, "client_id is required")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Site By API Key
-	//||------------------------------------------------------------------------------------------------||
-
-	site, err := sites.FetchSiteByPublic(clientID)
-	if err != nil {
-		responses.ErrorHTML(w, "Invalid apiKey")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Scope (default to site's allowed if missing)
-	//||------------------------------------------------------------------------------------------------||
-
-	var requestedScopes []string
-	var siteScopes []string
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Clean Scope Requests
-	//||------------------------------------------------------------------------------------------------||
-
-	formatPerm := site.Permissions
-	for _, p := range strings.Split(formatPerm, ",") {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			siteScopes = append(siteScopes, p)
-		}
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Handle Scope
-	//||------------------------------------------------------------------------------------------------||
-
-	if scope == "" {
-		requestedScopes = siteScopes
-	} else {
-		cleanScope := strings.Trim(scope, "[] ") // remove brackets
-		scopePerm := strings.NewReplacer(" ", "|", ",", "|").Replace(cleanScope)
-		scopeParts := strings.Split(scopePerm, "|")
-		for _, s := range scopeParts {
-			s = strings.TrimSpace(strings.ToUpper(s))
-			if s == "" {
-				continue
-			}
-
-			//||------------------------------------------------------------------------------------------------||
-			//|| Check if this scope is in allowed site permissions
-			//||------------------------------------------------------------------------------------------------||
-
-			found := false
-			for _, allowed := range siteScopes {
-				if strings.EqualFold(s, allowed) {
-					found = true
-					break
-				}
-			}
-
-			//||------------------------------------------------------------------------------------------------||
-			//|| An unapproved scope was requested
-			//||------------------------------------------------------------------------------------------------||
-
-			if !found {
-				responses.ErrorHTML(w, fmt.Sprintf("Invalid scope requested: %s", s))
-				return
-			}
-
-			requestedScopes = append(requestedScopes, s)
-		}
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get the Session Cookie
-	//||------------------------------------------------------------------------------------------------||
-
-	var session types.SessionRecord
-
-	cookie, err := r.Cookie("session")
-	if err == nil {
-		session, err = actions.FetchSession(cookie.Value)
-		if err != nil {
-			session = types.SessionRecord{
-				ID:          0,
-				Username:    "Anonymous",
-				Status:      "RMVD",
-				Type:        "USER",
-				Private:     "",
-				PrivateHash: "",
-				Security:    1,
-				Level:       0,
-				Identity:    verify.Identity{},
-			}
-		}
-	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get The Template

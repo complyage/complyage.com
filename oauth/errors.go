@@ -14,4 +14,5 @@ func init() {
 	app.Err("OAuth").Add("INVALID_LOCATION", "No Location found", false)
 	app.Err("OAuth").Add("INVALID_DOMAIN", "Domain is not allowed", false)
 	app.Err("OAuth").Add("MISSING_PRIVATE_COOKIE", "Missing private cookie", false)
+	app.Err("OAuth").Add("MISSING_IP_ADDRESS", "Missing ", false)
 }
