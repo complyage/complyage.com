@@ -90,9 +90,9 @@ export default function Shared() {
                 />
 
                 {loading ? (
-                    <p className="text-center text-base-content/70">Loading shared data...</p>
+                    <p className="text-center">Loading shared data...</p>
                 ) : siteKeys.length === 0 ? (
-                    <p className="text-sm text-base-content/70 text-center bg-gray-800 p-5 text-yellow-500">No shared verifications found.</p>
+                    <p className="text-sm text-center bg-gray-800 p-5 text-yellow-500">No shared verifications found.</p>
                 ) : (
                     siteKeys.map((siteKey) => {
                         const [siteName, siteURL] = siteKey.split("||");

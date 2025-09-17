@@ -54,7 +54,7 @@ func LoadUser(r *http.Request) User {
 	//|| Get Database Account
 	//||------------------------------------------------------------------------------------------------||
 
-	account, err := db.GetAccountByID(fmt.Sprintf("%s", session.ID))
+	account, err := db.GetAccountByID(fmt.Sprintf("%d", session.ID))
 	if err != nil {
 		return User{}
 	}
@@ -108,7 +108,7 @@ func LoadUser(r *http.Request) User {
 	if user.KeyLevel > 1 {
 		user.Private = ""
 		pookie := GetStoredPrivateKey(r)
-		if err != nil {
+		if pookie == "" {
 			return user
 		}
 		user.Private = pookie
