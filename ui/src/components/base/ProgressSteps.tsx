@@ -9,6 +9,15 @@
 
 import React                  from "react";
 import {Check}                from "lucide-react";
+import { useLocation }        from "react-router-dom";
+
+/*||------------------------------------------------------------------------------------------------||
+//|| Data
+//||------------------------------------------------------------------------------------------------||*/
+
+import { getVerificationIcon, getVerificationPageTitle }    from "../../data/getVerificationData";
+
+import { VerificationTypes }                                from "../../interfaces/models/model.verify";
 
 /*||------------------------------------------------------------------------------------------------||
 //|| Step
@@ -24,9 +33,10 @@ export type ProgressStep = {
 //||------------------------------------------------------------------------------------------------||*/
 
 interface ProgressStepsProps {
-	steps             : ProgessStep[];
+	steps             : ProgressStep[];
 	currentStep       : number;
 	className?        : string;
+      verificationType? : string;
 }
 
 /*||------------------------------------------------------------------------------------------------||
@@ -39,11 +49,30 @@ const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(ma
 //|| Progress Steps
 //||------------------------------------------------------------------------------------------------||*/
 
-const ProgressSteps: React.FC<ProgressStepsProps> = ({steps, currentStep, className}) => {
+const ProgressSteps: React.FC<ProgressStepsProps> = ({steps, currentStep, className, verificationType}) => {
       const maxSteps = steps.length || 1;
       const allComplete = currentStep > maxSteps;
       const stepNow = clamp(currentStep, 1, maxSteps);
       const activeStep = allComplete ? undefined : steps[stepNow - 1];
+      const location = useLocation();
+      const overlay = location.pathname.startsWith("/overlay");      
+      let Icon = Check;
+      let title = "";
+
+
+      if (verificationType && overlay) { 
+            title = getVerificationPageTitle(verificationType as VerificationTypes);
+            Icon = getVerificationIcon(verificationType as VerificationTypes);
+
+            return (
+                  <div className={`flex items-center bg-black rounded-xl mx-auto p-2 w-fit text-center border-gray-500 px-5 border ${className ?? ""}`}>
+                        <Icon size={24} className="inline-block mr-2 text-gray-400 fill-yellow-300" />
+                        <span className="font-bold">{title}</span>
+                        <span className="text-xs px-2 py-1 rounded-lg text-yellow-400 bg-gray-800 ml-4">Step {stepNow}/{maxSteps}</span>
+                  </div>
+            );
+      }
+
 
       return (
             <div className={`w-full ${className ?? ""}`}>
@@ -60,6 +89,7 @@ const ProgressSteps: React.FC<ProgressStepsProps> = ({steps, currentStep, classN
                               const stepNum = i + 1;
                               const isCompleted = allComplete || stepNum < stepNow;
                               const isActive = !allComplete && stepNum === stepNow;
+            
 
                               return (
                                     <React.Fragment key={stepNum}>

@@ -1,0 +1,29 @@
+# Root is current project directory
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/main"
+  bin = "tmp/main"
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "vendor"]
+  follow_symlink = true
+  delay = 10
+  send_interrupt = true
+  kill_delay = 0
+
+# Watch these dirs
+[build.watcher]
+  directories = [
+    ".", 
+    "../base"
+  ]
+
+[build]
+stop_on_error = true  
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

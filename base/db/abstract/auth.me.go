@@ -1,6 +1,7 @@
 package abstract
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -14,14 +15,14 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type authMeResponse struct {
-	ID         int64
-	Identifier string
-	Username   string
-	Status     string
-	Type       string
-	Level      int
-	Created    time.Time
-	LastLogin  time.Time
+	ID         int64             `json:"id"`
+	Identifier string            `json:"identifier"`
+	Username   string            `json:"username"`
+	Status     string            `json:"status"`
+	Type       string            `json:"type"`
+	Level      int               `json:"level"`
+	Created    time.Time         `json:"created"`
+	LastLogin  time.Time         `json:"last_login"`
 	Identity   identity.Identity `json:"identity"`
 }
 
@@ -31,13 +32,22 @@ type authMeResponse struct {
 
 func AuthMe(w http.ResponseWriter, r *http.Request, authMe types.AuthMeRecord) error {
 
+	fmt.Println("AuthMe Invoked for Account ID:", authMe.ID)
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	identity, err := identity.Load(authMe.ID)
+	iden, err := identity.Load(authMe.ID)
 	if err != nil {
-		return err
+		identity.Create(authMe.ID)
+		iden, err = identity.Load(authMe.ID)
+		if err != nil {
+			fmt.Println("Could not load identity for account ID:", authMe.ID, "error:", err.Error())
+			return err
+		}
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -51,8 +61,10 @@ func AuthMe(w http.ResponseWriter, r *http.Request, authMe types.AuthMeRecord) e
 		Status:     authMe.Status,
 		Type:       authMe.Type,
 		Level:      authMe.Level,
-		Identity:   identity,
+		Identity:   iden,
 	}
+
+	fmt.Println("AuthMe Compiled for Account ID:", me.ID)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Handle the Response

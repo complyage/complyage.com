@@ -2,6 +2,7 @@ module oauth
 
 require (
 	github.com/complyage/base v0.1.4
+	github.com/joho/godotenv v1.5.1
 	github.com/ralphferrara/aria v0.0.0-20250917054147-6e3e09fbab46
 )
 
@@ -100,7 +101,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.36.0 // indirect
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/image v0.31.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect

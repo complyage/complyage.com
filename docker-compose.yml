@@ -58,6 +58,28 @@ services:
       - redis_cache_data:/data
     command: ["redis-server", "--appendonly", "yes"]
 
+  mock:
+    build:
+      context: ./mock     # directory containing your Dockerfile
+      dockerfile: Dockerfile
+    container_name: mock-app
+    restart: unless-stopped
+    ports:
+      - "8080:80"   # expose Apache on localhost:8080
+    volumes:
+      - ./mock:/var/www/html
+    depends_on:
+      - db-main
+      - auth-redis
+      - oauth-redis
+      - queue-agents
+      - verifications-storage
+    environment:
+      DB_HOST: db-main
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      
   oauth-redis:
     image: redis:7-alpine
     container_name: redis-oauth
@@ -68,9 +90,35 @@ services:
       - redis_oauth_data:/data
     command: ["redis-server", "--appendonly", "yes"]
 
+  enforce-redis:
+    image: redis:7-alpine
+    container_name: redis-enforce
+    restart: unless-stopped
+    ports:
+      - "13002:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  mc-init:
+    image: minio/mc:latest
+    container_name: mc-init
+    depends_on:
+      - verifications-storage
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://verifications-storage:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}; do
+        echo '⏳ Waiting for MinIO...'; sleep 2;
+      done &&
+      mc mb --ignore-existing local/sites &&
+      mc anonymous set download local/sites &&
+      echo '✅ sites bucket ready';
+      exit 0
+      "
+  
+
 volumes:
   rabbitmq_data:
   mariadb_data:
   minio_data:
   redis_cache_data:
   redis_oauth_data:
+  redis_enforce_data:

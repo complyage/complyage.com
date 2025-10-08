@@ -17,7 +17,6 @@ import (
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -26,6 +25,8 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
+
+	app.Log.Info("Handler: Media Upload")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Query Params
@@ -44,41 +45,13 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get Account
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	account, err := abstract.GetAccountByVerificationUUID(identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusNotFound, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Session
-	//||------------------------------------------------------------------------------------------------||
-
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session
-	//||------------------------------------------------------------------------------------------------||
-
-	session, err := actions.FetchSession(cookie.Value)
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check Session Match
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusForbidden, "Session does not match verification record")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
@@ -109,22 +82,13 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Encrypt
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
-	encrypt, err := abstract.GetKeyByAccount(uint(account.ID))
+	verifyRecord, err := verify.CheckLoad(identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to get encryption keys")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Load Verification Record
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, encrypt.Private, encrypt.Public)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 
@@ -150,29 +114,17 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Pull the Data
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyData := verifyRecord.Encrypted.Data.IDEN
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Add the Correct Media
 	//||------------------------------------------------------------------------------------------------||
 
 	switch which {
 	case "front":
-		verifyData.Front = mediaRecord
+		verifyRecord.Data.IDEN.Front = mediaRecord
 	case "back":
-		verifyData.Back = mediaRecord
+		verifyRecord.Data.IDEN.Back = mediaRecord
 	case "selfie":
-		verifyData.Selfie = mediaRecord
+		verifyRecord.Data.IDEN.Selfie = mediaRecord
 	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Reassign the Data
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord.SetDataIDEN(verifyData)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Save All

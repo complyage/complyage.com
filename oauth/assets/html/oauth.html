@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>ComplyAge :: OAuth Provide</title>
+      <link href="/static/css/output.css?v={{CACHEBUST}}" rel="stylesheet" />
+</head>
+
+<style>
+      body.loggedOut .showLoggedOut {
+            display: flex;
+      }
+
+      body.loggedIn .showLoggedIn {
+            display: flex;
+      }
+
+      body.overlay-init #authOverlay,
+      body.overlay-init #previewOverlay,
+      body.overlay-preview #initOverlay,
+      body.overlay-preview #authOverlay,
+      body.overlay-auth #initOverlay,
+      body.overlay-auth #previewOverlay {
+            display: none;
+      }
+
+      body.overlay-init #initOverlay {
+            display: flex;
+      }
+
+      body.overlay-auth #authOverlay {
+            display: flex;
+      }
+
+      body.overlay-preview #previewOverlay {
+            display: flex;
+      }
+
+      body.overlay-action #actionOverlay {
+            display: flex;
+      }
+      
+      body.overlay-action #initAction {
+            display: none;
+      }
+
+      body #actionOverlay {
+            display: none;
+      }
+
+      body.overlay-action #actionOverlay {
+            display: flex;
+      }
+
+      body.ofAge isOver18 {
+            display: flex;
+      }
+
+      body.ofAge .notOver18 {
+            display: none;
+      }
+
+      body.underAge .isOver18 {
+            display: none;
+      }
+
+      body.underAge .notOver18 {
+            display: flex;
+      }
+
+
+</style>
+
+<body class="{{OFAGECLASS}} font-sans h-full text-[1.1em] overlay-init">
+
+      <main class="fixed w-full h-full flex flex-col min-h-0">
+            <!-- Overlay -->
+            <div class="flex flex-1 min-h-0">
+                  <!-- Sidebar -->
+                  <div class="w-full flex justify-center items-center p-8 relative bg-black bg-cover" style="background-image:url(/static/img/oauth.jpg)">
+                  
+                        <!-- Init Overlay -->
+                        <aside id="initOverlay" class="w-full flex justify-center items-center">
+                              <div class="flex flex-col items-center justify-center text-center w-4/5">
+                                    <img class="mb-2" src="/static/img/complyage-w.webp" alt="{{::DEFAULT::LOGO}}" />
+                                    <h2 class="text-gray-400 text-2xl px-2 py-5 font-bold">
+                                          {{::DEFAULT:TAKEBACKPRIVACY}} {{::DEFAULT:KEEPPRIVACY}}
+                                    </h2>
+                                          {{::DEFAULT:LOGOUT}} ({{USERNAME}})
+                                    <p class="text-md leading-7 px-2 pt-1 pb-6 m-0 text-gray-200">
+                                          {{::DEFAULT:BLURBSIGNUP}} <br />
+                                    </p>
+                                    {{STATUS_LOGIN}}
+                                    <div class="flex-col items-center justify-center text-center p-4 rounded-lg text-sm font-bold w-4/5 bg-black/50 text-white">
+                                          <span>{{IP}}</span>
+                                          <span class="text-gray-400"">Location: {{REGION}}, {{COUNTRY}}</span>
+                                          <span class="text-yellow-500">{{ENFORCED}}</span>
+                                    </div>
+                              </div>
+                        </aside>
+                  
+                        <!-- Auth Overlay -->
+                        <div id="authOverlay" class="hidden flex-1 min-h-full flex-col">
+                              <div class="flex justify-end">
+                                    <button onclick="closeOverlay()" class="text-2xl m-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800">✕</button>
+                              </div>
+                              <iframe id="authFrame" src="" class="flex-1 w-full h-full border-0 rounded-b-lg"></iframe>
+                        </div>
+                        
+                        <!-- Preview Overlay -->
+                        <div id="previewOverlay" class="hidden flex-1 min-h-full flex-col">
+                              <div class="flex justify-end flex-shrink-0">
+                                    <button onclick="closeOverlay()" class="text-2xl m-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800">✕</button>
+                              </div>
+
+                              <div class="bg-white/10 backdrop-blur-lg pt-4">
+                                    <h1 class="text-white text-center w-full text-xl font-bold">{{::DEFAULT:THIS_WILL_BE_SHARED}}</h1>
+                              </div>                              
+                              
+                              <div class="flex flex-1 flex-col w-full h-full bg-white/10 backdrop-blur-lg p-4">
+                                    <textarea 
+                                          id="previewData" 
+                                          class="flex-1 w-full resize-none bg-black/30 text-white p-3 rounded border border-white/10 font-mono text-lg leading-5 shadow-inner"
+                                          readonly
+                                    >{{::DEFAULT:LOADING_WAIT}}</textarea>
+                              </div>
+                        </div>
+
+                  </div>
+
+                  <!-- Main Panel -->
+                  <section class="flex flex-col h-full w-full min-h-0" style="background: oklch(0.2326 0.014 253.1);">
+
+                        <!-- Site Area -->
+                        <div id="initAction" class="flex flex-col h-full w-full text-center min-h-0 pt-3">
+                              
+                              <!-- Action Header -->
+                              <div class="flex-shrink-0 border-b border-black p-3 bg-black text-center">
+                                    <div class="w-[60%] aspect-[5/1] bg-center bg-cover bg-no-repeat mb-3 border border-white/20 shadow-lg rounded-2xl mx-auto"
+                                          style="background-image: url('{{SITE_LOGO}}');">
+                                    </div>
+                                    <h1 class="text-gray-300 text-2xl font-bold m-0 p-1">{{SITE_NAME}}</h1>
+                                    <b class="mb-2 text-yellow-400 block text-md">
+                                          {{SITE_URL}} <span class="text-gray-200">{{::DEFAULT:WANTSTOACCESSINFO}}</span>
+                                    </b>
+                              </div>
+
+                              <!-- Action Permissions (scrollable middle) -->
+                              <div class="flex-grow overflow-y-auto w-full min-h-0 bg-black">
+                                    <ul class="list-none m-0 p-0">
+                                          {{AGECHECK}}
+                                          {{AGEGATEHEADER}}
+                                          {{PERMISSIONS}}
+                                    </ul>
+                              </div>
+
+                              <!-- Action Footer -->
+                              <div class="flex-shrink-0 w-full bg-black/50 text-yellow-500 p-2">
+                                    {{FOOTER}}
+                              </div>
+                              
+                        </div>
+
+                        <!-- Auth Overlay -->
+                        <div id="actionOverlay" class="hidden flex-1 min-h-full flex-col">
+                              <div class="flex justify-end">
+                                    <button onclick="closeAction()" class="text-2xl m-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800">✕</button>
+                              </div>
+                              <iframe id="actionFrame" src="" class="flex-1 h-full bg-transparent rounded-b-lg mx-[2%]"></iframe>
+                        </div>
+
+                  </section>
+            </div>
+      </main>
+
+      <script>
+            window.addEventListener("message", (event) => {
+                  if (event.data?.action === "refreshParent") {
+                        window.location.reload();
+                  }
+                  if (event.data?.action === "closeOverlay") {
+                        closeOverlay();
+                  }                  
+                  if (event.data?.action === "closeAction") {
+                        closeAction();
+                  }                  
+            });
+
+            function bodyClass(newClass) {                  
+                  document.body.classList.remove("overlay-init", "overlay-auth", "overlay-preview");
+                  document.body.classList.add(newClass);
+            }
+
+            function openOverlay(url) {
+                  bodyClass("overlay-auth");
+                  const frame   = document.getElementById("authFrame");
+                  frame.src     = url;
+            }
+
+            function closeOverlay() {
+                  bodyClass("overlay-init");
+                  const frame   = document.getElementById("authFrame");
+                  frame.src     = "";
+            }
+
+            function openAction(url) {
+                  document.body.classList.add("overlay-action");
+                  const frame   = document.getElementById("actionFrame");
+                  frame.src     = url;
+            }
+
+            function closeAction() {
+                  document.body.classList.remove("overlay-action");
+                  const frame   = document.getElementById("actionFrame");
+                  frame.src     = "";
+            }            
+
+            function previewData() {
+            }
+
+            function closePreview() {
+                  bodyClass("overlay-init");
+            }
+
+            function loadPreview(scope, session, key) { 
+                  const preview = document.getElementById("previewData");
+                  preview.value = "{{::DEFAULT:LOADING_WAIT}}";
+                  fetch(`/v1/preview?scope=${scope}&session=${session}&key=${key}`, {
+                        method: "GET",
+                        credentials: "include"
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                        preview.value = JSON.stringify(data, null, 2);
+                        preview.scrollTop = 0;
+                  })
+                  .catch((error) => {
+                        preview.value = "{{::DEFAULT:ERROR_OCCURRED}}";
+                        console.error("Error:", error);
+                  });
+                  bodyClass("overlay-preview");
+
+            }
+
+            function logoutUser() {
+                  fetch("{{VITE_COMPLYAGE_API_URL}}//auth/logout", {
+                        method: "GET",
+                        credentials: "include"
+                  }).finally(() => {
+                        document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                        window.location.reload();
+                  });
+            }
+      </script>
+</body>
+</html>

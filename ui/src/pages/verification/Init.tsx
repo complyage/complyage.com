@@ -8,9 +8,15 @@
 //||------------------------------------------------------------------------------------------------||
 
 import React, { useEffect, useState }                             from "react";
-import { useSearchParams, useNavigate }                           from "react-router-dom";
-import {  User }                                                  from "lucide-react";
+import { useSearchParams }                                        from "react-router-dom";
+import {  User,ArrowLeft }                                                  from "lucide-react";
 import type { LucideIcon }                                        from "lucide-react";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Hooks
+//||------------------------------------------------------------------------------------------------||
+
+import { useOverlayNavigate }                                     from "../../hooks/useOverlay";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Data
@@ -49,13 +55,13 @@ import {ModelVerify, VerificationTypes, VerificationStatuses}     from "../../in
 //|| Component
 //||------------------------------------------------------------------------------------------------||
 
-export default function VerificationInit() {
+export default function VerificationInit({ overlay } : { overlay?: boolean }) {
 
       //||------------------------------------------------------------------------------------------------||
       //|| Navigate
       //||------------------------------------------------------------------------------------------------||
 
-      const navigate = useNavigate();
+      const navigate = useOverlayNavigate();
 
       //||------------------------------------------------------------------------------------------------||
       //|| Create New / Init Logic
@@ -189,7 +195,13 @@ export default function VerificationInit() {
 	//||------------------------------------------------------------------------------------------------||
 
 	return (
-		<MembersLayout title={typeTitle} icon={TypeIcon}>
+		<MembersLayout title={!overlay ? typeTitle : undefined} icon={!overlay ? TypeIcon : undefined} overlay={overlay}>
+                  {!overlay && (<div className="mt-[-90px] text-right">
+                        <button className="btn btn-lg btn-black" onClick={() => navigate("-1")}>
+                              <ArrowLeft size={24} /> Back
+                        </button>
+                  </div>)}
+
 			<div className="max-w-4xl mx-auto py-8">
 				{loading ? (
 					<SpinnerCircle />
@@ -200,30 +212,38 @@ export default function VerificationInit() {
 				) : verifications.length === 0 ? (
 					<>
 						<div className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-black/20 rounded-lg shadow mb-10">
+                                          <div className="w-full text-center mr-4 flex mx-auto text-gray-400 mb-5">
+                                                <div className="text-3xl font-semibold mb-2 bg-green-400/80 mx-auto rounded-full p-4">
+                                                      <TypeIcon className="block mx-auto text-white" size={128} />
+                                                </div>
+                                          </div>
+                                          
+                                          <div className="flex justify-center mb-6 pb-4">
+                                                <button className="btn btn-xl btn-success" onClick={handleInit}>
+                                                      <span className="font-semibold">Get Verified Now!</span>
+                                                </button>
+                                          </div>                                      
 							<div className="max-w-lg text-center">
 								<h2 className="text-2xl font-bold mb-2 text-gray-300">
 									No Previous{" "}
 									<span className="text-gray-100">{getVerificationPageTitle(typeVerify as VerificationTypes)}</span>
 								</h2>
 								<p className="text-base text-gray-300 mb-6">
-									When you create your first attempt, you’ll see your progress and status updates here.
-									<br />
-									<br />
-									Verification is a quick and secure process that helps keep your account safe and trusted. If you have
-									questions about verification, you can always contact our support team.
+									When you create your first verification, you’ll see your progress and status updates here.
 								</p>
-							</div>
-							<SpinnerCircle size={40} className="mb-4" />
-							<button
-								className="btn btn-primary text-lg font-semibold px-8 py-3 mt-2 shadow-lg bg-orange-400 hover:bg-orange-500 text-white"
-								onClick={handleInit}>
-								<TypeIcon className="inline-block mr-2" size={22} />
-								Create New Verification
-							</button>
+                                                <div className="mb-6 text-center">
+                                                      {!overlay && (<button className="btn btn-lg btn-ghost" onClick={() => navigate("-1")}>
+                                                            <ArrowLeft size={24} /> Back
+                                                      </button>)}
+                                                </div>
+
+							</div>                                          
 						</div>
 					</>
 				) : (
 					<div className="max-w-7xl">
+                                    
+
                                     <div className="w-full text-center mr-4 flex mx-auto text-gray-400 mb-5">
                                           <div className="text-3xl font-semibold mb-2 bg-green-400/80 mx-auto rounded-full p-4">
                                                 <TypeIcon className="block mx-auto text-white" size={128} />
@@ -237,6 +257,7 @@ export default function VerificationInit() {
                                     </div>         
 
 						<div className="mb-4 text-left rounded-lg mt-4">
+
 							<div className="overflow-x-auto rounded-lg shadow">
 								<table className="table table-zebra table-lg bg-base-200 text-base-content">
 									<thead>
@@ -285,6 +306,7 @@ export default function VerificationInit() {
 										)}
 									</tbody>
 								</table>
+
 							</div>
 						</div>
 					</div>

@@ -122,6 +122,21 @@ export default function CustomAgeGate({data, updateField}: CustomAgeGateProps) {
                               </p>
                         )}
 			</div>
+
+			{/* Custom Confirm URL */}
+			<div className="mt-4">
+				<label htmlFor="publicKey" className="block label pb-1">
+					Public Key (only needed for manual integration)
+				</label>
+				<div className="flex items-center space-x-4">
+                              <textarea
+                                    id="publicKey"
+                                    readOnly={true}
+                                    value={data?.public}
+                                    className="textarea textarea-bordered flex-1 h-32 text-gray-400"
+                              />
+				</div>
+			</div>                  
                   <>
                   <button onClick={() => setShowPreview(true)} className="btn btn-primary mt-6">Preview Gate</button>
                   { showPreview && (<PreviewGate data={data} onClose={() => setShowPreview(false)} />) }

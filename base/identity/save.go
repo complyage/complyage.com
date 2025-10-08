@@ -24,6 +24,6 @@ func (i *Identity) Save() error {
 		fmt.Println("Error saving identity to storage:", err)
 		return err
 	}
-
+	app.Log.Info("SAVING IDENTITY:", i.Filename())
 	return nil
 }

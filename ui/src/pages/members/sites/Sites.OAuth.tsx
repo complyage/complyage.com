@@ -52,38 +52,72 @@ export default function OAuthSettingsSection({data, updateField}: OAuthSettingsS
       const [types, setTypes]             = useState<VerificationType[]>([]);
 	const [loading, setLoading]         = useState(true);
       const [mode, setMode]               = useState<"auto" | "manual">("auto");
-	const [selected, setSelected]       = useState<Set<string>>(new Set(data.permissions ? data.permissions.split(",") : []));
+	const [selected, setSelected]       = useState<Set<string>>(new Set([]));
       //||------------------------------------------------------------------------------------------------||
       //|| Load Verification Types
       //||------------------------------------------------------------------------------------------------||
-	useEffectOnce(() => {
-		(async () => {
-			try {
-				const res = await fetch("/v1/api/sites/vtypes", {
-					method: "GET",
-					credentials: "include",
-				});
-				const json = await res.json();
-                        console.log(json);
-				if (Array.isArray(json.data.verification_types)) {
-					setTypes(json.data.verification_types);
-				}
-			} catch (err) {
-				console.error(err);
-			} finally {
-				setLoading(false);
-			}
-		})();
-	});
+      useEffectOnce(() => {
+      (async () => {
+            try {
+                  const res = await fetch("/v1/api/sites/scopes", {
+                        method            : "GET",
+                        credentials       : "include",
+                  });
+                  const json = await res.json();
+                  console.log("JSON SCOPES", json);
+                  setTypes(json.data);
+                  if (!json.data || json.data.length === 0) {
+                        const initialScopes = json.data.map((t: VerificationType) => ({
+                              code        : t.code,
+                              status      : "VERF",
+                              enabled     : false,
+                        }));
+                        updateField("scopes", initialScopes);
+                  }                  
+            } catch (err) {
+                  console.error(err);
+            } finally {
+                  setLoading(false);
+            }
+      })();
+      });
       //||------------------------------------------------------------------------------------------------||
-      //|| Permissions
+      //|| On Change
       //||------------------------------------------------------------------------------------------------||
-	useEffect(() => {
-		setSelected(new Set(data.permissions?.split(",") || []));
-	}, [data.permissions]);
+      useEffect(() => {
+      if (data.scopeAuto) {
+            setMode("auto");
+      } else {
+            setMode("manual");
+      }
+      }, [data.scopeAuto]);      
+      //||------------------------------------------------------------------------------------------------||
+      //|| On Change
+      //||------------------------------------------------------------------------------------------------||
+      useEffect(() => {
+      if (!data.scopes) return;
 
+      const enabledCodes = data.scopes
+            .filter((sc) => sc.enabled)
+            .map((sc) => sc.code);
+
+      setSelected(new Set(enabledCodes));
+      }, []); // only on mount    
       //||------------------------------------------------------------------------------------------------||
-      //|| On Chnage
+      //|| On Change
+      //||------------------------------------------------------------------------------------------------||
+      useEffect(() => {
+      if (!data.scopes) return;
+
+      const updatedScopes = data.scopes.map((sc) => ({
+            ...sc,
+            enabled: selected.has(sc.code),
+      }));
+
+      updateField("scopes", updatedScopes);
+      }, [selected]);
+      //||------------------------------------------------------------------------------------------------||
+      //|| On Change
       //||------------------------------------------------------------------------------------------------||
 	const onChangeField = (field: "redirect" | "private") => (e: React.ChangeEvent<HTMLInputElement>) => {
 		updateField(field, e.target.value);
@@ -93,8 +127,8 @@ export default function OAuthSettingsSection({data, updateField}: OAuthSettingsS
       //||------------------------------------------------------------------------------------------------||
       const changeMode = (newMode: "auto" | "manual") => {
             setMode(newMode);
-            updateField("permission_mode", newMode);
-      }
+            updateField("scopeAuto", newMode === "auto");
+      };
       //||------------------------------------------------------------------------------------------------||
       //|| Handle Permissions
       //||------------------------------------------------------------------------------------------------||
@@ -122,13 +156,13 @@ export default function OAuthSettingsSection({data, updateField}: OAuthSettingsS
 			{/* Client ID */}
 			<div className="mb-6">
 				<label className="block text-sm font-medium mb-1">Client ID</label>
-				<input type="text" className="input input-bordered w-full" value={data.public} />
+				<input readOnly={true} type="text" className="text-gray-400 input input-bordered w-full" value={data.clientId} />
 			</div>
 
 			{/* Private Key */}
 			<div className="mb-6">
 				<label className="block text-sm font-medium mb-1">Private Key</label>
-				<input type="text" className="input input-bordered w-full" value={data.private} />
+				<textarea readOnly={true} className="text-gray-400 textarea textarea-bordered w-full h-32" value={data.private} />
 			</div>
 
 			{/* Permissions Table */}

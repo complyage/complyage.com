@@ -12,6 +12,12 @@
       import {CheckCircle, Home}                            from "lucide-react";
 
       //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
+
+      //||------------------------------------------------------------------------------------------------||
       //|| Data
       //||------------------------------------------------------------------------------------------------||
 
@@ -29,7 +35,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       import MembersLayout                                  from "../../../layouts/MembersLayout";
-      import ProgressSteps, { ProgessStep }                 from "../../../components/base/ProgressSteps";
+      import ProgressSteps, { ProgressStep }                from "../../../components/base/ProgressSteps";
       import InlineAlert                                    from "../../../components/base/InlineAlert";
       import SpinnerCircle                                  from "../../../components/base/SpinnerCircle";
 
@@ -37,7 +43,7 @@
       //|| Page
       //||------------------------------------------------------------------------------------------------||
 
-      export default function VerificationCheck() {
+      export default function VerificationCheck({overlay}: { overlay?: boolean }) {
 
             //||------------------------------------------------------------------------------------------------||
             //|| Verification
@@ -50,7 +56,7 @@
             //|| Navigate
             //||------------------------------------------------------------------------------------------------||
 
-            const navigate                     = useNavigate();
+            const navigate                     = useOverlayNavigate();  
 
             //||------------------------------------------------------------------------------------------------||
             //|| useState
@@ -138,7 +144,7 @@
             //|| Steps
             //||------------------------------------------------------------------------------------------------||
 
-            const steps: ProgessStep[] = [
+            const steps: ProgressStep[] = [
                   { label: "Code Entry", description: "Enter the code" },
                   { label: "Verified!", description: "Verification Complete!" },
             ];            
@@ -148,12 +154,12 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-			<MembersLayout title={getVerificationType(verificationType)} icon={getVerificationIcon(verificationType)}>
+			<MembersLayout overlay={overlay} title={!overlay ? getVerificationType(verificationType) : undefined} icon={!overlay ? getVerificationIcon(verificationType) : undefined}>
 				<div className="relative min-h-[90vh]">
 					<div className="absolute inset-0 pointer-events-none z-0" />
 					<div className="relative z-10 max-w-2xl mx-auto">
 						<div className="flex flex-col gap-4 items-center">
-							<ProgressSteps steps={steps} currentStep={1} />
+							<ProgressSteps steps={steps} currentStep={1} verificationType={verificationType} />
 						</div>
 
 						{(!loaded || busy) && (
@@ -167,13 +173,27 @@
 
 						<div className="w-full max-w-2xl mx-auto mt-4">
 							{!loadError && loaded && !complete && (
+                                                <>
 								<div className="space-y-7 p-10 bg-black/20">
 									<p className="text-gray-50 text-center text-2xl font-bold tracking-tight mb-3">
 										Enter your 6-digit verification code
 									</p>
-									<p className="text-gray-400 text-center mb-6">
-										We sent a unique code to your bank statement. Enter it below to verify your card and complete setup.
-									</p>
+                                                      <p className="text-gray-400 text-center mb-6">
+                                                            {(() => {
+                                                                  switch (verificationType) {
+                                                                        case "CRCD":
+                                                                              return "We placed a unique code on your credit card statement. Enter it below to verify your card and complete setup.";
+                                                                        case "PHNE":
+                                                                              return "We sent a unique code to your phone number. Enter it below to verify your phone and complete setup.";
+                                                                        case "ADDR":
+                                                                              return "We mailed a unique code to your address. Enter it below to verify your address and complete setup.";
+                                                                        case "MAIL":
+                                                                              return "We sent a unique code to your email address. Enter it below to verify your email and complete setup.";
+                                                                        default:
+                                                                              return "";
+                                                                  }
+                                                            })()}
+                                                      </p>
                                                       { error && (
                                                             <InlineAlert
                                                                   isError
@@ -207,8 +227,9 @@
 											)}
 										</button>
 									</div>
-                                                      <span className="pt-2 block text-center text-sm text-gray-500 mt-2 select-all">{verificationId}</span>
 								</div>
+                                                <span className="pt-2 block text-center text-sm text-gray-500 mt-2 select-all">{verificationId}</span>                                                
+                                                </>
 							)}
 
 							{complete && !loadError && (
@@ -219,7 +240,7 @@
 										Your verification is complete!
 									</p>
 									<button
-										onClick={() => navigate("/members")}
+										onClick={() => navigate("/members?refresh")}
 										className="btn btn-primary bg-green-500/80 hover:bg-green-400 text-xl px-10 py-7 rounded-2xl shadow-lg font-bold">
 										<CheckCircle className="inline w-6 h-6 mr-2 align-middle" /> Go to Dashboard
 									</button>

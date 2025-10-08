@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ant Media Player (Tuned)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f8f8f8;
+      padding: 20px;
+    }
+    video {
+      width: 560px;
+      max-width: 100%;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #000;
+    }
+    #status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #444;
+    }
+    #reconnectBtn {
+      margin-top: 10px;
+      padding: 6px 12px;
+      background: #0d6efd;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>📡 Watching: <code>stream1</code></h2>
+  <video id="player" autoplay playsinline muted controls></video>
+  <div id="status">Status: initializing...</div>
+  <button id="reconnectBtn">Reconnect to WebRTC</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script type="module">
+    import { WebRTCAdaptor } from "https://esm.sh/@antmedia/webrtc_adaptor";
+
+    const APP_WEBSOCKET = "wss://access.chatrtc.com:5443/WebRTCApp/websocket";
+    const STREAM_ID     = "stream1";
+    const HLS_URL       = "https://access.chatrtc.com:5443/WebRTCApp/streams/stream1.m3u8";
+
+    const videoEl       = document.getElementById("player");
+    const statusEl      = document.getElementById("status");
+    const reconnectBtn  = document.getElementById("reconnectBtn");
+    const subscriberId  = "sub-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+
+    let fallbackStarted = false;
+    let webrtcStarted   = false;
+
+    function setStatus(msg, obj = null) {
+      const extra = obj ? " " + JSON.stringify(obj) : "";
+      console.log("🛰️", msg, obj || "");
+      statusEl.textContent = `Status: ${msg}${extra}`;
+    }
+
+    function playHLSOnce() {
+      if (fallbackStarted) return;
+      fallbackStarted = true;
+      reconnectBtn.style.display = "inline-block";
+      setStatus("🔁 Fallback to HLS...");
+
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          liveSyncDurationCount: 1,
+          liveMaxLatencyDurationCount: 2,
+          maxLiveSyncPlaybackRate: 1.5,
+          lowLatencyMode: true
+        });
+        hls.loadSource(HLS_URL);
+        hls.attachMedia(videoEl);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoEl.play().catch(() => {});
+          setStatus("📺 HLS playing");
+        });
+        hls.on(Hls.Events.ERROR, (e, data) => {
+          console.error("HLS error", data);
+          setStatus("❌ HLS error");
+        });
+      } else {
+        // Native HLS fallback (Safari, Smart TVs)
+        videoEl.src = HLS_URL;
+        videoEl.addEventListener("loadedmetadata", () => {
+          videoEl.currentTime = videoEl.duration;
+          videoEl.play().catch(() => {});
+          setStatus("📺 HLS native playing");
+        });
+      }
+    }
+
+    const adaptor = new WebRTCAdaptor({
+      websocket_url: APP_WEBSOCKET,
+      mediaConstraints: { video: false, audio: false },
+      sdp_constraints: { OfferToReceiveAudio: true, OfferToReceiveVideo: true },
+      remoteVideoId: "player",
+      peerconnection_config: {
+        iceServers: [
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" }
+        ]
+      },
+
+      callback: (info, obj) => {
+        setStatus(info, obj);
+
+        if (info === "initialized") {
+          setStatus("⚡ Checking stream...");
+          adaptor.getStreamInfo(STREAM_ID);
+        }
+
+        if (info === "streamInformation") {
+          if (obj?.status === "broadcasting") {
+            setStatus("🎬 WebRTC stream is live, connecting...");
+            adaptor.play(STREAM_ID, undefined, -1, subscriberId);
+          } else {
+            setStatus("⌛ Waiting for stream...");
+            setTimeout(() => adaptor.getStreamInfo(STREAM_ID), 1000);
+          }
+        }
+
+        if (info === "play_started") {
+          webrtcStarted = true;
+          fallbackStarted = false;
+          setStatus("✅ WebRTC live");
+          videoEl.muted = false;
+          reconnectBtn.style.display = "none";
+        }
+
+        if (info === "play_finished") {
+          setStatus("⏹️ WebRTC ended");
+        }
+
+        if (info === "ice_connection_state_changed" && obj?.state === "failed") {
+          setStatus("⚠️ ICE failed, switching to HLS");
+          playHLSOnce();
+        }
+      },
+
+      callbackError: (err) => {
+        console.error("❌ WebRTC error:", err);
+        const reason = err?.definition || err?.message || "unknown";
+        setStatus(`WebRTC error: ${reason}`);
+        playHLSOnce();
+      }
+    });
+
+    reconnectBtn.onclick = () => {
+      if (!webrtcStarted) {
+        fallbackStarted = false;
+        setStatus("🔁 Manual reconnect to WebRTC...");
+        adaptor.getStreamInfo(STREAM_ID);
+      }
+    };
+
+const video = document.querySelector("video");
+if (!video) {
+   console.warn("❌ No <video> element found.");
+} else if (!video.srcObject) {
+   console.warn("❌ <video> has no srcObject (not WebRTC?).");
+} else {
+   const audioTracks = video.srcObject.getAudioTracks();
+   console.log("🎧 Audio Tracks:", audioTracks);
+}
+  </script>
+</body>
+</html>

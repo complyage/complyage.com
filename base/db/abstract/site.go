@@ -17,10 +17,10 @@ import (
 //|| Helper: OAuthSites
 //||------------------------------------------------------------------------------------------------||
 
-func GetSiteByPublic(publicKey string) (models.Site, error) {
+func GetSiteByClientId(clientId string) (models.Site, error) {
 	var s models.Site
 	err := app.SQLDB["main"].DB.
-		Where("site_public = ?", publicKey).
+		Where("site_client_id = ?", clientId).
 		Where("site_status NOT IN ('RMVD','BNND')").
 		First(&s).Error
 	if err == nil {

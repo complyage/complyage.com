@@ -5,6 +5,7 @@ package public
 //||------------------------------------------------------------------------------------------------||
 
 import (
+	"api/handlers/utils"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/complyage/base/db/abstract"
 
+	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/log"
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/stripe/stripe-go/v82"
@@ -26,6 +29,7 @@ type DonateCompleteRequest struct {
 	Method   string  `json:"method"`   // "CARD", "CRYPTO", "CHECK"
 	Merchant string  `json:"merchant"` // "Stripe", "PayPal", "Coinbase"
 	Amount   float64 `json:"amount"`   // donation amount in dollars
+	Currency string  `json:"currency"` // currency code, e.g. "USD"
 	TxID     string  `json:"txID"`     // reference/intent ID
 }
 
@@ -69,10 +73,31 @@ func DonateComplete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Save to DB
-	if err := abstract.AddTransaction(req.Method, req.Merchant, req.Amount, req.TxID); err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to record donation: "+err.Error())
+	//||------------------------------------------------------------------------------------------------||
+	//|| Get the USD
+	//||------------------------------------------------------------------------------------------------||
+
+	usdAmount, cErr := utils.ConvertToUSD(int64(req.Amount), req.Currency)
+	if cErr != nil {
+		usdAmount = -1
 		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Create the transaction
+	//||------------------------------------------------------------------------------------------------||
+
+	app.Log.Error("Recording transaction: ", req.Method, req.Merchant, usdAmount, req.Amount, req.Currency, req.TxID)
+	log.PrettyPrint(req)
+	if err := abstract.AddTransaction(
+		"CARD",              // method
+		"STRIPE",            // merchant
+		(usdAmount / 100),   // USD value
+		float64(req.Amount), // original amount in major units
+		req.Currency,        // original currency
+		req.TxID,            // transaction reference
+	); err != nil {
+		app.Log.Error("Failed to insert transaction: ", err.Error())
 	}
 
 	// Success response

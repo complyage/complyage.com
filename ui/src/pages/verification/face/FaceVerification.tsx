@@ -256,7 +256,7 @@
                   <MembersLayout>
                         <div>Step : {  process.step }</div>
                         <div className="w-full max-w-5xl mx-auto">                              
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" /> 
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" verificationType="FACE" />
                               { process.step < 1 && <FaceVerificationInitial updateProcess={ updateProcess } process={process} />}
                               { process.step === 2 && <FaceVerificationStep1 which="front" updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
                               { process.step === 3 && <FaceVerificationStep2 which="back" updateProcess={ updateProcess } process={process}  onUpload={ onUpload } getUpload={ getUpload } />}

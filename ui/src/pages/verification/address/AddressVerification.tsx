@@ -14,6 +14,12 @@
       import {getEnv}                                       from "../../../data/getEnv";
 
       //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
+
+      //||------------------------------------------------------------------------------------------------||
       //|| Components
       //||------------------------------------------------------------------------------------------------||
 
@@ -48,7 +54,7 @@
       //|| Page
       //||------------------------------------------------------------------------------------------------||
 
-      export default function AddressVerification() {
+      export default function AddressVerification({overlay}: { overlay?: boolean }) {
 
             //||------------------------------------------------------------------------------------------------||
             //|| Verification
@@ -61,7 +67,7 @@
             //|| Navigate
             //||------------------------------------------------------------------------------------------------||
 
-            const navigate                     = useNavigate();
+            const navigate                     = useOverlayNavigate();
 
             //||------------------------------------------------------------------------------------------------||
             //|| Process
@@ -156,9 +162,9 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout title="Address Verification" icon={ Home }>
+                  <MembersLayout overlay={overlay}>
                         <div className="w-full max-w-2xl mx-auto">                              
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" />
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" verificationType="ADDR" />
                               { process.step === 1 && 
                                     <AddressVerificationStep1 
                                           process={ process } 

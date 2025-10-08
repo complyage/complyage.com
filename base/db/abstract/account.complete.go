@@ -3,28 +3,24 @@ package abstract
 import (
 	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
-	"github.com/complyage/base/db/models"
-	"github.com/complyage/base/send"
+	"github.com/complyage/base/encrypted"
+	"github.com/complyage/base/identity"
 	"github.com/complyage/base/types"
 	"github.com/complyage/base/verify"
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/auth/db"
-	"github.com/ralphferrara/aria/base/crypto"
-	"github.com/ralphferrara/aria/base/encrypt"
 	"github.com/ralphferrara/aria/base/validate"
 )
 
-func OnAccountComplete(r *http.Request, accountID int64, accountIdentifier string) error {
+func OnAccountComplete(r *http.Request, accountId int64, accountIdentifier string) error {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| DB Account
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("Fetching the created account, ID : ", accountID)
-	dbAccount, err := db.GetAccountByID(fmt.Sprintf("%d", accountID))
+	app.Log.Info("Fetching the created account, ID : ", accountId)
+	dbAccount, err := db.GetAccountByID(fmt.Sprintf("%d", accountId))
 	if err != nil {
 		return app.Err("Auth").Error("ACCOUNT_LOOKUP_FAILED")
 	}
@@ -33,196 +29,164 @@ func OnAccountComplete(r *http.Request, accountID int64, accountIdentifier strin
 	//|| Check Account Status
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("dbAccount.Status:", dbAccount.Status)
-	fmt.Println("Expected Status:", app.Constants("AccountStatus").Code("Verified"))
+	app.Log.Info("dbAccount.Status:", dbAccount.Status)
+	app.Log.Info("Expected Status:", app.Constants("AccountStatus").Code("Verified"))
 	if dbAccount.Status != app.Constants("AccountStatus").Code("Verified") {
 		return app.Err("auth").Error("ACCOUNT_NOT_PENDING")
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Var
+	//|| Key Generation
 	//||------------------------------------------------------------------------------------------------||
 
-	rawEncrypt := r.FormValue("encryptionLevel")
-	privateKeyInput := r.FormValue("privateKey")
-	publicKeyInput := r.FormValue("publicKey")
-	wordListJSON := r.FormValue("wordList")
+	var encryptionLevel int
+	var privateKey, publicKey, privateCheck string
+	keysExist := false
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Encryption Level
+	//|| Set the existing keys if they exist
 	//||------------------------------------------------------------------------------------------------||
 
-	encryptionLevel, err := strconv.Atoi(rawEncrypt)
-	if err != nil || encryptionLevel < 1 || encryptionLevel > 3 {
-		return app.Err("Auth").Error("INVALID_ACCOUNT_TYPE")
+	existingKey, err := GetKeyByAccount(uint(accountId)) // write this helper if not present
+	if err == nil && existingKey != nil {
+		app.Log.Info("Keys already exist, loading them instead of generating new")
+		encryptionLevel = existingKey.Level
+		privateKey = existingKey.Private
+		publicKey = existingKey.Public
+		privateCheck = existingKey.CheckKey
+		keysExist = true
 	}
 
-	fmt.Println("Encryption Level = ", encryptionLevel)
-
 	//||------------------------------------------------------------------------------------------------||
-	//|| Validate and Generate Private/Public Key
+	//|| Generate the Keys
 	//||------------------------------------------------------------------------------------------------||
 
-	var privateKey, publicKey string
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Level 1 - We handle the keys
-	//||------------------------------------------------------------------------------------------------||
-
-	if encryptionLevel == 1 {
-		genPrivateKey, genPublicKey, err := crypto.GenerateKeyPair()
-		if err != nil {
-			return app.Err("Auth").Error("PRIVPUB_FAILED")
+	if !keysExist {
+		secrets, secretsErr := CreateAccountSecrets(r, accountId, accountIdentifier)
+		if secretsErr != nil {
+			return secretsErr
 		}
-		privateKey = genPrivateKey
-		publicKey = genPublicKey
-	}
-	fmt.Println("Private Key:", privateKey)
-	fmt.Println("Public Key:", publicKey)
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Level 2 - BIPList
-	//||------------------------------------------------------------------------------------------------||
-
-	var BIPList []string
-
-	if encryptionLevel == 2 {
-		BIPList, err := validate.ValidateBIP39(wordListJSON)
-		if err != nil {
-			return app.Err("Auth").Error("BAD_BIP39")
-		}
-		genPrivate, genPublic, err := crypto.GenerateBIP39Keys(BIPList)
-		if err != nil {
-			return app.Err("Auth").Error("BIP39_GEN_FAILED")
-		}
-		privateKey = genPrivate
-		publicKey = genPublic
+		privateKey = secrets.PrivateKey
+		publicKey = secrets.PublicKey
+		privateCheck = secrets.CheckKey
+		encryptionLevel = secrets.EncryptionLevel
 	}
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Level 3 requires both keys
-	//||------------------------------------------------------------------------------------------------||
-
-	if encryptionLevel == 3 {
-		privateKey = privateKeyInput
-		publicKey = publicKeyInput
-	}
+	app.Log.Info("Encryption Level:", encryptionLevel)
+	app.Log.Info("Private Key:", len(privateKey), " characters")
+	app.Log.Info("Public Key:", len(publicKey), " characters")
+	app.Log.Info("Private Key Hash:", privateCheck)
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Key Pair
+	//|| Create the Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("Validating Key Pair")
-	err = validate.ValidateKeyPair(privateKey, publicKey)
+	iden, err := identity.Create(dbAccount.ID)
 	if err != nil {
-		fmt.Println("Error validating key pair:", err)
-		return app.Err("Auth").Error("PRIVPUB_MISMATCH")
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Generate the Private Key Hash
-	//||------------------------------------------------------------------------------------------------||
-
-	privateKeyHash, err := encrypt.GenerateCheckKey(privateKey)
-	if err != nil {
-		fmt.Println("Error generating private key hash:", err)
-		return app.Err("Auth").Error("PRIVPUB_CHECKEY_FAILED")
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Contact the User with the keys if needed
-	//||------------------------------------------------------------------------------------------------||
-
-	fmt.Println("Sending keys to user")
-	if encryptionLevel == 1 {
-		_ = send.EmailPrivateKeyToUser(dbAccount.Identifier, privateKey)
-	}
-
-	if encryptionLevel == 2 {
-		_ = send.EmailBIPListToUser(dbAccount.Identifier, BIPList, privateKey)
-	}
-
-	if encryptionLevel == 3 {
-		_ = send.EmailPrivateKeyToUser(dbAccount.Identifier, privateKey)
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Add Key to DB
-	//||------------------------------------------------------------------------------------------------||
-
-	fmt.Println("Creating Encryption Type")
-	if encryptionLevel == 1 {
-		CreateKey(&models.ModelKey{
-			FidAccount: uint(dbAccount.ID),
-			Level:      encryptionLevel,
-			Private:    privateKey,
-			Public:     publicKey,
-			CheckKey:   privateKeyHash,
-			CreatedAt:  time.Now().UTC(),
-		})
-	} else {
-		CreateKey(&models.ModelKey{
-			FidAccount: uint(dbAccount.ID),
-			Level:      encryptionLevel,
-			Private:    "",
-			Public:     publicKey,
-			CheckKey:   privateKeyHash,
-			CreatedAt:  time.Now().UTC(),
-		})
+		return app.Err("Auth").Error("IDENTITY_CREATE_FAILED")
 	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get Identifier Type
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("Getting identifier type")
 	identifierType := validate.IsEmailOrPhone(accountIdentifier)
-	fmt.Println("Identifier Type:", identifierType)
+	app.Log.Info("Getting identifier type -", accountIdentifier)
+	app.Log.Info("Identifier Type:", identifierType)
 	if identifierType == "unknown" {
 		return app.Err("Auth").Error("INVALID_IDENTIFIER")
 	}
-
-	verifyType := verify.DataTypeMAIL
+	verifyType := types.DataTypeMAIL
 	if identifierType == "phone" {
-		verifyType = verify.DataTypePHNE
+		verifyType = types.DataTypePHNE
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Email Verification
+	//|| Create the Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("Creating Verification Record")
-	verifyRecord, err := verify.Create(verifyType, dbAccount.ID, app.Storages["verifications"], app.SQLDB["main"], privateKey, publicKey)
-	if err != nil {
-		return app.Err("Verify").Error("CREATE_FAILED")
-	}
+	app.Log.Info("Creating Verification Record")
+	verifyRecord := verify.Create(verifyType, types.AccountSessionChecked{
+		ID:         dbAccount.ID,
+		Salt:       dbAccount.Salt,
+		Username:   dbAccount.Username,
+		Identifier: dbAccount.Identifier,
+		Status:     dbAccount.Status,
+		Level:      dbAccount.Level,
+		KeysLoaded: true,
+		Private:    privateKey,
+		Public:     publicKey,
+		CheckKey:   privateCheck,
+	})
+	app.Log.Info("Creating Verification Record with UUID:", verifyRecord.UUID)
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Determine Email or Phone
+	//|| Set the Encrypted/Identity Data
 	//||------------------------------------------------------------------------------------------------||
 
-	if verifyType == verify.DataTypeMAIL {
+	var encErr error
+	if verifyType == types.DataTypeMAIL {
+		//||------------------------------------------------------------------------------------------------||
+		//|| Create the type
+		//||------------------------------------------------------------------------------------------------||
 		var email types.EmailAddress
 		email.Email = accountIdentifier
+		//||------------------------------------------------------------------------------------------------||
+		//|| Set the Verify Record
+		//||------------------------------------------------------------------------------------------------||
 		verifyRecord.SetDataEmail(email)
-		verifyRecord.Identity.SetVerification(verifyType.String(), true, email.Mask(), verifyRecord.UUID)
+		//||------------------------------------------------------------------------------------------------||
+		//|| Set the Identity
+		//||------------------------------------------------------------------------------------------------||
+		iden.SetVerification(types.DataTypeMAIL.String(), true, email.Mask(), verifyRecord.UUID)
+		//||------------------------------------------------------------------------------------------------||
+		//|| Encrypt the Data
+		//||------------------------------------------------------------------------------------------------||
+		encErr = encrypted.SaveMAIL(publicKey, verifyRecord.UUID, email)
+		verifyRecord.EncryptedSaved = true
 	} else {
+		//||------------------------------------------------------------------------------------------------||
+		//|| Create the type
+		//||------------------------------------------------------------------------------------------------||
 		phone, err := types.PhoneFromString(accountIdentifier)
 		if err != nil {
-			return app.Err("Auth").Error("INVALID_PHONE")
+			return app.Err("Types").Error("INVALID_PHONE")
 		}
+		//||------------------------------------------------------------------------------------------------||
+		//|| Set the Verify Record
+		//||------------------------------------------------------------------------------------------------||
 		verifyRecord.SetDataPhone(phone)
-		verifyRecord.Identity.SetVerification(verifyType.String(), true, phone.Mask(), verifyRecord.UUID)
+		//||------------------------------------------------------------------------------------------------||
+		//|| Set the Identity
+		//||------------------------------------------------------------------------------------------------||
+		iden.SetVerification(types.DataTypePHNE.String(), true, phone.Mask(), verifyRecord.UUID)
+		//||------------------------------------------------------------------------------------------------||
+		//|| Encrypt the Data
+		//||------------------------------------------------------------------------------------------------||
+		encErr = encrypted.SavePHNE(publicKey, verifyRecord.UUID, phone)
+		verifyRecord.EncryptedSaved = true
+	}
+	if encErr != nil {
+		return app.Err("Encrypted").Error("ENCRYPT_CREATE_FAILED")
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Determine Email or Phone
+	//|| Save the Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord.DatabaseSaveIdentity()
+	iErr := iden.Save()
+	if iErr != nil {
+		return app.Err("Identity").Error("IDENTITY_UPDATE_FAILED")
+	}
+	verifyRecord.IdentityUpdated = true
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Save Verification
+	//||------------------------------------------------------------------------------------------------||
+
 	verifyRecord.UpdateStatusVerified("TWOFACTOR")
 	verifyRecord.Save()
-	verifyRecord.Lock()
+	verifyRecord.DatabaseUpdate()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Success

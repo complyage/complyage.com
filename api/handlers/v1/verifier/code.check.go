@@ -2,16 +2,17 @@ package verifier
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/encrypted"
+	"github.com/complyage/base/identity"
+	"github.com/complyage/base/types"
 	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -36,22 +37,15 @@ type codeCheckResponse struct {
 
 func VerificationCodeCheck(w http.ResponseWriter, r *http.Request) {
 
+	app.Log.Info("Handler: Code Check")
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
 	var updateRequest codeCheckRequest
 	if err := json.NewDecoder(r.Body).Decode(&updateRequest); err != nil {
-		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload: "+err.Error())
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check
-	//||------------------------------------------------------------------------------------------------||
-
-	if updateRequest.Identifier == "" || updateRequest.Code == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing identifier or code")
+		responses.Error(w, http.StatusBadRequest, app.Err("API").Code("INVALID_JSON"))
 		return
 	}
 
@@ -59,58 +53,21 @@ func VerificationCodeCheck(w http.ResponseWriter, r *http.Request) {
 	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch a Session
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
+	verifyRecord, err := verify.CheckLoad(updateRequest.Identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch Verification Record (with account public for decrypt)
-	//||------------------------------------------------------------------------------------------------||
-
-	account, err := abstract.GetAccountByVerificationUUID(updateRequest.Identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusBadRequest, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Session Account
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusBadRequest, "Session does not match account")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Encrypt
-	//||------------------------------------------------------------------------------------------------||
-
-	encrypt, err := abstract.GetKeyByAccount(uint(account.ID))
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to get encryption keys")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification Record matches Account
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], updateRequest.Identifier, encrypt.Private, encrypt.Public)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 
@@ -118,7 +75,7 @@ func VerificationCodeCheck(w http.ResponseWriter, r *http.Request) {
 	//|| Load
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("VerificationCodeLoad: Loaded verification", verifyRecord.UUID, "Code:", verifyRecord.TwoFactor.Code)
+	app.Log.Data("Verification :", verifyRecord.UUID, "Code:", verifyRecord.TwoFactor.Code)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check Code
@@ -131,19 +88,101 @@ func VerificationCodeCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Update Update Age
+	//|| Load Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	if verifyRecord.Type == verify.DataTypeCRCD {
-		fmt.Println("Updating Age to 18 for", verifyRecord.UUID)
-		verifyRecord.Identity.UpdateAge(verify.DataTypeCRCD.String(), 18, verifyRecord.UUID)
+	iden, err := identity.Load(account.ID)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, app.Err("Identity").Code("IDENTITY_LOAD_FAILED"))
+		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Print
+	//|| Update the Age for Credit Card
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println(verifyRecord.Type, "VerificationCodeCheck: Code verified for", verifyRecord.UUID, "Status now", verifyRecord.Status)
+	switch verifyRecord.Type {
+	case types.DataTypeCRCD:
+		iden.UpdateAge(types.DataTypeCRCD.String(), 18, verifyRecord.UUID)
+		verifyRecord.IdentityUpdated = true
+	case types.DataTypePHNE:
+		iden.SetVerification(types.DataTypePHNE.String(), true, verifyRecord.Data.PHNE.Mask(), verifyRecord.UUID)
+		verifyRecord.IdentityUpdated = true
+	case types.DataTypeMAIL:
+		iden.SetVerification(types.DataTypeMAIL.String(), true, verifyRecord.Data.PHNE.Mask(), verifyRecord.UUID)
+		verifyRecord.IdentityUpdated = true
+	case types.DataTypeADDR:
+		iden.SetVerification(types.DataTypeADDR.String(), true, verifyRecord.Data.ADDR.Mask(), verifyRecord.UUID)
+		verifyRecord.IdentityUpdated = true
+	default:
+		app.Log.Error("Unknown verification type for identity update: ", verifyRecord.Type.String())
+		responses.Error(w, http.StatusInternalServerError, app.Err("Verify").Code("UNKNOWN_VERIFICATION_TYPE"))
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Update the Encrypted
+	//||------------------------------------------------------------------------------------------------||
+
+	switch verifyRecord.Type {
+	//||------------------------------------------------------------------------------------------------||
+	//|| Credit Card
+	//||------------------------------------------------------------------------------------------------||
+	case types.DataTypeCRCD:
+		err := encrypted.SaveCRCD(account.Public, verifyRecord.UUID, verifyRecord.Data.CRCD)
+		if err != nil {
+			app.Log.Error(err.Error())
+			responses.Error(w, http.StatusInternalServerError, app.Err("API").Code("ENCRYPTED_FAILED"))
+			return
+		}
+		verifyRecord.EncryptedSaved = true
+	//||------------------------------------------------------------------------------------------------||
+	//|| Phone
+	//||------------------------------------------------------------------------------------------------||
+	case types.DataTypePHNE:
+		err := encrypted.SavePHNE(account.Public, verifyRecord.UUID, verifyRecord.Data.PHNE)
+		if err != nil {
+			app.Log.Error(err.Error())
+			responses.Error(w, http.StatusInternalServerError, app.Err("API").Code("ENCRYPTED_FAILED"))
+			return
+		}
+		verifyRecord.EncryptedSaved = true
+	//||------------------------------------------------------------------------------------------------||
+	//|| Email Address
+	//||------------------------------------------------------------------------------------------------||
+	case types.DataTypeMAIL:
+		err := encrypted.SaveMAIL(account.Public, verifyRecord.UUID, verifyRecord.Data.MAIL)
+		if err != nil {
+			app.Log.Error(err.Error())
+			responses.Error(w, http.StatusInternalServerError, app.Err("API").Code("ENCRYPTED_FAILED"))
+			return
+		}
+		verifyRecord.EncryptedSaved = true
+	//||------------------------------------------------------------------------------------------------||
+	//|| Address
+	//||------------------------------------------------------------------------------------------------||
+	case types.DataTypeADDR:
+		err := encrypted.SaveADDR(account.Public, verifyRecord.UUID, verifyRecord.Data.ADDR)
+		if err != nil {
+			app.Log.Error(err.Error())
+			responses.Error(w, http.StatusInternalServerError, app.Err("API").Code("ENCRYPTED_FAILED"))
+			return
+		}
+		verifyRecord.EncryptedSaved = true
+	//||------------------------------------------------------------------------------------------------||
+	//|| Fail
+	//||------------------------------------------------------------------------------------------------||
+	default:
+		app.Log.Error("Unknown verification type for encrypted update: ", verifyRecord.Type.String())
+		responses.Error(w, http.StatusInternalServerError, app.Err("Verify").Code("UNKNOWN_VERIFICATION_TYPE"))
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Success - Update Status
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord.UpdateStatusVerified("TWOFACTOR")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Success

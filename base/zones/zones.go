@@ -2,11 +2,13 @@ package zones
 
 import (
 	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/complyage/base/db/abstract"
 	"github.com/complyage/base/db/models"
-	"github.com/complyage/base/verify"
+	"github.com/complyage/base/types"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -14,6 +16,14 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 var Zones []models.Zone
+
+//||------------------------------------------------------------------------------------------------||
+//|| Package init – automatically start refresher on import
+//||------------------------------------------------------------------------------------------------||
+
+func init() {
+	StartZoneRefresher(30) // refresh every 10 minutes
+}
 
 //||------------------------------------------------------------------------------------------------||
 //|| LoadZones
@@ -42,6 +52,25 @@ func FindZoneByID(id uint) (*models.Zone, bool) {
 		}
 	}
 	return nil, false
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| StartZoneRefresher – refresh zones in memory every X minutes
+//||------------------------------------------------------------------------------------------------||
+
+func StartZoneRefresher(minutes int) {
+	ticker := time.NewTicker(time.Duration(minutes) * time.Minute)
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				if err := LoadZones(); err != nil {
+					log.Printf("[ZONE] Failed to reload zones: %v\n", err)
+				}
+			}
+		}
+	}()
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -99,9 +128,9 @@ func FetchShortZoneByLocation(state, country string) (*ShortZone, bool) {
 	}
 	raw := *zone.Requirements
 	parts := strings.Split(raw, ",")
-	requirements := make([]verify.DataType, 0, len(parts))
+	requirements := make([]types.DataType, 0, len(parts))
 	for _, part := range parts {
-		dt, exists := verify.StringToDataType(strings.TrimSpace(part))
+		dt, exists := types.StringToDataType(strings.TrimSpace(part))
 		if exists {
 			requirements = append(requirements, dt)
 		}

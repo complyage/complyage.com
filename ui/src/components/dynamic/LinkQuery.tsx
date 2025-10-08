@@ -24,17 +24,13 @@ export default function LinkQuery({ to, children, ...props } : LinkQueryProps) {
       //|| Var
       //||------------------------------------------------------------------------------------------------||  
       const location                  = useLocation();
-      const params                    = new URLSearchParams(location.search);
-      const oauthParam                = params.get("oauth");
-      //||------------------------------------------------------------------------------------------------||
-      //|| Append
-      //||------------------------------------------------------------------------------------------------||  
-      const finalTo = (oauthParam && typeof to === "string") ? `${to}${to.includes("?") ? "&" : "?"}oauth=${oauthParam}` : to;
+      const prefix                    = location.pathname.startsWith("/overlay") ? "/overlay" : "";
+      const params                    = new URLSearchParams(location.search);      
       //||------------------------------------------------------------------------------------------------||
       //|| Return
       //||------------------------------------------------------------------------------------------------||  
       return (
-            <Link to={finalTo} {...props}>
+            <Link to={prefix + to} {...props}>
                   {children}
             </Link>
       );

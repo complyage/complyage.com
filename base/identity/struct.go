@@ -30,8 +30,8 @@ type Identity struct {
 
 type IdentityRecord struct {
 	Verified     bool      `json:"verified"`
-	Age          int       `json:"age,omitempty"`
-	DOB          types.DOB `json:"dob,omitempty"`
+	Age          int       `json:"age"`
+	DOB          types.DOB `json:"dob"`
 	Display      string    `json:"display"`
 	Verification string    `json:"verification"`
 }

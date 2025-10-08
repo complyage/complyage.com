@@ -11,6 +11,7 @@ import (
 
 	"github.com/complyage/base/db/models"
 
+	"github.com/ralphferrara/aria/log"
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
@@ -48,6 +49,7 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		responses.Error(w, http.StatusBadRequest, "Invalid JSON: "+err.Error())
 		return
 	}
+	log.PrettyPrint(input)
 
 	if input.ID == 0 {
 		responses.Error(w, http.StatusBadRequest, "Missing site ID")
@@ -84,9 +86,10 @@ func SitesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Perform Update
 	//||------------------------------------------------------------------------------------------------||
 
-	err = app.SQLDB["main"].DB.Model(&input).
+	err = app.SQLDB["main"].DB.
+		Model(&models.Site{}).
 		Where("id_site = ? AND fid_account = ?", input.ID, session.ID).
-		Error
+		Select("*").Updates(&input).Error
 
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, fmt.Sprintf("Database error while updating site %d: %v", input.ID, err))

@@ -13,12 +13,14 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 var IPRanges []IPRange
+var IPRangesLoaded bool = false
 
 //||------------------------------------------------------------------------------------------------||
 //|| Initial Load of IP ranges from the database into memory
 //||------------------------------------------------------------------------------------------------||
 
 func LoadIPRanges() error {
+	fmt.Printf("Loading IP Ranges...Please wait..\n")
 	var results []models.IP
 	if err := app.SQLDB["main"].DB.Order("start_ip ASC").Find(&results).Error; err != nil {
 		return err
@@ -36,8 +38,8 @@ func LoadIPRanges() error {
 			Longitude: row.Longitude,
 		}
 	}
-
-	fmt.Printf("Loaded %d IP ranges into memory\n", len(IPRanges))
+	fmt.Printf("\033[32m[LOAD] - Loaded %d IPs into memory\033[0m\n", len(IPRanges))
+	IPRangesLoaded = true
 	return nil
 }
 

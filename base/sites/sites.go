@@ -1,3 +1,8 @@
+//||------------------------------------------------------------------------------------------------||
+//|| Sites Package
+//|| sites.go
+//||------------------------------------------------------------------------------------------------||
+
 package sites
 
 import (
@@ -7,24 +12,17 @@ import (
 
 	"github.com/complyage/base/db/abstract"
 	"github.com/complyage/base/db/models"
-
 	"github.com/ralphferrara/aria/app"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| In‑memory cache of Site records
+//|| In-memory cache of Site records
 //||------------------------------------------------------------------------------------------------||
 
 var (
 	Sites      []models.Site
 	sitesMutex sync.RWMutex
 )
-
-//||------------------------------------------------------------------------------------------------||
-//|| Refresh interval
-//||------------------------------------------------------------------------------------------------||
-
-const siteRefreshInterval = 5 * time.Minute
 
 //||------------------------------------------------------------------------------------------------||
 //|| loadSitesFromDB
@@ -43,20 +41,20 @@ func loadSitesFromDB() error {
 }
 
 //||------------------------------------------------------------------------------------------------||
-//|| StartSiteLoader
+//|| LoadSites – initial load + refresh every 5 minutes
 //||------------------------------------------------------------------------------------------------||
 
 func LoadSites() {
 	//||------------------------------------------------------------------------------------------------||
-	//|| Load Sites
+	//|| Initial Load
 	//||------------------------------------------------------------------------------------------------||
 	if err := loadSitesFromDB(); err != nil {
 		fmt.Println("Site loader initial load error:", err)
 	}
 	//||------------------------------------------------------------------------------------------------||
-	//|| Refresh
+	//|| Setup Ticker
 	//||------------------------------------------------------------------------------------------------||
-	ticker := time.NewTicker(siteRefreshInterval)
+	ticker := time.NewTicker(5 * time.Minute)
 	go func() {
 		for range ticker.C {
 			if err := loadSitesFromDB(); err != nil {
@@ -79,19 +77,19 @@ func GetSites() []models.Site {
 }
 
 //||------------------------------------------------------------------------------------------------||
-//|| FetchSiteByPublic
+//|| FetchSiteByClientId
 //||------------------------------------------------------------------------------------------------||
 
-func FetchSiteByPublic(publicKey string) (models.Site, error) {
+func FetchSiteByClientId(clientId string) (models.Site, error) {
 	if app.Config.App.Env != "production" {
-		fmt.Println("Fetching site from database by public key:", publicKey)
-		site, err := abstract.GetSiteByPublic(publicKey)
+		fmt.Println("Fetching site from database by clientId:", clientId)
+		site, err := abstract.GetSiteByClientId(clientId)
 		if err != nil {
 			return models.Site{}, fmt.Errorf("site not found")
 		}
 		return site, nil
 	} else {
-		local, err := GetSiteByPublic(publicKey)
+		local, err := GetSiteByPublic(clientId)
 		if err != nil {
 			return models.Site{}, fmt.Errorf("site not found")
 		}
@@ -106,13 +104,12 @@ func FetchSiteByPublic(publicKey string) (models.Site, error) {
 func GetSiteByPublic(publicKey string) (models.Site, error) {
 	sitesMutex.RLock()
 	defer sitesMutex.RUnlock()
-
 	for i := range Sites {
 		if Sites[i].Public == publicKey {
 			return Sites[i], nil
 		}
 	}
-	return models.Site{}, nil
+	return models.Site{}, fmt.Errorf("site not found")
 }
 
 //||------------------------------------------------------------------------------------------------||

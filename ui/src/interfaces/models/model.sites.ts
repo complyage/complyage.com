@@ -10,7 +10,7 @@
 export interface SiteScope {
 	code    : string;
 	status  : string;
-	granted : boolean;
+	enabled : boolean;
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -37,9 +37,11 @@ export interface ModelSite {
             enforcement       : "ALLZ" | "REGU" | "CSTM";
             zones             : SiteZone[];
             domains           : string;
+            clientId          : string;
             private           : string;
             public            : string;
             redirect          : string;
+            scopeAuto         : boolean;
             scopes            : SiteScope[];
             created           : string;
             gateSignup        : boolean;

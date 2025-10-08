@@ -15,7 +15,6 @@ import { ModelSite }                from "../../interfaces/models/model.sites";
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
-import MembersSitesContent          from "../../components/members/MembersSitesContent";
 import MembersLayout                from "../../layouts/MembersLayout";
 import { ChevronRightIcon }         from "lucide-react";
 
@@ -67,8 +66,6 @@ export default function Sites() {
             }
             const json = await newSite.json();
             const siteTemp = json.data.site;
-            siteTemp.logoHash = json.data.hash;
-            siteTemp.logoMissing = json.data.missing || false;
             if (typeof siteTemp.zones  === "string") try {
                   siteTemp.zones = JSON.parse(siteTemp.zones);
             } catch (e) {
@@ -132,7 +129,7 @@ export default function Sites() {
       const updateField = <K extends keyof Site>(field: K, value: Site[K]) => {
             if (!site) return;
             setSite({ ...site, [field]: value, } as Site); 
-            setChanged(true);
+            if (field !== "logo") setChanged(true);
       };
     
 
@@ -142,29 +139,6 @@ export default function Sites() {
 
       const updateSite = async () => {
 		if (!site) return;
-
-            //||------------------------------------------------------------------------------------------------||
-		//|| Update Logo
-		//||------------------------------------------------------------------------------------------------||
-
-            if (site.logo && site.logo instanceof File) {
-			const formData = new FormData();
-			formData.append("image", site.logo);
-
-                  const res = await fetch("/v1/api/sites/upload", {
-				method            : "POST",
-				body              : formData,
-				credentials       : "include",
-			});
-
-			const result = await res.json();
-			if (!result.success) {
-				alert("Failed to upload logo");
-				return;
-			}
-
-			site.logo = result.data.object; // Now it's a string
-		}
 
 		//||------------------------------------------------------------------------------------------------||
 		//|| Update Site
@@ -238,14 +212,14 @@ export default function Sites() {
                               <SiteSections value={ siteSection } setValue={ (value : SectionTypes) => { setSiteSection(value); } } />
                               <div className="bg-transparent w-full justify-center p-5 rounded-lg rounded-t-none">
 
-                              {siteSection === "basic" && (<BasicDataSection data={site} updateField={updateField} cacheBust={cacheBust} key={ `siteBasic-${site?.id || 0}` } />) }
-                              {siteSection === "zones" && (<ZonesEnforcementSection data={site} updateField={updateField} key={ `sitezZone-${site?.id || 0}` } /> )}
+                              { siteSection === "basic" && (<BasicDataSection data={site} updateField={updateField} cacheBust={cacheBust} key={ `siteBasic-${site?.id || 0}` } />) }
+                              { siteSection === "zones" && (<ZonesEnforcementSection data={site} updateField={updateField} key={ `sitezZone-${site?.id || 0}` } /> )}
                               { siteSection === "integration" && (<IntegrationSection data={site} updateField={updateField} key={ `siteIntegration-${site?.id || 0}` } /> ) }
                               { siteSection === "gate" && (<CustomAgeGate data={site} updateField={updateField} key={ `customGate-${site?.id || 0}` } /> ) }                                                            
                               { siteSection === "oauth" && (<OAuthSettingsSection data={site} updateField={updateField} key={ `siteOAuth-${site?.id || 0}` } /> ) }
             
                               {/* Delete */}
-                              {siteSection === "basic" && site && (
+                              { siteSection === "basic" && site && (
                                     <div className="w-full bg-base-100 opacity-40 hover:opacity-80 bg-shadow-lg rounded-lg p-8 mb-10">
                                           { !deleting && ( 
                                                 <>

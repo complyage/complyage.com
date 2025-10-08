@@ -11,6 +11,7 @@ import (
 	"github.com/complyage/base/db/models"
 
 	"github.com/ralphferrara/aria/base/random"
+	"github.com/ralphferrara/aria/base/sign"
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
@@ -47,9 +48,14 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Generate Public/Private Keys
 	//||------------------------------------------------------------------------------------------------||
 
-	privKey := random.RandomString(32)
-	pubKey := random.RandomString(32)
-	agentKey := random.RandomString(32)
+	privPEM, pubPEM, err := sign.GenerateKeyPair()
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to generate keys")
+		fmt.Println("Error generating keys:", err)
+		return
+	}
+	clientId := "CLID-" + random.RandomString(27)
+	agentKey := "AGNT-" + random.RandomString(8) + "-" + random.RandomString(8) + "-" + random.RandomString(8)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create New Site Model
@@ -58,11 +64,18 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 	site := models.Site{
 		FidAccount:   session.ID,
 		Status:       "PNEW",
-		Private:      privKey,
-		Public:       pubKey,
+		ClientID:     clientId,
+		Private:      privPEM,
+		Public:       pubPEM,
+		TestMode:     true,
+		Domains:      "*",
 		Enforcement:  "ALLZ",
 		AgentPrivate: agentKey,
 	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Create the Record
+	//||------------------------------------------------------------------------------------------------||
 
 	if err := app.SQLDB["main"].DB.Create(&site).Error; err != nil {
 		responses.Error(w, http.StatusInternalServerError, "Failed to create site")

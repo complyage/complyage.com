@@ -9,7 +9,12 @@
 
       import React, { useEffect }                           from "react";
       import { CheckCircle, RefreshCw }                     from "lucide-react";
-      import { onlyDigits }                                 from "../../../utils/clean";
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Interfacss
@@ -32,7 +37,6 @@
             updateProcess     : (process: Partial<VerificationPhone>) => void;
       }
 
-
       //||------------------------------------------------------------------------------------------------||
       //|| React
       //||------------------------------------------------------------------------------------------------||
@@ -45,6 +49,12 @@
             const [cooldown, setCooldown] = React.useState(30);
 
             //||------------------------------------------------------------------------------------------------||
+            //|| Navigate
+            //||------------------------------------------------------------------------------------------------||
+
+            const navigate                     = useOverlayNavigate();              
+
+            //||------------------------------------------------------------------------------------------------||
             //|| React
             //||------------------------------------------------------------------------------------------------||
 
@@ -54,7 +64,9 @@
                         headers: {
                               "Content-Type": "application/json",
                         },
-                        body: JSON.stringify(payload),
+                        body: JSON.stringify({ 
+                              "identifier" : process.verificationUUID
+                        }),
                   })
                   .then(response => response.json())
                   .then(data => {
@@ -141,7 +153,7 @@
 					<button
 						className="btn btn-secondary text-2xl py-2 font-bold transition h-auto px-4"
 						onClick={ () => { 
-                                          window.location.href = `/verification/check?identifier=${process.verificationUUID}`
+                                          navigate(`/verification/check?identifier=${process.verificationUUID}`)
                                     }}
 						type="button">
 						Continue

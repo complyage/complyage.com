@@ -7,15 +7,19 @@
       //|| Import
       //||------------------------------------------------------------------------------------------------||
 
-      import { Camera as CameraIcon, Upload as UploadIcon }      from "lucide-react";
-      import React, {useEffect, useRef, useState}                from "react";
+      import { useState}                from "react";
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Interfaces
       //||------------------------------------------------------------------------------------------------||
 
       import { StepProps }                                       from "./IDVerification";
-      import { VerificationID, VerificationMedia }               from "../../../interfaces/verify/id/process";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Components
@@ -38,6 +42,12 @@
             const [error, setError]       = useState<string | null>(null);
 
             //||------------------------------------------------------------------------------------------------||
+            //|| Navigate
+            //||------------------------------------------------------------------------------------------------||
+
+            const navigate                     = useOverlayNavigate();              
+            
+            //||------------------------------------------------------------------------------------------------||
             //|| Handle Submit
             //||------------------------------------------------------------------------------------------------||
 
@@ -59,7 +69,7 @@
                         if (!res.ok && data.message) {
                               throw new Error(data.message || "Unknown error occurred.");
                         }
-                        window.location.href = `/verification/status?identifier=${process.verificationUUID}`;
+                        navigate(`/verification/status?identifier=${process.verificationUUID}`);
                   } catch (err: any) {
                         setError(err.message || "Submission failed.");
                   } finally {

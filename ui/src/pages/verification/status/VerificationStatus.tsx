@@ -120,7 +120,7 @@ function getStepsFromProcess(vType: VerificationTypes): ProgressStep[] {
 //|| Main Component
 //||------------------------------------------------------------------------------------------------||
 
-const IDVerificationStatus: React.FC<IDVerificationStatusProps> = () => {
+const IDVerificationStatus: React.FC = () => {
 
       //||------------------------------------------------------------------------------------------------||
       //|| Verification
@@ -321,7 +321,7 @@ const IDVerificationStatus: React.FC<IDVerificationStatusProps> = () => {
                         </div>
 
                         {/* Escalate Option */}
-                        {status === "ESCL" && onEscalate && (
+                        {status === "ESCL"  && (
                               <div className="mt-2 flex flex-col items-center">
                                     <div className="text-orange-700 mb-2 text-lg font-medium">
                                           Automatic verification couldn't complete.<br />
@@ -329,7 +329,6 @@ const IDVerificationStatus: React.FC<IDVerificationStatusProps> = () => {
                                     </div>
                                     <button
                                           className="btn btn-primary text-lg px-8 py-2"
-                                          onClick={onEscalate}
                                     >
                                           Escalate to Human Verification
                                     </button>

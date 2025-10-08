@@ -8,9 +8,14 @@
       //||------------------------------------------------------------------------------------------------||
 
       import React, {useRef, useState, useEffect}           from "react";
-      import {useNavigate, useSearchParams}                 from "react-router-dom";
-      import {convertCurrency}                              from "../../../utils/convertCurrency";
+      import {useSearchParams}                 from "react-router-dom";
       import {getEnv}                                       from "../../../data/getEnv";
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Components
@@ -46,7 +51,7 @@
       //|| Page
       //||------------------------------------------------------------------------------------------------||
 
-      export default function CCVerification() {
+      export default function CCVerification({overlay}: { overlay?: boolean }) {
 
             //||------------------------------------------------------------------------------------------------||
             //|| UUID
@@ -59,7 +64,7 @@
             //|| Navigate
             //||------------------------------------------------------------------------------------------------||
 
-            const navigate                     = useNavigate();
+            const navigate                     = useOverlayNavigate();  
 
             //||------------------------------------------------------------------------------------------------||
             //|| Process
@@ -121,9 +126,9 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout>
+                  <MembersLayout overlay={overlay}>
                         <div className="w-full max-w-2xl mx-auto">                              
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-2" />
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-2" verificationType="CRCD" />
                               { process.step === 1 && 
                                     <CCVerificationStep1 
                                           process={ process } 

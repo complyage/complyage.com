@@ -1,16 +1,18 @@
 package identity
 
-import "strings"
+import (
+	"strings"
+)
 
 //||------------------------------------------------------------------------------------------------||
 //|| Add Verification
 //||------------------------------------------------------------------------------------------------||
 
 func (i *Identity) SetVerification(section string, verified bool, display, verification string) {
-	// normalize key
 	key := strings.ToUpper(strings.TrimSpace(section))
-
-	// update the appropriate IdentityRecord
+	//||------------------------------------------------------------------------------------------------||
+	//|| Update the Appropriate Section
+	//||------------------------------------------------------------------------------------------------||
 	switch key {
 	case "ADDR":
 		i.Address.Verified = verified

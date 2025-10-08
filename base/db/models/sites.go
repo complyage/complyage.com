@@ -89,17 +89,19 @@ type Site struct {
 	Enforcement  string     `gorm:"column:site_enforcement;size:4"          json:"enforcement"`
 	Zones        SiteZones  `gorm:"column:site_zones;type:text"             json:"zones"`
 	Domains      string     `gorm:"column:site_domains;type:text"           json:"domains"`
-	Public       string     `gorm:"column:site_public;size:64;uniqueIndex"  json:"public"`
-	Private      string     `gorm:"column:site_private;size:64;uniqueIndex" json:"private"`
+	ClientID     string     `gorm:"column:site_client_id;size:32;unique"    json:"clientId"`
+	Private      string     `gorm:"column:site_private;size:500"            json:"private"`
+	Public       string     `gorm:"column:site_public;size:300"             json:"public"`
 	Redirect     string     `gorm:"column:site_redirect;size:256"           json:"redirect"`
+	ScopeAuto    bool       `gorm:"column:site_scope_auto;type:tinyint(1)"  json:"scopeAuto"`
 	Scopes       SiteScopes `gorm:"column:site_scopes;type:text"            json:"scopes"`
 	TestMode     bool       `gorm:"column:site_testmode;"                   json:"testmode"`
-	GateSignup   int64      `gorm:"column:site_gate_signup;"                json:"gateSignup"`
+	GateSignup   bool       `gorm:"column:site_gate_signup;type:tinyint(1)" json:"gateSignup"`
 	GateConfirm  string     `gorm:"column:site_gate_confirm;size:256"       json:"gateConfirm"`
 	GateExit     string     `gorm:"column:site_gate_exit;size:256"          json:"gateExit"`
 	Created      time.Time  `gorm:"column:site_created;autoCreateTime"      json:"created"`
 	Updated      time.Time  `gorm:"column:site_updated;autoUpdateTime"      json:"updated"`
-	AgentPrivate string     `gorm:"column:site_agent_private;size:64"       json:"agentPrivate"`
+	AgentPrivate string     `gorm:"column:site_agent_private;size:32;uniqueIndex"       json:"agentPrivate"`
 }
 
 //||------------------------------------------------------------------------------------------------||

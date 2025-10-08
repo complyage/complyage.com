@@ -1,0 +1,13 @@
+<div class="showLoggedOut flex flex-col items-center justify-center text-center p-4 rounded-lg w-4/5">
+      <div class="flex gap-4">
+            <a href="javascript:void(0)" onclick="openOverlay('{{VITE_COMPLYAGE_UI_URL}}/overlay/signup')"
+                  class="inline-block text-2xl no-underline cursor-pointer bg-orange-500 text-white py-3 px-8 rounded-md font-bold transition hover:bg-orange-600 shadow">
+                  {{::DEFAULT:SIGNUP}}
+            </a>
+            <a href="javascript:void(0)" onclick="openOverlay('{{VITE_COMPLYAGE_UI_URL}}/overlay/login')"
+                  class="inline-block text-2xl no-underline cursor-pointer bg-gray-600 text-white py-3 px-8 rounded-md font-bold transition hover:bg-gray-700 shadow">
+                  {{::DEFAULT:LOGIN}}
+            </a>
+      </div>
+      <span class="my-4 text-2xl font-bold text-gray-500">{{::DEFAULT:PRIVACYSECURE}}</span>
+</div>

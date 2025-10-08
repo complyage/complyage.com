@@ -1,16 +1,10 @@
 package verify
 
-import "github.com/ralphferrara/aria/app"
+import (
+	"time"
 
-//||------------------------------------------------------------------------------------------------||
-//|| Main Type Export
-//||------------------------------------------------------------------------------------------------||
-
-type Step struct {
-	Type      app.ConstantsEntry `json:"type"`
-	Timestamp UniversalDate      `json:"timestamp"`
-	Details   string             `json:"details,omitempty"`
-}
+	"github.com/ralphferrara/aria/app"
+)
 
 //||------------------------------------------------------------------------------------------------||
 //|| Initialize Steps
@@ -38,7 +32,7 @@ func (v *Verification) AddStep(stepType app.ConstantsEntry, details string) {
 	//||------------------------------------------------------------------------------------------------||
 	step := Step{
 		Type:      stepType,
-		Timestamp: UniversalNow(),
+		Timestamp: time.Now().UTC(),
 		Details:   details,
 	}
 	//||------------------------------------------------------------------------------------------------||
@@ -58,7 +52,6 @@ func (v *Verification) IncrementStep() {
 	//||------------------------------------------------------------------------------------------------||
 	v.Step = v.Step + 1
 	v.Updated()
-	v.Save()
 }
 
 //||------------------------------------------------------------------------------------------------||

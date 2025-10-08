@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/complyage/base/db/models"
-	"github.com/complyage/base/verify"
+	"github.com/complyage/base/types"
 
 	"github.com/ralphferrara/aria/responses"
 
@@ -17,6 +17,8 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func GetVerificationsList(w http.ResponseWriter, r *http.Request) {
+
+	app.Log.Info("Handler: Util List")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
@@ -43,7 +45,7 @@ func GetVerificationsList(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	listType := r.URL.Query().Get("type")
-	if !verify.IsValidDataType(listType) {
+	if !types.IsValidDataType(listType) {
 		responses.Error(w, http.StatusBadRequest, "Invalid type")
 		return
 	}

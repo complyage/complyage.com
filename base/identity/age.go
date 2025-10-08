@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/complyage/base/types"
+	"github.com/ralphferrara/aria/log"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -32,10 +33,6 @@ func (i *Identity) UpdateAge(section string, age int, verification string) {
 		Display:      displayStr,
 		Verification: verification,
 	}
-	fmt.Println("Updating Age to", age, "for", section, "->", displayStr)
-	fmt.Println("DOB:", dob.String())
-	fmt.Println("Verification:", verification)
-	fmt.Println(displayStr)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Iden is top Tier but we got something else
 	//||------------------------------------------------------------------------------------------------||
@@ -47,6 +44,7 @@ func (i *Identity) UpdateAge(section string, age int, verification string) {
 	case "CRCD":
 		i.CreditCard = idRecord
 	}
+	log.PrettyPrint(i)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Save
 	//||------------------------------------------------------------------------------------------------||

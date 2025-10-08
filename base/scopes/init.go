@@ -8,6 +8,7 @@ import "strings"
 
 type BaseScope struct {
 	Code        string
+	Title       string
 	Description string
 	Icon        string
 	Level       int
@@ -28,14 +29,48 @@ var (
 
 func init() {
 	ScopesList = []BaseScope{
-		{Code: "MAIL", Description: "Verified Email Address", Icon: "envelope", Level: 0},
-		{Code: "PHNE", Description: "Verified Phone Number", Icon: "phone", Level: 1},
-		{Code: "UAGE", Description: "Verified Age", Icon: "calendar", Level: 0},
-		{Code: "BDAY", Description: "Verified Birthday", Icon: "cake", Level: 1},
-		{Code: "CRCD", Description: "Verified Credit Card", Icon: "credit-card", Level: 0},
-		{Code: "PROF", Description: "Verified Profile Photo", Icon: "user-circle", Level: 1},
-		{Code: "UNAM", Description: "Verified Username", Icon: "id-card", Level: 0},
-		{Code: "ADDR", Description: "Verified Mailing Address", Icon: "home", Level: 1},
+		{
+			Code:        "IDEN",
+			Title:       "ID/Passport",
+			Description: "Verified ID/Passport",
+			Icon:        "user-id",
+			Level:       1,
+		},
+		{
+			Code:        "CRCD",
+			Title:       "Credit Card",
+			Description: "Verified Credit Card",
+			Icon:        "credit-card",
+			Level:       1,
+		},
+		{
+			Code:        "FACE",
+			Title:       "Facial Age",
+			Description: "Verified Facial Age",
+			Icon:        "smile",
+			Level:       0,
+		},
+		{
+			Code:        "MAIL",
+			Title:       "Email",
+			Description: "Verified Email Address",
+			Icon:        "envelope",
+			Level:       0,
+		},
+		{
+			Code:        "PHNE",
+			Title:       "Phone",
+			Description: "Verified Phone Number",
+			Icon:        "phone",
+			Level:       0,
+		},
+		{
+			Code:        "ADDR",
+			Title:       "Mailing Address",
+			Description: "Verified Mailing Address",
+			Icon:        "home",
+			Level:       1,
+		},
 	}
 
 	ScopesMap = make(map[string]BaseScope, len(ScopesList))
@@ -53,18 +88,25 @@ func FindScope(code string) (BaseScope, bool) {
 	return s, ok
 }
 
-func Icon(code string) string {
+func Title(code string) string {
 	if s, ok := FindScope(code); ok {
-		return s.Icon
+		return s.Title
 	}
-	return "question"
+	return "Unknown-" + code
 }
 
 func Description(code string) string {
 	if s, ok := FindScope(code); ok {
 		return s.Description
 	}
-	return "Unknown Scope"
+	return "Unknown Scope - " + code
+}
+
+func Icon(code string) string {
+	if s, ok := FindScope(code); ok {
+		return s.Icon
+	}
+	return "question"
 }
 
 func Level(code string) int {

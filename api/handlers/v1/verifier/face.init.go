@@ -5,16 +5,15 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/types"
 	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -31,57 +30,26 @@ type faceInitResponse struct {
 
 func FaceVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 
-	verify.LogInfo("FaceVerifyInitHandler")
+	app.Log.Info("Handler: Face Init")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Check Session
+	//|| Create
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Account
-	//||------------------------------------------------------------------------------------------------||
-
-	account, err := abstract.GetAccountByID(fmt.Sprintf("%d", session.ID))
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusBadRequest, "Account not found for session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Encrypt
-	//||------------------------------------------------------------------------------------------------||
-
-	encrypt, err := abstract.GetKeyByAccount(uint(account.ID))
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to get encryption keys")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification Record matches Account
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Create(verify.DataTypeFACE, account.ID, app.Storages["verifications"], app.SQLDB["main"], encrypt.Private, encrypt.Public)
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
-		return
-	}
+	verifyRecord := verify.Create(types.DataTypeFACE, account)
+	verifyRecord.Save()
+	verifyRecord.DatabaseInsert()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Prepare Response

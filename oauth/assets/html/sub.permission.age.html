@@ -1,0 +1,30 @@
+
+<li class="flex items-center justify-between permission px-5">
+      <div class="flex items-center gap-2 px-5 py-2 mb-3 bg-white/5 shadow-sm rounded-lg border border-black w-full">
+
+            <!-- Icon -->
+            <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full bg-black">
+                  <img src="/static/img/icons/icon_{{PERMCODE}}.png" alt="{{PERMCODE}} Icon" class="w-8 h-8">
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 px-4 text-left">
+                  <h3 class="text-xl font-semibold text-gray-200">
+                        {{PERM_PERMCODE_TITLE}}
+                  </h3>
+                  <p class="text-lg {{CLASS_VERIFICATION_STATUS}}">
+                        {{PERM_PERMCODE_TITLE}} {{MARKER_VERIFICATION_STATUS}}
+                  </p>
+            </div>
+
+            <!-- Status -->
+            <div class="flex items-center gap-2 p-2 rounded-lg {{SHOWPREVIEW}}">
+                  <button onclick="loadPreview(`{{PERMCODE}}`, `{{TOKEN}}`, `{{PREVIEWKEY}}`)" class="text-white text-sm bg-gray-700 p-2 rounded-lg cursor-pointer">{{::DEFAULT:WHAT_AM_I_SHARING}}</button>
+            </div>            
+
+            <!-- Status -->
+            <div class="flex items-center gap-2 p-2 rounded-lg">
+                  {{STATUS}}
+            </div>
+      </div>
+</li>

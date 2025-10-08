@@ -3,22 +3,31 @@
 //|| src/components/security/PhoneVerification.tsx
 //||------------------------------------------------------------------------------------------------||
 
-      import React, {useMemo, useRef, useState, useEffect}        from "react";
-      import {Phone, ShieldCheck, Key, RefreshCw, Lock}           from "lucide-react";
+      //||------------------------------------------------------------------------------------------------||
+      //|| React
+      //||------------------------------------------------------------------------------------------------||
+
+      import {useState}                                           from "react";
       import {useNavigate}                                        from "react-router-dom";
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                               from "../../../hooks/useOverlay";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Components
       //||------------------------------------------------------------------------------------------------||
 
       import MembersLayout                                        from "../../../layouts/MembersLayout";
-      import ProgressSteps, { ProgessStep }                       from "../../../components/base/ProgressSteps";
+      import ProgressSteps, { ProgressStep }                      from "../../../components/base/ProgressSteps";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Interfaces
       //||------------------------------------------------------------------------------------------------||
 
-      import { VerificationPhone }                               from "../../../interfaces/verify/phone/process";
+      import { VerificationPhone }                                from "../../../interfaces/verify/phone/process";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Pages
@@ -55,13 +64,13 @@
       //|| Component
       //||------------------------------------------------------------------------------------------------||
 
-      export default function PhoneVerification() {
+      export default function PhoneVerification({overlay}: { overlay?: boolean }) {
 
             //||------------------------------------------------------------------------------------------------||
             //|| Navigate
             //||------------------------------------------------------------------------------------------------||
 
-            const navigate                     = useNavigate();
+            const navigate                     = useOverlayNavigate();
 
             //||------------------------------------------------------------------------------------------------||
             //|| Process
@@ -89,7 +98,7 @@
             //|| Stepper
             //||------------------------------------------------------------------------------------------------||
 
-            const steps: ProgessStep[] = [
+            const steps: ProgressStep[] = [
                   { label: "Enter Phone Number", description: "Enter your phone number" },
                   { label: "Enter Verification Code ", description: "Enter the code we sent your." },
             ]
@@ -99,10 +108,11 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout title="Phone Verification">
+                  
+                  <MembersLayout overlay={overlay}>
                         <div className="w-full mx-auto max-w-2xl">
                               {/* Stepper */}
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" />
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" verificationType="PHNE" />
 
                               {/* Step 1 */}
                               {process.step === 1 && (

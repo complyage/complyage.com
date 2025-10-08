@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ralphferrara/aria/app"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -20,6 +21,8 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func QRCodeGenerate(w http.ResponseWriter, r *http.Request) {
+
+	app.Log.Info("Handler: Util QR")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get Params

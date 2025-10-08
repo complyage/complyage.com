@@ -1,13 +1,13 @@
 package zones
 
-import "github.com/complyage/base/verify"
+import "github.com/complyage/base/types"
 
 type ShortZone struct {
-	ID           int               `json:"id,omitempty"`
-	Law          string            `json:"laws,omitempty"`
-	Requirements []verify.DataType `json:"requirements,omitempty"`
-	Effective    string            `json:"effective,omitempty"`
-	MinAge       int               `json:"minAge,omitempty"`
+	ID           int              `json:"id,omitempty"`
+	Law          string           `json:"laws,omitempty"`
+	Requirements []types.DataType `json:"requirements,omitempty"`
+	Effective    string           `json:"effective,omitempty"`
+	MinAge       int              `json:"minAge,omitempty"`
 }
 
 type SiteZone struct {

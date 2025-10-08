@@ -6,7 +6,9 @@ import (
 
 	"github.com/complyage/base/adapters"
 	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/encrypted"
 	"github.com/complyage/base/ips"
+	"github.com/complyage/base/verify"
 	"github.com/complyage/base/zones"
 
 	"github.com/joho/godotenv"
@@ -38,7 +40,7 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	setup.Setup.Functions.OnAccountComplete = abstract.OnAccountComplete
 	setup.Setup.Functions.OnAuthCheck = abstract.AuthMe
-	auth.Init(app.SQLDB["main"].DB, app.Config.Auth)
+	auth.Init(app.SQLDB["main"].DB, app.Config.Auth, ".complyage.com")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Cors
 	//||------------------------------------------------------------------------------------------------||
@@ -72,6 +74,11 @@ func main() {
 	//|| Load Zones
 	//||------------------------------------------------------------------------------------------------||
 	zones.LoadZones()
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify Init
+	//||------------------------------------------------------------------------------------------------||
+	verify.Init(app.Storages["verifications"], app.SQLDB["main"].DB)
+	encrypted.Init(app.Storages["encrypted"])
 	//||------------------------------------------------------------------------------------------------||
 	//|| Keep Alive
 	//||------------------------------------------------------------------------------------------------||

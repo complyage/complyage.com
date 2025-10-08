@@ -1,86 +1,108 @@
 package sites
 
 //||------------------------------------------------------------------------------------------------||
-//|| Set Policy
-//||------------------------------------------------------------------------------------------------||
-
-// mc.exe anonymous set download babl/complyage.com/sites/logos
-
-//||------------------------------------------------------------------------------------------------||
 //|| Import
 //||------------------------------------------------------------------------------------------------||
 
 import (
 	"bytes"
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"image"
 	"image/draw"
 	"image/gif"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
-	"strings"
 
-	"github.com/ralphferrara/aria/base/agnostic"
-
-	"github.com/ralphferrara/aria/responses"
+	"golang.org/x/image/webp"
 
 	"github.com/disintegration/imaging"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/auth/actions"
+	"github.com/ralphferrara/aria/base/agnostic"
+	"github.com/ralphferrara/aria/responses"
 )
 
 //||------------------------------------------------------------------------------------------------||
-//|| UploadHandler :: Handles image upload and conversion to WebP
+//|| UploadHandler :: Uploads or clears logo, stores in MinIO, updates site_logo
 //||------------------------------------------------------------------------------------------------||
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
-
 	//||------------------------------------------------------------------------------------------------||
-	//|| Check Method
-	//||------------------------------------------------------------------------------------------------||
-
-	if r.Method != http.MethodPost {
-		responses.Error(w, http.StatusMethodNotAllowed, "Only POST allowed")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session Cookie
+	//|| Get Session
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session Record
-	//||------------------------------------------------------------------------------------------------||
-
-	session, err := actions.FetchSession(cookie.Value)
+	_, account, _, err := actions.LoadSessionAccount(r)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Read Image into Memory
+	//|| Parse site ID
+	//||------------------------------------------------------------------------------------------------||
+	siteIDStr := r.FormValue("siteId")
+	if siteIDStr == "" {
+		responses.Error(w, http.StatusBadRequest, "Missing siteId")
+		return
+	}
+
+	siteID, err := strconv.Atoi(siteIDStr)
+	if err != nil || siteID <= 0 {
+		responses.Error(w, http.StatusBadRequest, "Invalid siteId")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verify ownership
+	//||------------------------------------------------------------------------------------------------||
+
+	var count int64
+	err = app.SQLDB["main"].DB.
+		Table("sites").
+		Where("id_site = ? AND fid_account = ? AND site_status NOT IN ?", siteID, account.ID, []string{"RMVD", "BNND"}).
+		Count(&count).Error
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+	if count == 0 {
+		responses.Error(w, http.StatusForbidden, "Unauthorized or invalid site")
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Handle Delete (no file uploaded)
 	//||------------------------------------------------------------------------------------------------||
 
 	file, _, err := r.FormFile("image")
+	if err == http.ErrMissingFile {
+		// clear DB field
+		if err := app.SQLDB["main"].DB.
+			Table("sites").
+			Where("id_site = ? AND fid_account = ?", siteID, account.ID).
+			Update("site_logo", "").Error; err != nil {
+			responses.Error(w, http.StatusInternalServerError, "Failed to clear site_logo: "+err.Error())
+			return
+		}
+
+		// optional: remove from MinIO (if old filename known, you could query first)
+		// _ = app.Storages["sites"].Delete(oldFilename)
+
+		responses.Success(w, http.StatusOK, map[string]any{
+			"object": "",
+		})
+		return
+	}
 	if err != nil {
 		responses.Error(w, http.StatusBadRequest, "Error reading image: "+err.Error())
 		return
 	}
 	defer file.Close()
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Read Image
+	//||------------------------------------------------------------------------------------------------||
 
 	buf, err := io.ReadAll(file)
 	if err != nil {
@@ -88,73 +110,22 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fail on Animated GIFs
-	//||------------------------------------------------------------------------------------------------||
-
+	// reject animated GIFs
 	if gifImg, err := gif.DecodeAll(bytes.NewReader(buf)); err == nil && len(gifImg.Image) > 1 {
-		responses.Error(w, http.StatusBadRequest, "Animated GIFs are not supported. Please upload a static image.")
+		responses.Error(w, http.StatusBadRequest, "Animated GIFs are not supported")
 		return
 	}
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Decode Image
-	//||------------------------------------------------------------------------------------------------||
-
-	srcImg, err := imaging.Decode(bytes.NewReader(buf), imaging.AutoOrientation(true))
+	// decode with fallback for WebP
+	var srcImg image.Image
+	srcImg, err = imaging.Decode(bytes.NewReader(buf), imaging.AutoOrientation(true))
 	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Invalid image: "+err.Error())
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate logoHash (hash = siteID_hashValue)
-	//||------------------------------------------------------------------------------------------------||
-
-	logoHash := r.FormValue("logoHash")
-	if logoHash == "" || !strings.Contains(logoHash, "_") {
-		responses.Error(w, http.StatusBadRequest, "Missing or invalid logoHash")
-		return
-	}
-
-	parts := strings.SplitN(logoHash, "_", 2)
-	siteIDStr := parts[0]
-	clientHash := parts[1]
-
-	siteID, err := strconv.Atoi(siteIDStr)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Invalid site ID in hash")
-		return
-	}
-
-	secret := os.Getenv("MINIO_HASH")
-	hashInput := fmt.Sprintf("%s%d%s", secret, siteID, secret)
-	expectedHashBytes := sha256.Sum256([]byte(hashInput))
-	expectedHash := hex.EncodeToString(expectedHashBytes[:])
-
-	if clientHash != expectedHash {
-		responses.Error(w, http.StatusUnauthorized, "logoHash verification failed")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verify Site Ownership and Status
-	//||------------------------------------------------------------------------------------------------||
-
-	var count int64
-	err = app.SQLDB["main"].DB.
-		Table("sites").
-		Where("id_site = ? AND fid_account = ? AND site_status NOT IN ?", siteID, session.ID, []string{"RMVD", "BNND"}).
-		Count(&count).Error
-
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Database error")
-		return
-	}
-
-	if count == 0 {
-		responses.Error(w, http.StatusForbidden, "Unauthorized or invalid site")
-		return
+		if webpImg, webpErr := webp.Decode(bytes.NewReader(buf)); webpErr == nil {
+			srcImg = webpImg
+		} else {
+			responses.Error(w, http.StatusBadRequest, "Invalid image: "+err.Error())
+			return
+		}
 	}
 
 	//||------------------------------------------------------------------------------------------------||
@@ -162,20 +133,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	resizedImg := imaging.Resize(srcImg, 500, 0, imaging.Lanczos)
-
 	canvas := image.NewRGBA(image.Rect(0, 0, 500, 500))
 	draw.Draw(canvas, canvas.Bounds(), image.Transparent, image.Point{}, draw.Src)
-
-	offset := image.Pt(
-		(500-resizedImg.Bounds().Dx())/2,
-		(500-resizedImg.Bounds().Dy())/2,
-	)
+	offset := image.Pt((500-resizedImg.Bounds().Dx())/2, (500-resizedImg.Bounds().Dy())/2)
 	draw.Draw(canvas, resizedImg.Bounds().Add(offset), resizedImg, image.Point{}, draw.Over)
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Convert to WebP (via agnostic)
-	//||------------------------------------------------------------------------------------------------||
-
+	// encode to webp
 	webpBuf, err := agnostic.EncodeWebP(canvas)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "WebP encoding failed: "+err.Error())
@@ -183,56 +146,32 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| MinIO Configuration
+	//|| Upload to Storage
 	//||------------------------------------------------------------------------------------------------||
 
-	endpoint := os.Getenv("MINIO_ENDPOINT")
-	accessKeyID := os.Getenv("MINIO_ACCESS_KEY")
-	secretAccessKey := os.Getenv("MINIO_SECRET_KEY")
-	useSSL := os.Getenv("MINIO_USE_SSL") == "true"
-	bucketName := os.Getenv("VITE_MINIO_BUCKET")
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Upload to MinIO
-	//||------------------------------------------------------------------------------------------------||
-
-	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
-	})
-
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "MinIO connection failed: "+err.Error())
-		return
-	}
-
-	objectName := fmt.Sprintf("sites/logos/%s.webp", logoHash)
-
-	ctx := context.Background()
-	exists, err := minioClient.BucketExists(ctx, bucketName)
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Bucket check failed: "+err.Error())
-		return
-	}
-
-	if !exists {
-		responses.Error(w, http.StatusBadRequest, "Bucket does not exist")
-		return
-	}
-
-	_, err = minioClient.PutObject(ctx, bucketName, objectName, webpBuf, int64(webpBuf.Len()), minio.PutObjectOptions{
-		ContentType: "image/webp",
-	})
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Upload failed: "+err.Error())
+	filename := LogoHash(siteID, int(account.ID))
+	fmt.Println("Uploading logo to storage: " + filename)
+	if err := app.Storages["sites"].Put(filename, webpBuf.Bytes()); err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Storage upload failed: "+err.Error())
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Success Response
+	//|| Update DB record
 	//||------------------------------------------------------------------------------------------------||
 
+	if err := app.SQLDB["main"].DB.
+		Table("sites").
+		Where("id_site = ? AND fid_account = ?", siteID, account.ID).
+		Update("site_logo", filename).Error; err != nil {
+		responses.Error(w, http.StatusInternalServerError, "Failed to update site_logo: "+err.Error())
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Success
+	//||------------------------------------------------------------------------------------------------||
 	responses.Success(w, http.StatusOK, map[string]any{
-		"object": objectName,
+		"object": filename,
 	})
 }

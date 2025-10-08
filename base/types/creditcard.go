@@ -7,11 +7,12 @@ import "fmt"
 //||------------------------------------------------------------------------------------------------||
 
 type CreditCard struct {
-	LastFour      string  `json:"lastFour,omitempty"`
-	CardType      string  `json:"cardType,omitempty"`
-	ExpYear       string  `json:"expYear,omitempty"`
+	LastFour      string  `json:"lastFour"`
+	CardType      string  `json:"cardType"`
+	ExpYear       string  `json:"expYear"`
 	Address       Address `json:"address"`
-	TransactionId string  `json:"transactionId,omitempty"`
+	DOB           DOB     `json:"dob"`
+	TransactionId string  `json:"transactionId"`
 }
 
 func (c *CreditCard) String() string {

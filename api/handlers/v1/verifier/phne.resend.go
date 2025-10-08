@@ -6,10 +6,10 @@ package verifier
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/complyage/base/db/abstract"
 	"github.com/complyage/base/send"
 	"github.com/complyage/base/verify"
 
@@ -17,7 +17,6 @@ import (
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -34,21 +33,7 @@ type phoneVerifyResendRequest struct {
 
 func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Session Cookie
-	//||------------------------------------------------------------------------------------------------||
-
-	cookie, err := r.Cookie("session")
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
-		return
-	}
-
-	session, err := actions.FetchSession(cookie.Value)
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
+	app.Log.Info("Handler: Phone Resend")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse JSON
@@ -71,12 +56,24 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Verification
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], req.Identifier, session.Private, session.Public)
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
+		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Load Verification Record
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord, err := verify.CheckLoad(req.Identifier, account.ID)
+	if err != nil {
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 
@@ -94,21 +91,22 @@ func PhoneVerifyResendHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Send the verification SMS
 	//||------------------------------------------------------------------------------------------------||
 
-	phone := verifyRecord.Encrypted.Data.PHNE
+	phone := verifyRecord.Data.PHNE
 	code := verifyRecord.TwoFactor.Code
 	bodyTxt, sendErr := send.SendVerifyText(phone.CountryCode+phone.Number, code, locale.Request(r))
 	if sendErr != nil {
-		fmt.Println("Error sending verification SMS:", sendErr)
+		app.Log.Info("Error sending verification SMS:", sendErr)
 		responses.Error(w, http.StatusInternalServerError, "Failed to send verification SMS")
 		return
 	}
-	fmt.Println("Verification SMS sent successfully:", bodyTxt)
+	app.Log.Data("Verification SMS sent successfully:", bodyTxt)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
 	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("SENT_SMS"), verifyRecord.Status.Description())
+	verifyRecord.Save()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Prepare Response
