@@ -15,7 +15,7 @@ import (
 //|| Create
 //||------------------------------------------------------------------------------------------------||
 
-func Create(enforcement enforce.Enforcement) (OAuthSharedAccess, error) {
+func Create(enforcement enforce.Enforcement, scope string) (OAuthSharedAccess, error) {
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Token
@@ -35,43 +35,45 @@ func Create(enforcement enforce.Enforcement) (OAuthSharedAccess, error) {
 	//||------------------------------------------------------------------------------------------------||
 
 	for _, s := range enforcement.Scopes {
-		switch s.Code {
-		//||------------------------------------------------------------------------------------------------||
-		//|| Address
-		//||------------------------------------------------------------------------------------------------||
-		case types.DataTypeADDR:
-			dataAddr, _ := encrypted.LoadADDR(s.Verification, privateKey)
-			data.ADDR = dataAddr
-		//||------------------------------------------------------------------------------------------------||
-		//|| Credit Card
-		//||------------------------------------------------------------------------------------------------||
-		case types.DataTypeCRCD:
-			dataCRCD, _ := encrypted.LoadCRCD(s.Verification, privateKey)
-			data.CRCD = dataCRCD
-		//||------------------------------------------------------------------------------------------------||
-		//|| Facial
-		//||------------------------------------------------------------------------------------------------||
-		case types.DataTypeFACE:
-			dataFACE, _ := encrypted.LoadFACE(s.Verification, privateKey)
-			data.FACE = dataFACE
-		//||------------------------------------------------------------------------------------------------||
-		//|| Identification
-		//||------------------------------------------------------------------------------------------------||
-		case types.DataTypeIDEN:
-			dataID, _ := encrypted.LoadIDEN(s.Verification, privateKey)
-			data.IDEN = dataID
-		//||------------------------------------------------------------------------------------------------||
-		//|| Email
-		//||------------------------------------------------------------------------------------------------||
-		case types.DataTypeMAIL:
-			dataEMAL, _ := encrypted.LoadMAIL(s.Verification, privateKey)
-			data.MAIL = dataEMAL
-		//||------------------------------------------------------------------------------------------------||
-		//|| Phone
-		//||------------------------------------------------------------------------------------------------||
-		case types.DataTypePHNE:
-			dataPHON, _ := encrypted.LoadPHNE(s.Verification, privateKey)
-			data.PHNE = dataPHON
+		if (scope != "" && s.Code.String() == scope) || scope == "" {
+			switch s.Code {
+			//||------------------------------------------------------------------------------------------------||
+			//|| Address
+			//||------------------------------------------------------------------------------------------------||
+			case types.DataTypeADDR:
+				dataAddr, _ := encrypted.LoadADDR(s.Verification, privateKey)
+				data.ADDR = dataAddr
+			//||------------------------------------------------------------------------------------------------||
+			//|| Credit Card
+			//||------------------------------------------------------------------------------------------------||
+			case types.DataTypeCRCD:
+				dataCRCD, _ := encrypted.LoadCRCD(s.Verification, privateKey)
+				data.CRCD = dataCRCD
+			//||------------------------------------------------------------------------------------------------||
+			//|| Facial
+			//||------------------------------------------------------------------------------------------------||
+			case types.DataTypeFACE:
+				dataFACE, _ := encrypted.LoadFACE(s.Verification, privateKey)
+				data.FACE = dataFACE
+			//||------------------------------------------------------------------------------------------------||
+			//|| Identification
+			//||------------------------------------------------------------------------------------------------||
+			case types.DataTypeIDEN:
+				dataID, _ := encrypted.LoadIDEN(s.Verification, privateKey)
+				data.IDEN = dataID
+			//||------------------------------------------------------------------------------------------------||
+			//|| Email
+			//||------------------------------------------------------------------------------------------------||
+			case types.DataTypeMAIL:
+				dataEMAL, _ := encrypted.LoadMAIL(s.Verification, privateKey)
+				data.MAIL = dataEMAL
+			//||------------------------------------------------------------------------------------------------||
+			//|| Phone
+			//||------------------------------------------------------------------------------------------------||
+			case types.DataTypePHNE:
+				dataPHON, _ := encrypted.LoadPHNE(s.Verification, privateKey)
+				data.PHNE = dataPHON
+			}
 		}
 	}
 

@@ -19,9 +19,10 @@ import { useEffectOnce }                          from "../../../hooks/useEffect
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import { ModelSite }                              from "../../../interfaces/models/model.sites";
-import { SiteZone, ModelZone }                    from "../../../interfaces/models/model.zones";
+import { ModelSite, SiteZone }                    from "../../../interfaces/models/model.sites";
+import { ModelZone }                              from "../../../interfaces/models/model.zones";
 import { getZoneRequirement }                     from "../../../data/getZoneData";
+import { ZoneRequirement }                       from "../../../interfaces/models/model.zones";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
@@ -66,7 +67,7 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
                         if (Array.isArray(json.data)) {
                               const newZones = json.data;
                               newZones.push({
-                                    id          : "9999",
+                                    id          : 9999,
                                     state       : "All",
                                     country     : "All",
                                     requirements: "none"
@@ -89,22 +90,32 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
 
       useEffect(() => {
             setMode(data?.enforcement || "");
-            if (data?.zones === undefined || data.zones === null) {
+
+            if (!data?.zones) {
                   setCustomZones({});
                   return;
             }
-            if (typeof data?.zones !== "object" && !Array.isArray(data?.zones)) {
-                  try { 
-                        setCustomZones(JSON.parse(data?.zones) as Record<number, number>);
-                  } catch(e) { 
+
+            try {
+                  // If zones is a stringified JSON from API
+                  if (typeof data.zones === "string") {
+                        setCustomZones(JSON.parse(data.zones) as Record<number, number>);
+                  }
+                  // If zones is an array of SiteZone objects
+                  else if (Array.isArray(data.zones)) {
+                        const record: Record<number, number> = {};
+                        (data.zones as SiteZone[]).forEach(z => {
+                              record[z.zone] = z.enforced ? 1 : 0;
+                        });
+                        setCustomZones(record);
+                  }
+                  // Fallback for other unexpected structures
+                  else {
                         setCustomZones({});
                   }
-            } else {
-                  try {
-                        setCustomZones(data?.zones as Record<number, number>);
-                  } catch (e) {
-                        setCustomZones({});
-                  }
+            } catch (e) {
+                  console.error("Failed to parse zones", e);
+                  setCustomZones({});
             }
       }, [data]);
 
@@ -114,6 +125,7 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
 
       const handleModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
             const newMode = e.target.value;
+            if (newMode !== "CSTM" && newMode !== "REGU" && newMode !== "ALLZ") return;
             setMode(newMode);
             updateField("enforcement", newMode);
       };
@@ -125,13 +137,20 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
       const updateZone = (zoneId: number, action: 'ENFORCE' | 'IGNORE') => {
             if (!data) return;
             let updatedZones: SiteZone[];
+
             if (action === 'IGNORE') {
-                  updatedZones = data.zones.filter((z: SiteZone) => z.id !== zoneId);
+                  updatedZones = data.zones.filter((z: SiteZone) => z.zone !== zoneId);
             } else {
-                  updatedZones = data.zones.map((z: SiteZone) =>
-                        z.id === zoneId ? { ...z } : z
-                  );
+                  const existing = data.zones.find((z: SiteZone) => z.zone === zoneId);
+                  if (existing) {
+                        updatedZones = data.zones.map((z: SiteZone) =>
+                              z.zone === zoneId ? { ...z, enforced: true } : z
+                        );
+                  } else {
+                        updatedZones = [...data.zones, { zone: zoneId, enforced: true }];
+                  }
             }
+
             updateField('zones', updatedZones);
       };
 
@@ -153,7 +172,7 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
 
       return (
             <div className="w-full bg-base-100 shadow-lg rounded-lg p-8 mb-5">
-                  <h2 className="text-2xl font-bold mb-6">Zones Enforcement</h2>
+                  <h2 className="text-2xl font-bold mb-6">Age Gate - Zone Enforcement</h2>
 
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
                         <select
@@ -190,13 +209,13 @@ export default function ZonesEnforcementSection({ data, updateField }: ZonesEnfo
                                           <tbody>
                                                 {zones.map((zone : ModelZone) => {
                                                       const requirementsList = !zone.requirements ? (<li>N/A</li>): zone.requirements.split(",").map((req, idx) => (
-                                                            <li className="p-1 text-gray-300 text-xs" key={idx}>{getZoneRequirement(req.trim())}</li>
+                                                            <li className="p-1 text-gray-300 text-xs" key={idx}>{getZoneRequirement(req.trim() as ZoneRequirement)}</li>
                                                       ));
-                                                      if (zone.id === "9999") {
+                                                      if (zone.id === 9999) {
                                                             return (
                                                                   <>
                                                                         <tr key={`unknown${zone.id}`} className="bg-black/50">
-                                                                              <td className="align-center text-center text-yellow-400 text-xs p-5" colSpan="4">
+                                                                              <td className="align-center text-center text-yellow-400 text-xs p-5" colSpan={4}>
                                                                                     Some IP Addresses may be un-resolvable to a certain state or country. How would you like to handle these?
                                                                               </td>
                                                                         </tr>                                                                  

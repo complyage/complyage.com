@@ -1,6 +1,6 @@
 //||------------------------------------------------------------------------------------------------||
 //|| BasicDataSection
-//|| Component for editing basic website info including logo upload
+//|| Component for editing basic website info including logo upload + allowed domains
 //||------------------------------------------------------------------------------------------------||
 
 import React, { useState, useEffect, useRef }               from "react";
@@ -10,8 +10,14 @@ import React, { useState, useEffect, useRef }               from "react";
 //||------------------------------------------------------------------------------------------------||
 
 import { ModelSite }                                        from "../../../interfaces/models/model.sites";
-import { getAccountStatus }                                 from "../../../data/getAccountData";      
 import SpinnerCircle                                        from "../../../components/base/SpinnerCircle";
+import { X }                                                from "lucide-react";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Components
+//||------------------------------------------------------------------------------------------------||
+
+import LabelDescription                               from "../../../components/base/LabelDescription";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
@@ -19,7 +25,7 @@ import SpinnerCircle                                        from "../../../compo
 
 interface BasicDataProps {
       data        : ModelSite;
-      updateField : (field : string, value : string) => void;
+      updateField : (field : string, value : string | boolean | number) => void;
       cacheBust   : string;
 }
 
@@ -39,6 +45,13 @@ export default function BasicDataSection({ updateField, data, cacheBust }: Basic
       const [cb, setCb]                         = useState<string>(cacheBust || new Date().toISOString());
 
       //||------------------------------------------------------------------------------------------------||
+      //|| Allowed Domains
+      //||------------------------------------------------------------------------------------------------||
+
+      const [currentDomain, setCurrentDomain]   = useState("");
+      const [domainList, setDomainList]         = useState<string[]>([]);
+
+      //||------------------------------------------------------------------------------------------------||
       //|| Sync With Parent Data
       //||------------------------------------------------------------------------------------------------||
 
@@ -50,7 +63,31 @@ export default function BasicDataSection({ updateField, data, cacheBust }: Basic
             setStatus((data.status as "Active" | "Pending") || "Pending");
             setLogo(null);
             setCb(cacheBust);
+            if (data?.domains) {
+                  setDomainList(data.domains.split(",").map(d => d.trim()).filter(Boolean));
+            } else {
+                  setDomainList([]);
+            }
       }, [data, cacheBust]);
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Domain Management
+      //||------------------------------------------------------------------------------------------------||
+
+      const addDomain = () => {
+            if (currentDomain && !domainList.includes(currentDomain)) {
+                  const updatedDomains = [...domainList, currentDomain];
+                  setDomainList(updatedDomains);
+                  updateField("domains", updatedDomains.join(","));
+                  setCurrentDomain("");
+            }
+      };
+
+      const removeDomain = (domain: string) => {
+            const updatedDomains = domainList.filter(d => d !== domain);
+            setDomainList(updatedDomains);
+            updateField("domains", updatedDomains.join(","));
+      }
 
       //||------------------------------------------------------------------------------------------------||
       //|| Handle File Upload (POST to API)
@@ -189,6 +226,7 @@ export default function BasicDataSection({ updateField, data, cacheBust }: Basic
             return (<div className="flex justify-center items-center text-gray-500 text-sm italic">No logo uploaded yet</div>);
       }
 
+
       //||------------------------------------------------------------------------------------------------||
       //|| No Site Loaded
       //||------------------------------------------------------------------------------------------------||
@@ -202,17 +240,16 @@ export default function BasicDataSection({ updateField, data, cacheBust }: Basic
       return (
             <>
                   <div className="w-full bg-base-100 shadow-lg rounded-lg p-8 mb-5">
-                        <h2 className="text-2xl font-bold mb-6">Basic Website Data</h2>
+                        <h2 className="text-2xl font-bold mb-6">Website Identity</h2>
 
                         <div className="grid grid-cols-1 gap-6">
 
                               <div>
-                                    <label htmlFor="siteStatus" className="block label pb-1">Site Status</label>
-                                    <span id="siteStatus" className="inline-block bg-black/50 px-4 py-1 text-yellow-300">{getAccountStatus(data?.status)}</span>
-                              </div>
-
-                              <div>
-                                    <label htmlFor="sitename" className="label pb-1">Name</label>
+                                    <LabelDescription
+                                          id="sitename"
+                                          label="Name"
+                                          description="The name of your website or application. (i.e. ComplyAge Demo)"
+                                    />                                    
                                     <input
                                           id="sitename"
                                           type="text"
@@ -224,7 +261,11 @@ export default function BasicDataSection({ updateField, data, cacheBust }: Basic
                               </div>
 
                               <div>
-                                    <label htmlFor="siteurl" className="label pb-1">URL</label>
+                                    <LabelDescription
+                                          id="siteurl"
+                                          label="URL"
+                                          description="Homepage of your website or application. (i.e. https://complyage.com)"
+                                    />                                                                        
                                     <input
                                           id="siteurl"
                                           type="text"
@@ -236,7 +277,11 @@ export default function BasicDataSection({ updateField, data, cacheBust }: Basic
                               </div>
 
                               <div>
-                                    <label htmlFor="description" className="label pb-1">Description</label>
+                                    <LabelDescription
+                                          id="description"
+                                          label="Description"
+                                          description="A short description of your website or application."
+                                    />                                                                        
                                     <textarea
                                           id="description"
                                           placeholder="Website Description"
@@ -246,6 +291,57 @@ export default function BasicDataSection({ updateField, data, cacheBust }: Basic
                                     ></textarea>
                               </div>
 
+                              <div>
+                                    <LabelDescription
+                                          id="allowed"
+                                          label="Allowed Domains"
+                                          description="Which domains should be allowed to call Age Gate/OAuth/Agent? (e.g. complyage.com, mysite.org)"
+                                    />                                    
+                                    <div className="flex items-center">
+                                          <input 
+                                                id="allowed"
+                                                type="text" 
+                                                className="input input-bordered text-white flex-1"
+                                                onChange={(e) => setCurrentDomain(e.target.value)} 
+                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addDomain(); }}}
+                                                value={currentDomain} 
+                                                placeholder="Add domain and press Enter"
+                                          />
+                                          <button
+                                                onClick={addDomain}
+                                                className="btn btn-sm btn-primary ml-2"
+                                          >
+                                                Add
+                                          </button>
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                          { domainList.length === 0 && (
+                                                <p className="text-sm text-gray-500 text-center p-4 bg-black/20 border-lg mb-5 w-full">
+                                                      No domains added. Please add allowed domains.
+                                                </p>
+                                          )}
+                                          {domainList.map((domain, index) => (
+                                                <div 
+                                                      key={index}
+                                                      className="flex items-center justify-between bg-gray-700 text-white text-sm px-3 py-1 rounded-md shadow-sm"
+                                                >
+                                                      <span>{domain}</span>
+                                                      <button
+                                                            onClick={() => removeDomain(domain)}
+                                                            className="ml-2 flex items-center justify-center text-white hover:text-red-600 cursor-pointer"
+                                                      >
+                                                            <X size={16} />
+                                                      </button>
+                                                </div>
+                                          ))}
+                                    </div>
+                              </div>
+
+                              <LabelDescription
+                                    id="allowed"
+                                    label="Logo"
+                                    description="Update a Logo for your website. (Max 2MB, JPG/PNG/GIF) This will be shown on the approval pages."
+                              />     
                               {showLogo()}
 
                               <div

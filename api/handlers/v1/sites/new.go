@@ -56,6 +56,7 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	clientId := "CLID-" + random.RandomString(27)
 	agentKey := "AGNT-" + random.RandomString(8) + "-" + random.RandomString(8) + "-" + random.RandomString(8)
+	validateKey := random.RandomString(32)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Create New Site Model
@@ -70,6 +71,7 @@ func SitesNewHandler(w http.ResponseWriter, r *http.Request) {
 		TestMode:     true,
 		Domains:      "*",
 		Enforcement:  "ALLZ",
+		CheckKey:     validateKey,
 		AgentPrivate: agentKey,
 	}
 

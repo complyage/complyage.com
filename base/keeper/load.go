@@ -19,7 +19,6 @@ func Load(r *http.Request) (KeeperRecord, error) {
 	//|| Get Variables
 	//||------------------------------------------------------------------------------------------------||
 	var record KeeperRecord
-	clientId := r.URL.Query().Get("client_id")
 	ipAddress := ariaHTTP.GetClientIP(r)
 	cookie, err := r.Cookie(GATE_COOKIE_NAME)
 	if err != nil || cookie.Value == "" {
@@ -45,7 +44,9 @@ func Load(r *http.Request) (KeeperRecord, error) {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Verify
 	//||------------------------------------------------------------------------------------------------||
-	if record.IPAddress != ipAddress || record.ClientId != clientId {
+	app.Log.Info("Verifying keeper record...")
+	app.Log.Info(record.IPAddress, ipAddress)
+	if record.IPAddress != ipAddress {
 		return KeeperRecord{}, app.Err("Gate").Error("RECORD_MISMATTCH")
 	}
 	//||------------------------------------------------------------------------------------------------||

@@ -13,27 +13,28 @@ import React, {useState, useEffect}                   from "react";
 //|| Interfaces
 //||------------------------------------------------------------------------------------------------||
 
-import type { ModelSite }                                  from "../../../interfaces/models/model.sites";
+import type { ModelSite }                             from "../../../interfaces/models/model.sites";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
-import PreviewGate                                    from "./Sites.GatePreview";
+import LabelDescription                               from "../../../components/base/LabelDescription";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Functions
 //||------------------------------------------------------------------------------------------------||
 
 import { isValidURL }                                 from "../../../utils/validate";
+import { integrationCode }                            from "../../../utils/integration.code";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
 //||------------------------------------------------------------------------------------------------||
 
 interface CustomAgeGateProps {
-	data: Site;
-	updateField: (field: string, value: any) => void;
+	data                    : ModelSite;
+	updateField             : (field: string, value: any) => void;
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -46,15 +47,17 @@ export default function CustomAgeGate({data, updateField}: CustomAgeGateProps) {
 	//|| State
 	//||------------------------------------------------------------------------------------------------||
 
-      const [showPreview, setShowPreview] = useState(false);
-      const [validConfirm, setValidConfirm] = useState(false);
-      const [validExit, setValidExit] = useState(false);
+      const [showPreview, setShowPreview]             = useState(false);
+      const [validConfirm, setValidConfirm]           = useState(false);
+      const [validExit, setValidExit]                 = useState(false);
+      const [codePreview, setCodePreview]             = useState(integrationCode(data?.clientId || "123"));
 
+      //||------------------------------------------------------------------------------------------------||
+	//|| JSX
+	//||------------------------------------------------------------------------------------------------||
 
       useEffect(() => {
-            // Validate URLs
-            setValidConfirm(isValidURL(data.gateConfirm));
-            setValidExit(isValidURL(data.gateExit));
+            setValidConfirm(isValidURL(data.webhook));
       }, [data]);
 
       //||------------------------------------------------------------------------------------------------||
@@ -63,84 +66,54 @@ export default function CustomAgeGate({data, updateField}: CustomAgeGateProps) {
 
       return (
 		<div className="w-full bg-base-100 shadow-lg rounded-lg p-8 mb-5">
-			<h2 className="text-2xl font-bold mb-6">Gate Custom Settings</h2>
+			<h2 className="text-2xl font-bold mb-6">Age Gate Setup</h2>
 
-			{/* Require Signup */}
+			{/* Custom Confirm URL */}
 			<div className="mb-4">
-				<label htmlFor="requireSignup" className="block label pb-1">
-					Show ComplyAge Signup 
-				</label>
-				<select 
-                              id="requireSignup" 
-                              value={String(data.gate_signup)} 
-                              onChange={(e) => updateField("gate_signup", e.target.value === "1" ? "1" : "0")}
-                              className="select w-full max-w-xs"
-                        >
-					<option value="1">True</option>
-					<option value="0">False</option>
-				</select>
+				<LabelDescription id="confirmURL" label="Webhook URL" description="This is the URL where age verification results will be sent." />
+				<div className="flex items-center space-x-4">
+					<input
+						type="text"
+						value={data?.webhook}
+						onChange={(e) => updateField("webhook", e.target.value)}
+						placeholder="https://..."
+						className="input input-bordered flex-1"
+					/>
+				</div>
+				{!validConfirm && data.webhook != "" && <p className="text-red-500 text-sm mt-1">Please enter a valid URL for the Webhook</p>}
 			</div>
 
-			{/* Custom Confirm URL */}
+			{/* Check Key */}
+			<div className="mb-4">
+				<LabelDescription
+					id="checkKey"
+					label="Validation Key"
+					description="This secret key will be passed to the webhook to ensure data is from ComplyAge."
+				/>
+
+				<div className="flex items-center space-x-4">
+					<input
+						type="text"
+						value={data?.checkKey}
+						onChange={(e) => updateField("gateExit", e.target.value)}
+						className="input input-bordered flex-1"
+					/>
+				</div>
+			</div>
+
 			<div>
-				<label htmlFor="confirmURL" className="block label pb-1">
-					Custom Confirm URL
-				</label>
-				<div className="flex items-center space-x-4">
-                              <input
-                                    type="text"
-                                    value={data?.gateConfirm}
-                                    onChange={(e) => updateField("gateConfirm", e.target.value)}
-                                    placeholder="https://..."
-                                    className="input input-bordered flex-1"
-                              />
-				</div>
-                        {(!validConfirm && data.gateConfirm != "") && (
-                              <p className="text-red-500 text-sm mt-1">
-                                    Please enter a valid URL for the Confirm URL.
-                              </p>
-                        )}
+				<LabelDescription
+					id="integrationCode"
+					label="Integration Code"
+					description="Javascript to integrate the age gate on your website. Place this code before the closing </body> tag."
+				/>
+				<input
+					id="integrationCode"
+					readOnly
+					className="w-full font-mono text-xs bg-base-200 p-3 text-gray-200"
+					value={codePreview}
+                        />
 			</div>
-
-			{/* Custom Exit URL */}
-			<div className="mt-6">
-				<label htmlFor="exitURL" className="block label pb-1">
-					Custom Exit URL
-				</label>
-				<div className="flex items-center space-x-4">
-                              <input
-                                    type="text"
-                                    value={data?.gateExit}
-                                    onChange={(e) => updateField("gateExit", e.target.value)}
-                                    placeholder="https://..."
-                                    className="input input-bordered flex-1"
-                              />
-				</div>
-                        {(!validExit && data.gateExit != "") && (
-                              <p className="text-red-500 text-sm mt-1">
-                                    Please enter a valid URL for the Exit URL.
-                              </p>
-                        )}
-			</div>
-
-			{/* Custom Confirm URL */}
-			<div className="mt-4">
-				<label htmlFor="publicKey" className="block label pb-1">
-					Public Key (only needed for manual integration)
-				</label>
-				<div className="flex items-center space-x-4">
-                              <textarea
-                                    id="publicKey"
-                                    readOnly={true}
-                                    value={data?.public}
-                                    className="textarea textarea-bordered flex-1 h-32 text-gray-400"
-                              />
-				</div>
-			</div>                  
-                  <>
-                  <button onClick={() => setShowPreview(true)} className="btn btn-primary mt-6">Preview Gate</button>
-                  { showPreview && (<PreviewGate data={data} onClose={() => setShowPreview(false)} />) }
-                  </>
 		</div>
 	);
 }

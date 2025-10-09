@@ -27,6 +27,8 @@
       "LOGO" : "ComplyAge Logo",
       "ENFORCED" : "Enforced",
       "NOT_ENFORCED" : "Not Enforced",
+      "ERROR" : "Error",
+      "CLOSE" : "Close",
 
       "PERM_CRCD_TITLE" : "Verified Credit Card", 
       "PERM_MAIL_TITLE" : "Verified Email Address", 
@@ -56,5 +58,7 @@
       "PLEASE_CHOOSE_PREFERRED_APPROVAL" : "Please choose your preferred approval method",
       "AGE_VERIFICATION_REQUIRED" : "Age Verification Required",
       "CONGRATS_AGE_VERIFIED" : "Congratulations, your age has been verified!",
-      "THIS_WILL_BE_SHARED" : "This is the information that will be shared."
+      "THIS_WILL_BE_SHARED" : "This is the information that will be shared.",
+      "AGE_HAS_BEEN_VERIFIED" : "Your age has been verified.",
+      "RETURN_TO_SITE" : "Return to Site"
 }

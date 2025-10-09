@@ -21,4 +21,7 @@ func init() {
 	app.Err("OAuth").Add("MISSING_SCOPE", "Scope was not provided", false)
 	app.Err("OAuth").Add("INVALID_CHECKKEY", "Action key did not match", false)
 	app.Err("OAuth").Add("INVALID_SCOPE", "Scope is not available", false)
+	app.Err("OAuth").Add("INVALID_SCOPE_DATA", "Encrypted Data is not available", false)
+	app.Err("OAuth").Add("MISSING_ACCESS", "Access Session not found", false)
+	app.Err("OAuth").Add("CORRUPT_ACCESS", "Access Session not corrupt. Please try again", false)
 }

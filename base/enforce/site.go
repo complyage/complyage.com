@@ -23,15 +23,17 @@ type Zone struct {
 //||------------------------------------------------------------------------------------------------||
 
 type Site struct {
-	ID          uint              `json:"id"`
-	ClientId    string            `json:"clientId"`
-	Public      string            `json:"-"`
-	Private     string            `json:"-"`
+	ID       uint   `json:"id"`
+	ClientId string `json:"clientId"`
+	Verifier string `json:"verifier"`
+	// Public      string            `json:"-"`
+	// Private     string            `json:"-"`
 	Name        string            `json:"name"`
 	Logo        string            `json:"logo"`
 	Description string            `json:"description"`
 	URL         string            `json:"url"`
 	Redirect    string            `json:"redirect"`
+	Webhook     string            `json:"webhook"`
 	TestMode    bool              `json:"testMode"`
 	Enforcement string            `json:"enforcement"`
 	Zones       models.SiteZones  `json:"zones"`
@@ -103,11 +105,12 @@ func LoadSite(clientID, hostName string) (Site, error) {
 	eSite := Site{
 		ID:          site.ID,
 		ClientId:    site.ClientID,
-		Private:     site.Private,
+		Verifier:    site.CheckKey,
 		Name:        site.Name,
 		Logo:        site.Logo,
 		Description: site.Description,
 		URL:         site.URL,
+		Webhook:     site.Webhook,
 		Enforcement: site.Enforcement,
 		Redirect:    site.Redirect,
 		TestMode:    site.TestMode,

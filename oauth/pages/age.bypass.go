@@ -10,6 +10,7 @@ import (
 	"oauth/templates"
 
 	"github.com/complyage/base/keeper"
+	"github.com/ralphferrara/aria/base/template"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -72,14 +73,12 @@ func BypassOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	keep.Save()
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Return URL
+	//|| Replace Zone Markers
 	//||------------------------------------------------------------------------------------------------||
 
-	if keep.ReturnURL == "" {
-		templates.ErrorHTML(r, w, "Missing return URL")
-		return
-	}
+	tpl := template.Create("verified")
+	tpl.Add("RETURN_URL", keep.ReturnURL)
 
-	keep.Redirect(w, r)
-
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(tpl.Compile()))
 }
