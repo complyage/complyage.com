@@ -1,20 +1,35 @@
-# syntax=docker/dockerfile:1
-FROM golang:1.24-alpine
+# ----------------------------------------------------------------------------------
+# Stage 1: Build
+# ----------------------------------------------------------------------------------
+FROM golang:1.24.5-alpine AS builder
 
-ENV GO111MODULE=on \
-    CGO_ENABLED=1 \
-    PATH="/go/bin:$PATH"
+# Set working directory
+WORKDIR /app
+
+# Install git for Go modules
+RUN apk add --no-cache git
+
+# ----------------------------------------------------------------------------------
+# Copy production go.mod and go.sum first for dependency caching
+# ----------------------------------------------------------------------------------
+
+COPY . .
+
+# Build static binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o oauth .
+
+# ----------------------------------------------------------------------------------
+# Stage 2: Runtime
+# ----------------------------------------------------------------------------------
+FROM alpine:latest
 
 WORKDIR /app
 
-RUN apk add --no-cache git build-base bash
-RUN go install github.com/air-verse/air@latest
+# Copy the built binary from builder
+COPY --from=builder /app/oauth .
 
-COPY oauth/go.mod oauth/go.sum ./
-COPY base /base
-RUN go mod download
+# Expose port
+EXPOSE 8083
 
-COPY oauth/ .
-
-EXPOSE 8888
-ENTRYPOINT ["air"]
+# Run the binary
+ENTRYPOINT ["./oauth"]

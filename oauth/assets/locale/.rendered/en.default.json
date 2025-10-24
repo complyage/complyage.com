@@ -60,5 +60,8 @@
       "CONGRATS_AGE_VERIFIED" : "Congratulations, your age has been verified!",
       "THIS_WILL_BE_SHARED" : "This is the information that will be shared.",
       "AGE_HAS_BEEN_VERIFIED" : "Your age has been verified.",
-      "RETURN_TO_SITE" : "Return to Site"
+      "RETURN_TO_SITE" : "Return to Site",
+      "AGE_METHODS_ALLOWED_IN" : "Age verification methods allowed in",
+      "YOU_MUST_COMPLETE_AGE" : "You must complete an approved age verification method in",
+      "REQUIRED_PERMISSIONS_MISSING" : "required permissions missing to proceed. Click Get Verified to continue."
 }

@@ -74,11 +74,11 @@ const StatusColor: Record<VerificationStatuses, string> = {
 
 const stepsIDEN: ProgressStep[] = [
       { label: "Awaiting Agent",          description: "Awaiting Agent" },
-      { label: "Parsing ID Data",         description: "Parsing ID Data" },
-      { label: "Verifying DOB",           description: "Verifying DOB" },
-      { label: "Verifying Photo",         description: "Upload the back of your ID" },
-      { label: "Matching Photo",          description: "Matching ID to Selfie" },
-      { label: "Encrypting Data",         description: "Encrypting your photos" },
+      { label: "Parse ID",         description: "Parsing ID Data" },
+      { label: "Verify DOB",           description: "Verifying DOB" },
+      { label: "Verify Photo",         description: "Upload the back of your ID" },
+      { label: "Match Photo",          description: "Matching ID to Selfie" },
+      { label: "Encrypt Data",         description: "Encrypting your photos" },
 ];
 
 //||------------------------------------------------------------------------------------------------||
@@ -120,7 +120,7 @@ function getStepsFromProcess(vType: VerificationTypes): ProgressStep[] {
 //|| Main Component
 //||------------------------------------------------------------------------------------------------||
 
-const IDVerificationStatus: React.FC = () => {
+export default function VerificationStatus({overlay}: { overlay?: boolean }) {
 
       //||------------------------------------------------------------------------------------------------||
       //|| Verification
@@ -243,7 +243,7 @@ const IDVerificationStatus: React.FC = () => {
 
       if (loading) {
             return (
-                  <MembersLayout>
+                  <MembersLayout overlay={overlay}>
                         <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center p-8 bg-black/20 rounded-xl mt-10">
                               <SpinnerCircle className="w-16 h-16 text-gray-500 animate-spin" />
                               <span className="text-lg text-gray-600 mt-4">Please wait...</span>
@@ -257,7 +257,7 @@ const IDVerificationStatus: React.FC = () => {
       //||----------------------------------------------------------------------------------------||
 
       return (
-            <MembersLayout>
+            <MembersLayout overlay={overlay}>
                   <div className="w-full max-w-full mx-auto flex flex-col items-center justify-center rounded-lg">
 
 
@@ -366,9 +366,3 @@ const IDVerificationStatus: React.FC = () => {
             </MembersLayout>
       );
 };
-
-//||------------------------------------------------------------------------------------------------||
-//|| Export
-//||------------------------------------------------------------------------------------------------||
-
-export default IDVerificationStatus;

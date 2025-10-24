@@ -118,7 +118,7 @@ export default function App() {
                   <Route path="/overlay/login" element={<OverlayLogin />} />
                   <Route path="/overlay/logout" element={<OverlayLogout />} />
                   <Route path="/overlay/signup" element={<OverlaySignup />} />
-                  <Route path="/overlay/verify" element={<OverlayVerify />} />			
+                  <Route path="/overlay/verify" element={<OverlayVerify />} />
 
 			<Route path="/private" element={<Private />} />
                   <Route path="/signup" element={<Signup />} />
@@ -155,13 +155,8 @@ export default function App() {
                   <Route path="/overlay/verification/check"    element={<VerificationCheck overlay={true} />} />
                   <Route path="/overlay/verification/id"       element={<IDVerification overlay={true} />} />
                   <Route path="/overlay/verification/phone"    element={<PhoneVerification overlay={true} />} />
-
-                  {/*
-                  <Route path="/overlay/verification/status"   element={<VerificationStatus overlay={true} />} />                  
+                  <Route path="/overlay/verification/status"   element={<VerificationStatus overlay={true} />} />                                    
                   <Route path="/overlay/verification/face"     element={<FaceVerification overlay={true} />} />
-                  
-                  
-                  */}
 
                   <Route path="/admin" element={<AdminDashboard />} />
 		</Routes>

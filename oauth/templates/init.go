@@ -35,11 +35,16 @@ func init() {
 	template.Register("status.loggedin", "./assets/html/status.loggedin.html")
 	template.Register("status.loggedout", "./assets/html/status.loggedout.html")
 	//||------------------------------------------------------------------------------------------------||
+	//|| Span
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("span.age.methods", "./assets/html/span.age.methods.html")
+	//||------------------------------------------------------------------------------------------------||
 	//|| Footer
 	//||------------------------------------------------------------------------------------------------||
 	template.Register("footer.notrequired", "./assets/html/footer.notrequired.html")
 	template.Register("footer.loggedout", "./assets/html/footer.loggedout.html")
 	template.Register("footer.requires", "./assets/html/footer.requires.html")
+	template.Register("footer.notmet", "./assets/html/footer.notmet.html")
 	template.Register("footer.private", "./assets/html/footer.private.html")
 	template.Register("footer.verified", "./assets/html/footer.verified.html")
 	template.Register("footer.verified.age", "./assets/html/footer.verified.age.html")

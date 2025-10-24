@@ -256,6 +256,12 @@
             }      
 
             //||------------------------------------------------------------------------------------------------||
+            //|| Section Title
+            //||------------------------------------------------------------------------------------------------||
+
+            const sectionTitle = steps[process.step - 1]?.label + String(process.step) || "No Title";
+
+            //||------------------------------------------------------------------------------------------------||
             //|| Step
             //||------------------------------------------------------------------------------------------------||
 
@@ -264,6 +270,9 @@
                         <div className="w-full max-w-5xl mx-auto">                              
                               <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" verificationType="IDEN" />
                               { process.step <= 1 && <IDVerificationStep1 updateProcess={ updateProcess } process={process} />}
+                              { process.step >= 1 && (
+                                    <h2 className="text-xl font-bold text-yellow-500 text-center p-2 w-[50%] mx-auto">{ sectionTitle }</h2>
+                              )}
                               { process.step === 2 && <IDVerificationMedia which="front" updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
                               { process.step === 3 && <IDVerificationMedia which="back" updateProcess={ updateProcess } process={process}  onUpload={ onUpload } getUpload={ getUpload } />}
                               { process.step === 4 && <IDVerificationSelfie updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}

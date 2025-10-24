@@ -117,6 +117,13 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.Add("PERMISSIONS", htmlPermissions.String())
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| Age Gate Header
+	//||------------------------------------------------------------------------------------------------||
+
+	agh := template.Create("span.age.methods")
+	tpl.Add("AGEGATEHEADER", agh.Compile())
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Footer
 	//||------------------------------------------------------------------------------------------------||
 
@@ -131,7 +138,7 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 			footer = template.Create("footer.loggedout")
 		} else {
 			if enforcement.Missing > 0 {
-				footer = template.Create("footer.requires")
+				footer = template.Create("footer.notmet")
 				footer.Add("MISSING", strconv.Itoa(enforcement.Missing))
 			} else {
 				if !enforcement.HasPrivate {

@@ -1,28 +1,26 @@
-# syntax=docker/dockerfile:1
-FROM golang:1.24-alpine
+# ----------------------------------------------------------------------------------
+# Stage 1: Build
+# ----------------------------------------------------------------------------------
 
-ENV GO111MODULE=on \
-    CGO_ENABLED=1 \
-    PATH="/go/bin:$PATH"
+FROM golang:1.24.5-alpine AS builder
 
 WORKDIR /app
+RUN apk add --no-cache git
 
-# Install dependencies for building
-RUN apk add --no-cache git build-base bash
+# Copy shared base package and module files
+COPY . .
+RUN go mod tidy
 
-# Install Air for hot reload
-RUN go install github.com/air-verse/air@latest
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api .
 
-# Copy module definitions (cache layer)
-COPY api/go.mod api/go.sum ./
-COPY base /base
+# ----------------------------------------------------------------------------------
+# Stage 2: Runtime
+# ----------------------------------------------------------------------------------
+      
+FROM alpine:latest
 
-# Download Go modules
-RUN go mod download
+WORKDIR /app
+COPY --from=builder /app/api .
+EXPOSE 8082
 
-# Copy application source
-COPY api/ .
-
-EXPOSE 8888
-
-ENTRYPOINT ["air"]
+ENTRYPOINT ["./api"]

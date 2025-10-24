@@ -139,7 +139,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	draw.Draw(canvas, resizedImg.Bounds().Add(offset), resizedImg, image.Point{}, draw.Over)
 
 	// encode to webp
-	webpBuf, err := agnostic.EncodeWebP(canvas)
+	webpBuf, err := agnostic.EncodeWebP(canvas, true, 80)
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, "WebP encoding failed: "+err.Error())
 		return
