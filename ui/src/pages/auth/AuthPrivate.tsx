@@ -12,6 +12,12 @@ import { useOverlayNavigate }                               from "../../hooks/us
 import Call                                                  from "../../classes/call";
 
 //||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
+
+//||------------------------------------------------------------------------------------------------||
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
@@ -51,7 +57,7 @@ export default function AuthPrivate() {
             const fetchData = async () => {
                   setLoading(true);
                   setStatusMessage("");
-                  const chirp = new Call("/user/private/fetch", {});
+                  const chirp = new Call(apiURL("/user/private/fetch"), {});
                   chirp.method = "GET";
                   chirp.debug = true;
                   await chirp.execute();

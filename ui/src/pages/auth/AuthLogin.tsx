@@ -11,6 +11,12 @@ import React, { useState, useEffect }                from "react";
 import { useOverlayNavigate }                        from "../../hooks/useOverlay";
 
 //||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
+
+//||------------------------------------------------------------------------------------------------||
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
@@ -73,9 +79,10 @@ export default function AuthLogin() {
             };
 
             try {
-                  const serv = "";                  
-                  const res = await fetch(serv + "/auth/login", {
+                  const serv = import.meta.env.VITE_API_SERVER;
+                  const res = await fetch(apiURL("/auth/login"), {
                         method   : "POST",
+                        credentials : "include",
                         headers  : { "Content-Type": "application/x-www-form-urlencoded" },
                         body     : new URLSearchParams(payload).toString(),
                   });

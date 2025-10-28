@@ -15,6 +15,13 @@ import keyLevelToWordCount                                    from "../../utils/
 import { validateBIP39 }                                      from "../../utils/validateBIP39";
 
 //||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
+
+
+//||------------------------------------------------------------------------------------------------||
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
@@ -74,7 +81,6 @@ export default function AuthComplete() {
 
             // Levels: 2..5 => BIP39 (6/12/18/24), 6 => raw private key
             if (encryptionLevel > 1 && encryptionLevel < 6) {
-                  alert("HOWDY")
                   // normalize list and validate
                   const words = (wordList || []).map(w => (w || "").trim().toLowerCase());
 
@@ -95,8 +101,9 @@ export default function AuthComplete() {
 
             try {
                   setLoading(true);
-                  const res  = await fetch("/auth/complete", {
+                  const res  = await fetch(apiURL("/auth/complete"), {
                         method   : "POST",
+                        credentials : "include",                        
                         headers  : { "Content-Type": "application/x-www-form-urlencoded" },
                         body     : payload,
                   });

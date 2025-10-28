@@ -7,6 +7,12 @@ import { useNavigate, useLocation }       from "react-router-dom";
 import SpinnerCircle                      from "../../components/base/SpinnerCircle";
 
 //||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
+
+//||------------------------------------------------------------------------------------------------||
 //|| Default
 //||------------------------------------------------------------------------------------------------||
 
@@ -26,9 +32,8 @@ export default function AuthLogout() {
             try {
                   setIsLoading(true);
 
-                  const serv = "";
-                  const res = await fetch(serv+"/auth/logout", {
-                        method: "GET",
+                  const res = await fetch(apiURL("/auth/logout"), {
+                        method: "GET",                        
                         credentials: "include",
                   });
 

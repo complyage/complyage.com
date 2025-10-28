@@ -6,6 +6,12 @@ import React, { useState }                  from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 
 //||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
+
+//||------------------------------------------------------------------------------------------------||
 //|| Default
 //||------------------------------------------------------------------------------------------------||
 
@@ -34,8 +40,9 @@ export default function AuthVerify() {
             try {
                   setLoading(true);
                   const serv = "";
-                  const res = await fetch(serv+"/auth/twofactor", {
+                  const res = await fetch(apiURL("/auth/twofactor"), {
                         method  : "POST",
+                        credentials : "include", 
                         headers : { "Content-Type": "application/x-www-form-urlencoded" },
                         body    : new URLSearchParams(payload).toString(),
                   });

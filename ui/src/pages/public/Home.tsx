@@ -18,7 +18,7 @@ export default function Home() {
 				{/* Video background */}
 				<img
 					className="absolute top-0 left-0 w-full h-full object-cover"
-					src="/vid/take.webp"
+					src="/img/hero/home.webp"
                         />
 
 				{/* Overlay */}

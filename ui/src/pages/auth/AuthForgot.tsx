@@ -5,6 +5,13 @@
 import React, { useState }         from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
+
+//||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
+
 //||------------------------------------------------------------------------------------------------||
 //|| Components
 //||------------------------------------------------------------------------------------------------||
@@ -44,9 +51,9 @@ export default function AuthForgot() {
             };
 
             try {
-                  const serv = import.meta.env.VITE_COMPLYAGE_API_URL || "";
-                  const res = await fetch(serv+"/auth/forgot", {
+                  const res = await fetch(apiURL("/auth/forgot"), {
                         method  : "POST",
+                        credentials : "include",
                         headers : { "Content-Type": "application/x-www-form-urlencoded" },
                         body    : new URLSearchParams(payload).toString(),
                   });

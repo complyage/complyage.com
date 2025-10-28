@@ -1,8 +1,15 @@
 //||------------------------------------------------------------------------------------------------||
 //|| React
 //||------------------------------------------------------------------------------------------------||
+
 import React, { useState }          from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
+//||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Components
@@ -44,9 +51,9 @@ export default function AuthSignup() {
             };
 
             try {
-                  const serv = "";
-                  const res = await fetch(serv+"/auth/signup", {
+                  const res = await fetch(apiURL("/auth/signup"), {
                         method  : "POST",
+                        credentials : "include",
                         headers : { "Content-Type": "application/x-www-form-urlencoded" },
                         body    : new URLSearchParams(payload).toString(),
                   });

@@ -22,6 +22,12 @@ import { useCountryFullName } from "../../hooks/useCountry";
 import { getZoneRequirement } from "../../data/getZoneData";
 
 //||------------------------------------------------------------------------------------------------||
+//|| API
+//||------------------------------------------------------------------------------------------------||
+
+import apiURL                                                 from "../../utils/apiURL";
+
+//||------------------------------------------------------------------------------------------------||
 //|| Interface
 //||------------------------------------------------------------------------------------------------||
 
@@ -71,7 +77,7 @@ export default function EnforcementZones() {
       useEffect(() => {
             const fetchZones = async () => {
                   try {
-                        const response = await fetch("/v1/api/zones");
+                        const response = await fetch(apiURL("/v1/api/zones"));
                         if (!response.ok) throw new Error("Network response was not ok");
 
                         const data = await response.json();
