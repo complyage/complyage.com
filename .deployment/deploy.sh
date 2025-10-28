@@ -80,6 +80,32 @@ echo "[5/8] Starting Docker stack..."
 docker compose -f "$COMPOSE_FILE" up -d
 
 #------------------------------------------------------------------------||
+#-|| [5.5/8] Build and deploy UI
+#------------------------------------------------------------------------||
+
+echo "[5.5/8] Building and deploying UI..."
+
+UI_DIR="$REPO_DIR/ui"
+UI_DIST_DIR="$UI_DIR/dist"
+NGINX_UI_DIR="/var/www/complyage-ui"
+
+if [ -d "$UI_DIR" ]; then
+    echo " → Installing dependencies..."
+    cd "$UI_DIR"
+    npm ci --omit=dev || npm install --omit=dev
+
+    echo " → Building production bundle..."
+    npm run build
+
+    echo " → Copying build output to Nginx web root..."
+    mkdir -p "$NGINX_UI_DIR"
+    rsync -av --delete "$UI_DIST_DIR/" "$NGINX_UI_DIR/"
+else
+    echo " ⚠️ UI directory not found at $UI_DIR — skipping build."
+fi
+
+
+#------------------------------------------------------------------------||
 #-|| [6/8] Apply updated Nginx configuration
 #------------------------------------------------------------------------||
 
