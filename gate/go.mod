@@ -3,7 +3,7 @@ module github.com/complyage/gate
 go 1.24.5
 
 require (
-	github.com/complyage/base v0.0.0-00010101000000-000000000000
+	github.com/complyage/base v0.1.0
 	github.com/joho/godotenv v1.5.1
 	github.com/ralphferrara/aria v0.0.0-20250917054147-6e3e09fbab46
 )
