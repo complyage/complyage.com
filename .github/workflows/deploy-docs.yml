@@ -1,4 +1,4 @@
-name: Deploy Docusaurus Docs
+name: Deploy To Production
 
 on:
   push:
@@ -18,8 +18,11 @@ jobs:
         with:
           node-version: 18
 
-      - run: npm ci
-      - run: npm run build
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Docusaurus site
+        run: npm run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
@@ -30,17 +33,16 @@ jobs:
 
       - name: Notify Deployment Server
         run: |
-          echo "Notifying deployment server..."
-          DEPLOY_URL="http://complyage.com:9090/deploy"
+          echo "🚀 Notifying deployment server..."
           DEPLOY_KEY="${{ secrets.DEPLOY_KEY }}"
+          DEPLOY_URL="https://complyage.com:9090/deploy?check=${DEPLOY_KEY}"
 
-          RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null \
-            -X POST "$DEPLOY_URL" \
-            -H "Content-Type: application/json" \
-            -d "{\"key\": \"$DEPLOY_KEY\", \"project\": \"docs\"}")
+          echo "Calling: $DEPLOY_URL"
+
+          RESPONSE=$(curl -sk -w "%{http_code}" -o /dev/null "$DEPLOY_URL")
 
           if [ "$RESPONSE" != "200" ]; then
-            echo "❌ Deployment failed with HTTP code $RESPONSE"
+            echo "❌ Deployment trigger failed with HTTP code $RESPONSE"
             exit 1
           fi
 
