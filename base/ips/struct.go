@@ -1,6 +1,10 @@
 package ips
 
-import "time"
+import (
+	"time"
+
+	"github.com/complyage/base/db/models"
+)
 
 //||------------------------------------------------------------------------------------------------||
 //|| IP Range entry
@@ -58,10 +62,10 @@ type OptimizedZone struct {
 //||------------------------------------------------------------------------------------------------||
 
 type OptimizedSite struct {
-	Name        string `json:"name"`
-	Logo        string `json:"logo"`
-	Description string `json:"description"`
-	URL         string `json:"url"`
-	Redirect    string `json:"redirect"`
-	Permissions string `json:"permissions"`
+	Name        string             `json:"name"`
+	Logo        string             `json:"logo"`
+	Description string             `json:"description"`
+	URL         string             `json:"url"`
+	Redirect    string             `json:"redirect"`
+	Scopes      []models.SiteScope `json:"permissions"`
 }

@@ -5,11 +5,12 @@ package user
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/ips"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/complyage/base/ips"
 
 	"github.com/ralphferrara/aria/auth/actions"
 	ariaHTTP "github.com/ralphferrara/aria/http"

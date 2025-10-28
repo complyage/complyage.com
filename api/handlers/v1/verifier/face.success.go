@@ -1,16 +1,18 @@
 package verifier
 
 import (
-	"agent/publish"
-	"base/db/abstract"
-	"base/verify"
 	"encoding/json"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/types"
+	"github.com/complyage/base/verify"
+
+	"github.com/complyage/complyagent.com/publish"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 	"github.com/ralphferrara/aria/base/validate"
 )
 
@@ -19,8 +21,8 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type faceVerifyRequest struct {
-	DOB        verify.DOB `json:"dob"`
-	Identifier string     `json:"identifier"`
+	DOB        types.DOB `json:"dob"`
+	Identifier string    `json:"identifier"`
 }
 
 type faceVerifyResponse struct {
@@ -34,7 +36,7 @@ type faceVerifyResponse struct {
 
 func VerifyFaceSuccessHandler(w http.ResponseWriter, r *http.Request) {
 
-	verify.LogInfo("VerifyFaceSuccessHandler")
+	app.Log.Info("Handler: Face Success")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Request
@@ -43,14 +45,6 @@ func VerifyFaceSuccessHandler(w http.ResponseWriter, r *http.Request) {
 	var updateRequest faceVerifyRequest
 	if err := json.NewDecoder(r.Body).Decode(&updateRequest); err != nil {
 		responses.Error(w, http.StatusBadRequest, "Invalid JSON payload: "+err.Error())
-		return
-	}
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check
-	//||------------------------------------------------------------------------------------------------||
-
-	if updateRequest.Identifier == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing identifier")
 		return
 	}
 
@@ -67,48 +61,21 @@ func VerifyFaceSuccessHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch a Session
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
+	verifyRecord, err := verify.CheckLoad(updateRequest.Identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch Verification Record (with account public for decrypt)
-	//||------------------------------------------------------------------------------------------------||
-
-	account, err := abstract.GetAccountByVerificationUUID(updateRequest.Identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusBadRequest, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Session Account
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusBadRequest, "Session does not match account")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification Record matches Account
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], updateRequest.Identifier, account.Private, account.Public)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 
@@ -116,21 +83,19 @@ func VerifyFaceSuccessHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Check Face
 	//||------------------------------------------------------------------------------------------------||
 
-	if verifyRecord.Type != verify.DataTypeFACE {
+	if verifyRecord.Type != types.DataTypeFACE {
 		responses.Error(w, http.StatusBadRequest, "Verification record is not a Face verification")
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| DOB
+	//|| Update the DOB
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord.Encrypted.Data.FACE.DOB = updateRequest.DOB
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Update the Verification Status to Pending Verification
-	//||------------------------------------------------------------------------------------------------||
-
+	verifyData := verifyRecord.Data.FACE
+	verifyData.DOB = updateRequest.DOB
+	verifyRecord.SetDataFACE(verifyData)
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("QUEUED_L1"), "")
 	verifyRecord.UpdateStatusPendingVerification()
 
 	//||------------------------------------------------------------------------------------------------||
@@ -142,13 +107,6 @@ func VerifyFaceSuccessHandler(w http.ResponseWriter, r *http.Request) {
 		responses.Error(w, http.StatusInternalServerError, "Failed to start Face verification: "+insert.Error())
 		return
 	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Save
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("QUEUED_L1"), "")
-	verifyRecord.Save()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Return Success

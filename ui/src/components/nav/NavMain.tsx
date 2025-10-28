@@ -1,22 +1,50 @@
+//||------------------------------------------------------------------------------------------------||
+//|| Import
+//||------------------------------------------------------------------------------------------------||
+
 import React, { useEffect, useState }           from "react";
-import { Link, useLocation }                    from "react-router-dom";
-import LinkQuery          from "../../components/dynamic/LinkQuery";
+import { useLocation }                          from "react-router-dom";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Components
+//||------------------------------------------------------------------------------------------------||
+
+
+import LinkQuery                                from "../../components/dynamic/LinkQuery";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Default Component
+//||------------------------------------------------------------------------------------------------||
 
 export default function NavMain() {
-	const { pathname } = useLocation();
-      const [loggedIn, setLoggedIn] = useState(false);
+      const { pathname }                       = useLocation();
+      const [loggedIn, setLoggedIn]            = useState<boolean | null>(null);
 
-      // Check for session cookie on mount
+      //||------------------------------------------------------------------------------------------------||
+      //|| Check for session cookie on mount
+      //||------------------------------------------------------------------------------------------------||
 
       useEffect(() => {
-            const cookies = document.cookie.split(";").map(c => c.trim());
-            const hasSessionUI = cookies.some(c => c.startsWith("session_ui="));
-            setLoggedIn(hasSessionUI);
-      }, []);      
+            fetch("/auth/quick", { credentials: "include" })
+                  .then(res => setLoggedIn(res.status === 200))
+                  .catch(() => setLoggedIn(false));
+      }, []);
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Helper: active link style
+      //||------------------------------------------------------------------------------------------------||
+
+      const linkClass = (path: string, extra = "") =>
+            `btn btn-ghost text-xl ${pathname === path || pathname.startsWith(path) ? "text-orange-500" : ""} ${extra}`;
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Render
+      //||------------------------------------------------------------------------------------------------||
 
       return (
             <header className="fixed top-0 left-0 right-0 z-50 bg-base-100 shadow-md">
                   <div className="navbar px-6 max-w-7xl mx-auto">
+
                         {/* Logo */}
                         <div className="flex-1">
                               <LinkQuery to="/" className="flex items-center">
@@ -30,24 +58,28 @@ export default function NavMain() {
 
                         {/* Navigation Links */}
                         <div className="flex-none flex gap-4 items-center">
-                              <LinkQuery to="/donate" className={`btn btn-ghost text-xl ${pathname === "/donate" ? "text-orange-500" : ""}`}>Donate</LinkQuery>
-                              <LinkQuery to="/about" className={`btn btn-ghost text-xl ${pathname === "/about" ? "text-orange-500" : ""}`}>About</LinkQuery>
-                              <LinkQuery to="/vendors" className={`btn btn-ghost text-xl ${pathname === "/vendors" ? "text-orange-500" : ""}`}>Vendors</LinkQuery>
-                              <LinkQuery to="/gilead" className={`btn btn-ghost text-xl ${pathname === "/gilead" ? "text-orange-500" : ""}`}>Enforcement</LinkQuery>
-                              <LinkQuery to="/pricing" className={`btn btn-ghost text-xl ${pathname === "/pricing" ? "text-orange-500" : ""}`}>Pricing</LinkQuery>
 
-                              {/* Conditional Links */}
-                              {loggedIn ? (
-                                    <>
-                                          <LinkQuery to="/members" className={`btn btn-ghost text-xl ${pathname.startsWith("/members") ? "text-orange-500" : ""}`}>Members</LinkQuery>
-                                          <LinkQuery to="/logout" className="btn btn-secondary">Logout</LinkQuery>
-                                    </>
-                              ) : (
-                                    <>
-                                          <LinkQuery to="/login" className={`btn btn-ghost text-xl ${location.pathname === "/login" ? "text-orange-500" : ""}`}>Login</LinkQuery>
-                                          <LinkQuery to="/signup" className={`btn btn-primary text-xl ${pathname === "/signup" ? "text-orange-500" : ""}`}>Sign Up</LinkQuery>
-                                    </>
-                              )}
+                              <LinkQuery to="/donate"   className={linkClass("/donate")}>Donate</LinkQuery>
+                              <LinkQuery to="/about"    className={linkClass("/about")}>About</LinkQuery>
+                              <LinkQuery to="/vendors"  className={linkClass("/vendors")}>Vendors</LinkQuery>
+                              <LinkQuery to="/gilead"   className={linkClass("/gilead")}>Enforcement</LinkQuery>
+                              <LinkQuery to="/pricing"  className={linkClass("/pricing")}>Pricing</LinkQuery>
+
+                              {/* Auth Links Area (reserved space) */}
+                              <div className="min-w-[200px] flex justify-end transition-opacity duration-300 ease-in-out"
+                                   style={{ opacity: loggedIn === null ? 0 : 1 }}>
+                                    { loggedIn ? (
+                                          <>
+                                                <LinkQuery to="/members" className={linkClass("/members")}>Members</LinkQuery>
+                                                <LinkQuery to="/logout"  className="btn btn-primary btn=md ml-4">Logout</LinkQuery>
+                                          </>
+                                    ) : (
+                                          <>
+                                                <LinkQuery to="/login"  className={linkClass("/login")}>Login</LinkQuery>
+                                                <LinkQuery to="/signup" className={`btn btn-secondary ml-4 btn-md ${pathname === "/signup" ? "text-orange-500" : ""}`}>Sign Up</LinkQuery>
+                                          </>
+                                    )}
+                              </div>
                         </div>
                   </div>
             </header>

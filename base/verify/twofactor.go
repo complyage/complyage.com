@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/complyage/base/types"
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/base/random"
 )
@@ -27,7 +28,7 @@ func (v *Verification) TwoFactorInit() error {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check
 	//||------------------------------------------------------------------------------------------------||
-	if v.Type != DataTypeCRCD && v.Type != DataTypePHNE && v.Type != DataTypeADDR && v.Type != DataTypeMAIL {
+	if v.Type != types.DataTypeCRCD && v.Type != types.DataTypePHNE && v.Type != types.DataTypeADDR && v.Type != types.DataTypeMAIL {
 		fmt.Println("TwoFactorInit: Not a type that requires two-factor:", v.Type)
 		return nil
 	}
@@ -35,7 +36,7 @@ func (v *Verification) TwoFactorInit() error {
 	//|| Expires Time
 	//||------------------------------------------------------------------------------------------------||
 	expirMin := 15
-	if v.Type == DataTypeADDR {
+	if v.Type == types.DataTypeADDR {
 		expirMin = 60 * 60 * 24 * 30
 	}
 	//||------------------------------------------------------------------------------------------------||
@@ -62,11 +63,11 @@ func (v *Verification) TwoFactorInit() error {
 //||------------------------------------------------------------------------------------------------||
 
 func (v *Verification) TwoFactorVerify(code string) error {
-	LogInfo("TwoFactor Verify Attempt")
+	app.Log.Data("TwoFactor Verify Attempt")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check
 	//||------------------------------------------------------------------------------------------------||
-	if v.Type != DataTypeCRCD && v.Type != DataTypePHNE && v.Type != DataTypeADDR && v.Type != DataTypeMAIL {
+	if v.Type != types.DataTypeCRCD && v.Type != types.DataTypePHNE && v.Type != types.DataTypeADDR && v.Type != types.DataTypeMAIL {
 		return nil
 	}
 	//||------------------------------------------------------------------------------------------------||
@@ -75,32 +76,28 @@ func (v *Verification) TwoFactorVerify(code string) error {
 	expirationTime := v.TwoFactor.Expiration
 	if !expirationTime.IsZero() && time.Now().UTC().After(expirationTime) {
 		v.UpdateStatusExpired()
-		return fmt.Errorf("verification code expired")
+		return app.Err("Verify").Error("TWOFACTOR_EXPIRED")
 	}
 	//||------------------------------------------------------------------------------------------------||
 	//|| Attempts
 	//||------------------------------------------------------------------------------------------------||
 	if v.TwoFactor.Attempts > 5 {
 		v.UpdateStatusReject("TWOFACTOR", app.Err("verify").Get("2FA_TOO_MANY"))
-		return fmt.Errorf("too many attempts")
+		return app.Err("Verify").Error("TWOFACTOR_TOOMANY")
 	}
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check Code
 	//||------------------------------------------------------------------------------------------------||
 	if v.TwoFactor.Code == "" {
-		return fmt.Errorf("twoFactor code was not set")
+		return app.Err("Verify").Error("TWOFACTOR_NOTSET")
 	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Check Code
+	//||------------------------------------------------------------------------------------------------||
 	if v.TwoFactor.Code != code {
 		v.TwoFactor.Attempts = v.TwoFactor.Attempts + 1
 		v.Save()
-		return fmt.Errorf("invalid code")
-	}
-	//||------------------------------------------------------------------------------------------------||
-	//|| Success - Update Status
-	//||------------------------------------------------------------------------------------------------||
-	upErr := v.UpdateStatusVerified("TWOFACTOR")
-	if upErr != nil {
-		return upErr
+		return app.Err("Verify").Error("TWOFACTOR_INVALID")
 	}
 	//||------------------------------------------------------------------------------------------------||
 	//|| Done

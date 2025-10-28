@@ -1,8 +1,9 @@
 package abstract
 
 import (
-	"base/db/models"
 	"errors"
+
+	"github.com/complyage/base/db/models"
 
 	"github.com/ralphferrara/aria/app"
 )

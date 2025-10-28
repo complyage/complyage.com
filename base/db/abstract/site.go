@@ -5,9 +5,10 @@ package abstract
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/models"
-	"base/oauth"
 	"fmt"
+
+	"github.com/complyage/base/db/models"
+	"github.com/complyage/base/oauth"
 
 	"github.com/ralphferrara/aria/app"
 )
@@ -16,15 +17,16 @@ import (
 //|| Helper: OAuthSites
 //||------------------------------------------------------------------------------------------------||
 
-func GetSiteByPublic(publicKey string) (models.Site, error) {
+func GetSiteByClientId(clientId string) (models.Site, error) {
 	var s models.Site
-	if err := app.SQLDB["main"].DB.
-		Where("site_public = ?", publicKey).
+	err := app.SQLDB["main"].DB.
+		Where("site_client_id = ?", clientId).
 		Where("site_status NOT IN ('RMVD','BNND')").
-		First(&s).Error; err != nil {
-		return s, err
+		First(&s).Error
+	if err == nil {
+		return s, nil
 	}
-	return models.Site{}, nil
+	return models.Site{}, err
 }
 
 //||------------------------------------------------------------------------------------------------||

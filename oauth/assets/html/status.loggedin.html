@@ -1,0 +1,19 @@
+<div class="flex flex-col items-center justify-center text-center p-8 rounded-xl w-4/5 bg-gray-200 space-y-4 mb-10">
+      <p class="text-xl font-semibold text-gray-800">
+            You are currently logged in as
+      </p>
+      <span class="username text-2xl font-bold text-orange-400">
+            {{USERNAME}}
+      </span>
+
+      <a href="{{VITE_COMPLYAGE_UI_URL}}/members" target="_blank"
+            class="inline-block text-2xl no-underline cursor-pointer bg-orange-400 text-white py-4 px-10 rounded-lg font-bold transition transform hover:scale-105 shadow-lg">
+            {{::DEFAULT:MY_ACCOUNT}}
+      </a>
+
+      <a onClick="openOverlay('{{VITE_COMPLYAGE_UI_URL}}/overlay/logout')"
+            class="inline-block text-lg no-underline cursor-pointer text-gray-600 py-2 font-bold  transition transform hover:scale-105">
+            {{::DEFAULT:LOGOUT}}
+      </a>
+
+</div>

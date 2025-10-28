@@ -1,26 +1,51 @@
 package templates
 
-//||------------------------------------------------------------------------------------------------||
-//|| Import
-//||------------------------------------------------------------------------------------------------||
-
-import (
-	"github.com/ralphferrara/aria/base/template"
-)
+import "github.com/ralphferrara/aria/base/template"
 
 //||------------------------------------------------------------------------------------------------||
-//|| Import
+//|| Init
 //||------------------------------------------------------------------------------------------------||
 
-func InitTemplates() {
+func init() {
 	//||------------------------------------------------------------------------------------------------||
-	//|| Register Templates
+	//|| Main
 	//||------------------------------------------------------------------------------------------------||
-	template.Register("oauth", "templates/html/oauth.html")
-	template.Register("private", "templates/html/private.html")
-	template.Register("private_locked", "templates/html/private.locked.html")
-	template.Register("private_unlocked", "templates/html/private.unlocked.html")
-	template.Register("private_key", "templates/html/private.key.html")
-	template.Register("private_bip39", "templates/html/private.bip39.html")
-	template.Register("permission", "templates/html/permission.html")
+	template.Register("oauth", "./assets/html/oauth.html")
+	template.Register("error", "./assets/html/error.html")
+	template.Register("verified", "./assets/html/verified.html")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Main
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("sub.age", "./assets/html/sub.age.html")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Permissions
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("sub.permission", "./assets/html/sub.permission.html")
+	template.Register("sub.permission.age", "./assets/html/sub.permission.age.html")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Badge/Button
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("verify.badge", "./assets/html/verify.badge.html")
+	template.Register("verify.button", "./assets/html/verify.button.html")
+	template.Register("verify.login", "./assets/html/verify.login.html")
+	template.Register("verify.use", "./assets/html/verify.use.html")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Login Status
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("status.loggedin", "./assets/html/status.loggedin.html")
+	template.Register("status.loggedout", "./assets/html/status.loggedout.html")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Span
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("span.age.methods", "./assets/html/span.age.methods.html")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Footer
+	//||------------------------------------------------------------------------------------------------||
+	template.Register("footer.notrequired", "./assets/html/footer.notrequired.html")
+	template.Register("footer.loggedout", "./assets/html/footer.loggedout.html")
+	template.Register("footer.requires", "./assets/html/footer.requires.html")
+	template.Register("footer.notmet", "./assets/html/footer.notmet.html")
+	template.Register("footer.private", "./assets/html/footer.private.html")
+	template.Register("footer.verified", "./assets/html/footer.verified.html")
+	template.Register("footer.verified.age", "./assets/html/footer.verified.age.html")
 }

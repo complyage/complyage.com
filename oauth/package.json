@@ -1,0 +1,17 @@
+{
+      "name"      : "oauth",
+      "version"   : "1.0.0",
+      "main"      : "index.js",
+      "scripts"   : {
+            "tailwind:watch"  : "tailwindcss -i ./assets/css/tailwind.css -o ./public/css/output.css --watch --verbose --content \"./assets/html/**/*.*\" --content \"./**/*.go\"",
+            "tailwind"        : "tailwindcss -i ./assets/css/tailwind.css -o ./public/css/output.css --verbose --minify --content \"./assets/html/**/*.*\" --content \"./**/*.go\""
+      },
+      "keywords"              : [],
+      "author"                : "",
+      "license"               : "ISC",
+      "description"           : "",
+      "devDependencies"       : {
+            "@tailwindcss/cli"      : "^4.1.13",
+            "tailwindcss"           : "^4.1.13"
+      }
+}

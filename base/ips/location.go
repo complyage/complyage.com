@@ -5,11 +5,11 @@ package ips
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/abstract"
 	"errors"
 	"strings"
 
-	"github.com/ralphferrara/aria/app"
+	"github.com/complyage/base/db/abstract"
+
 	"github.com/ralphferrara/aria/base/convert"
 )
 
@@ -32,7 +32,7 @@ func GetLocationByIP(ipAddress string) (Location, error) {
 	//|| Dev Mode: DB Lookup
 	//||------------------------------------------------------------------------------------------------||
 
-	if app.Config.App.Env != "production" {
+	if IPRangesLoaded == false {
 		city, state, country, lat, long, err := abstract.FetchIPFromDatabase(ipNum)
 		if err != nil {
 			return Location{}, err

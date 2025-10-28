@@ -5,19 +5,24 @@ package sites
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/models"
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"net/http"
-	"os"
 	"strconv"
+
+	"github.com/complyage/base/db/models"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/auth/actions"
 )
+
+//||------------------------------------------------------------------------------------------------||
+//|| Response
+//||------------------------------------------------------------------------------------------------||
+
+type siteLoadResponse struct {
+	Site models.Site `json:"site"`
+}
 
 //||------------------------------------------------------------------------------------------------||
 //|| Handler
@@ -29,19 +34,9 @@ func SitesLoadHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Get Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	_, _, session, err := actions.LoadSessionAccount(r)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, "No session cookie")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session Record
-	//||------------------------------------------------------------------------------------------------||
-
-	session, err := actions.FetchSession(cookie.Value)
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
 		return
 	}
 
@@ -66,14 +61,13 @@ func SitesLoadHandler(w http.ResponseWriter, r *http.Request) {
 	//||------------------------------------------------------------------------------------------------||
 
 	var site models.Site
-	if err := app.SQLDB["main"].DB.
+	err = app.SQLDB["main"].DB.
 		Where("id_site = ? AND fid_account = ?", id, session.ID).
 		Where("site_status NOT IN ('RMVD', 'BNND')").
-		First(&site).Error; err != nil {
-		responses.Success(w, http.StatusOK, map[string]any{
-			"success": false,
-			"site":    nil,
-		})
+		First(&site).Error
+
+	if err != nil {
+		responses.Error(w, http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -81,46 +75,16 @@ func SitesLoadHandler(w http.ResponseWriter, r *http.Request) {
 	//|| Create Logo Hash
 	//||------------------------------------------------------------------------------------------------||
 
-	host := os.Getenv("VITE_COMPLYAGE_MINIO_URL")
-	bucket := os.Getenv("VITE_MINIO_BUCKET")
-	hashSecret := os.Getenv("MINIO_HASH")
-	hashInput := fmt.Sprintf("%s%d%s", hashSecret, site.ID, hashSecret)
-	hashBytes := sha256.Sum256([]byte(hashInput))
-	hashHex := fmt.Sprintf("%d_%s", site.ID, hex.EncodeToString(hashBytes[:]))
-	logoURL := fmt.Sprintf("%s/%s/sites/logos/%s.webp", host, bucket, hashHex)
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check if Logo exists
-	//||------------------------------------------------------------------------------------------------||
-
-	req, err := http.NewRequest("HEAD", logoURL, nil)
-	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to construct request")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Definitely not the best way to do this, but feeling lazy
-	//||------------------------------------------------------------------------------------------------||
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		responses.Success(w, http.StatusOK, map[string]any{
-			"site":    site,
-			"hash":    hashHex,
-			"missing": true,
-		})
-		return
+	checkLogo, logoErr := app.Storages["sites"].Get(site.Logo)
+	if logoErr != nil || checkLogo == nil || len(checkLogo) == 0 {
+		site.Logo = ""
 	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Return Site
 	//||------------------------------------------------------------------------------------------------||
 
-	responses.Success(w, http.StatusOK, map[string]any{
-		"site":    site,
-		"hash":    hashHex,
-		"missing": false,
+	responses.Success(w, http.StatusOK, siteLoadResponse{
+		Site: site,
 	})
 }

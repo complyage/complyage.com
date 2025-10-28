@@ -15,7 +15,6 @@ import { ModelSite }                from "../../interfaces/models/model.sites";
 //|| Components
 //||------------------------------------------------------------------------------------------------||
 
-import MembersSitesContent          from "../../components/members/MembersSitesContent";
 import MembersLayout                from "../../layouts/MembersLayout";
 import { ChevronRightIcon }         from "lucide-react";
 
@@ -24,7 +23,14 @@ import { ChevronRightIcon }         from "lucide-react";
 //||------------------------------------------------------------------------------------------------||
 
 import SiteSections                 from "../../components/nav/SiteSections";
-import type { SectionTypes }        from "../../interfaces/types.sitesections";
+import type { SectionTypes }        from "../../interfaces/models/model.sites";
+
+//||------------------------------------------------------------------------------------------------||
+//|| Status
+//||------------------------------------------------------------------------------------------------||
+
+import { getAccountStatus }                                 from "../../data/getAccountData";      
+import { AccountStatusTypes }                               from "../../interfaces/models/model.account";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Site Components
@@ -33,9 +39,10 @@ import type { SectionTypes }        from "../../interfaces/types.sitesections";
 import BasicDataSection             from "./sites/Sites.BasicData";
 import ZonesEnforcementSection      from "./sites/Sites.Zones";
 import WebsiteManagerSection        from "./sites/Sites.Manager";
-import IntegrationSection           from "./sites/Sites.Integration";
 import CustomAgeGate                from "./sites/Sites.AgeGate";
 import OAuthSettingsSection         from "./sites/Sites.OAuth";
+import SiteAgentSection             from "./sites/Sites.Agent";
+import SiteTestingSection           from "./sites/Sites.Testing";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Default
@@ -52,6 +59,8 @@ export default function Sites() {
       const [deleting, setDeleting]       = useState<boolean>(false);
       const [cacheBust, setCacheBust]     = useState<string>(Date.now().toString());
       const [siteSection, setSiteSection] = useState<SectionTypes>("basic");      
+      const [testMode, setTestMode]       = useState(site?.testMode || false);
+
       //||------------------------------------------------------------------------------------------------||
       //|| Load Site
       //||------------------------------------------------------------------------------------------------||
@@ -67,8 +76,6 @@ export default function Sites() {
             }
             const json = await newSite.json();
             const siteTemp = json.data.site;
-            siteTemp.logoHash = json.data.hash;
-            siteTemp.logoMissing = json.data.missing || false;
             if (typeof siteTemp.zones  === "string") try {
                   siteTemp.zones = JSON.parse(siteTemp.zones);
             } catch (e) {
@@ -108,6 +115,7 @@ export default function Sites() {
       //||------------------------------------------------------------------------------------------------||
 
       const copySite = async () => {
+            if (site === null) return alert("No site selected to copy");
             if (changed) return alert("You must save your changes before copying");
             if (!confirm("Are you sure you want to copy this site?")) return;
             const response = await fetch("/v1/api/sites/copy?id=" + site.id, { method: "GET", credentials: "include" });
@@ -129,42 +137,18 @@ export default function Sites() {
       //|| Update Field
       //||------------------------------------------------------------------------------------------------||
 
-      const updateField = <K extends keyof Site>(field: K, value: Site[K]) => {
+      const updateField = (field: string, value: any) => {
             if (!site) return;
-            setSite({ ...site, [field]: value, } as Site); 
-            setChanged(true);
+            setSite({ ...site, [field]: value, } as ModelSite); 
+            if (field !== "logo") setChanged(true);
       };
-    
-
+          
       //||------------------------------------------------------------------------------------------------||
       //|| Update Field
       //||------------------------------------------------------------------------------------------------||
 
       const updateSite = async () => {
 		if (!site) return;
-
-            //||------------------------------------------------------------------------------------------------||
-		//|| Update Logo
-		//||------------------------------------------------------------------------------------------------||
-
-            if (site.logo && site.logo instanceof File) {
-			const formData = new FormData();
-			formData.append("image", site.logo);
-
-                  const res = await fetch("/v1/api/sites/upload", {
-				method            : "POST",
-				body              : formData,
-				credentials       : "include",
-			});
-
-			const result = await res.json();
-			if (!result.success) {
-				alert("Failed to upload logo");
-				return;
-			}
-
-			site.logo = result.data.object; // Now it's a string
-		}
 
 		//||------------------------------------------------------------------------------------------------||
 		//|| Update Site
@@ -220,6 +204,15 @@ export default function Sites() {
 
 
       //||------------------------------------------------------------------------------------------------||
+      //|| Toggle TEST MODE
+      //||------------------------------------------------------------------------------------------------||
+
+      const toggleTestMode = (toTestMode: boolean) => {
+            updateField("testMode", toTestMode);
+            setTestMode(toTestMode);
+      }      
+
+      //||------------------------------------------------------------------------------------------------||
       //|| JSX 
       //||------------------------------------------------------------------------------------------------||
 
@@ -238,14 +231,55 @@ export default function Sites() {
                               <SiteSections value={ siteSection } setValue={ (value : SectionTypes) => { setSiteSection(value); } } />
                               <div className="bg-transparent w-full justify-center p-5 rounded-lg rounded-t-none">
 
-                              {siteSection === "basic" && (<BasicDataSection data={site} updateField={updateField} cacheBust={cacheBust} key={ `siteBasic-${site?.id || 0}` } />) }
-                              {siteSection === "zones" && (<ZonesEnforcementSection data={site} updateField={updateField} key={ `sitezZone-${site?.id || 0}` } /> )}
-                              { siteSection === "integration" && (<IntegrationSection data={site} updateField={updateField} key={ `siteIntegration-${site?.id || 0}` } /> ) }
-                              { siteSection === "gate" && (<CustomAgeGate data={site} updateField={updateField} key={ `customGate-${site?.id || 0}` } /> ) }                                                            
+                                    <div className="flex flex-wrap items-end gap-6 justify-top-center mb-4">
+
+                                          <div className="flex-1 min-w-[200px] text-center">
+                                                <label htmlFor="siteTestmode" className="block label pb-1">Test Mode</label>
+                                                {testMode ? (
+                                                      <button
+                                                            onClick={() => toggleTestMode(false)}
+                                                            className="btn btn-secondary cursor-pointer"
+                                                      >
+                                                            In Production
+                                                      </button>
+                                                ) : (
+                                                      <button
+                                                            onClick={() => toggleTestMode(true)}
+                                                            className="btn btn-primary cursor-pointer"
+                                                      >
+                                                            In Test Mode
+                                                      </button>
+                                                )}
+                                          </div>
+
+                                          <div className="flex-1 min-w-[400px] text-center">
+                                                <label htmlFor="clientId" className="block label pb-1">Client ID</label>
+                                                <input id="clientId" className="input text-center inline-block text-gray-200" readOnly defaultValue={site?.clientId} />
+                                          </div>                                    
+
+                                          <div className="flex-1 min-w-[200px] text-center">
+                                                <label htmlFor="siteStatus" className="block label pb-1">Site Status</label>
+                                                <span id="siteStatus" className="inline-block bg-black/50 px-4 py-1 text-yellow-300">
+                                                      {getAccountStatus(site?.status as AccountStatusTypes )}
+                                                </span>
+                                          </div>
+
+                                    </div>
+
+
+                              { siteSection === "basic" && (<BasicDataSection data={site} updateField={updateField} cacheBust={cacheBust} key={ `siteBasic-${site?.id || 0}` } />) }
+                              { siteSection === "gate" && (
+                                    <>
+                                    <CustomAgeGate data={site} updateField={updateField} key={ `customGate-${site?.id || 0}` } />
+                                    <ZonesEnforcementSection data={site} updateField={updateField} key={ `sitezZone-${site?.id || 0}` } /> 
+                                    </>
+                              )}
+                              { siteSection === "agent" && (<SiteAgentSection data={site} updateField={updateField} key={ `siteOAuth-${site?.id || 0}` } /> ) }
                               { siteSection === "oauth" && (<OAuthSettingsSection data={site} updateField={updateField} key={ `siteOAuth-${site?.id || 0}` } /> ) }
+                              { siteSection === "testing" && (<SiteTestingSection data={site} key={ `siteTesting-${site?.id || 0}` } /> ) }
             
                               {/* Delete */}
-                              {siteSection === "basic" && site && (
+                              { siteSection === "basic" && site && (
                                     <div className="w-full bg-base-100 opacity-40 hover:opacity-80 bg-shadow-lg rounded-lg p-8 mb-10">
                                           { !deleting && ( 
                                                 <>

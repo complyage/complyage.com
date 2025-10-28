@@ -1,7 +1,7 @@
 package ips
 
 import (
-	"base/db/models"
+	"github.com/complyage/base/db/models"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -15,7 +15,7 @@ func OptimizeSite(site models.Site) OptimizedSite {
 		Description: site.Description,
 		URL:         site.URL,
 		Redirect:    site.Redirect,
-		Permissions: site.Permissions,
+		Scopes:      site.Scopes,
 	}
 }
 

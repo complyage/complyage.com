@@ -1,15 +1,16 @@
 package verifier
 
 import (
-	"base/db/abstract"
-	"base/verify"
 	"fmt"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/types"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -19,7 +20,7 @@ import (
 type codeLoadResponse struct {
 	Identifier string            `json:"identifier"`
 	Status     verify.StatusType `json:"status"`
-	Type       verify.DataType   `json:"type"`
+	Type       types.DataType    `json:"type"`
 	Details    string            `json:"details"`
 	Message    string            `json:"message"`
 }
@@ -29,6 +30,8 @@ type codeLoadResponse struct {
 //||------------------------------------------------------------------------------------------------||
 
 func VerificationCodeLoad(w http.ResponseWriter, r *http.Request) {
+
+	app.Log.Info("Handler: Code Load")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get Params
@@ -40,48 +43,21 @@ func VerificationCodeLoad(w http.ResponseWriter, r *http.Request) {
 	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch a Session
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
+	verifyRecord, err := verify.CheckLoad(identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch Verification Record (with account public for decrypt)
-	//||------------------------------------------------------------------------------------------------||
-
-	account, err := abstract.GetAccountByVerificationUUID(identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusNotFound, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Session Account
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusUnauthorized, "Session does not match account")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification Record matches Account
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
-	if err != nil {
-		responses.Error(w, http.StatusNotFound, "Verification record not found."+err.Error())
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 
@@ -89,7 +65,7 @@ func VerificationCodeLoad(w http.ResponseWriter, r *http.Request) {
 	//|| Load
 	//||------------------------------------------------------------------------------------------------||
 
-	fmt.Println("VerificationCodeLoad: Loaded verification", verifyRecord.UUID, "Code:", verifyRecord.TwoFactor.Code)
+	app.Log.Data(fmt.Sprintf("2FA Code Check : %s - %s [%s]", verifyRecord.Type.String(), verifyRecord.UUID, verifyRecord.TwoFactor.Code))
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Success

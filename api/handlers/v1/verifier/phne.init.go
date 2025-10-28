@@ -5,18 +5,21 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"api/send"
-	"base/verify"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/send"
+	"github.com/complyage/base/types"
+
+	"github.com/complyage/base/verify"
+
 	"github.com/ralphferrara/aria/locale"
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -39,21 +42,7 @@ type handlerResponse struct {
 
 func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Session Cookie
-	//||------------------------------------------------------------------------------------------------||
-
-	cookie, err := r.Cookie("session")
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
-		return
-	}
-
-	session, err := actions.FetchSession(cookie.Value)
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
+	app.Log.Info("Handler: Phone Init")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse JSON
@@ -76,26 +65,30 @@ func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Verification
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Create(verify.DataTypePHNE, session.ID, app.Storages["verifications"], app.SQLDB["main"], session.Private, session.Public)
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Failed to initialize verification: "+err.Error())
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Verification Record matches Account
+	//||------------------------------------------------------------------------------------------------||
+
+	verifyRecord := verify.Create(types.DataTypePHNE, account)
+	verifyRecord.Save()
+	verifyRecord.DatabaseInsert()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| We are in progress
 	//||------------------------------------------------------------------------------------------------||
 
 	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("STATUS_CHANGE"), verifyRecord.Status.Description())
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Send the Data
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord.SetDataPhone(verify.PhoneNumber{CountryCode: req.CountryCode, Number: req.Phone})
+	verifyRecord.SetDataPhone(types.PhoneNumber{CountryCode: req.CountryCode, Number: req.Phone})
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Send the verification SMS
@@ -107,13 +100,13 @@ func PhoneVerifyInitHandler(w http.ResponseWriter, r *http.Request) {
 		responses.Error(w, http.StatusInternalServerError, "Failed to send verification SMS")
 		return
 	}
-	fmt.Println("Verification SMS sent successfully:", bodyTxt, verifyRecord.TwoFactor.Code)
-	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("SENT_SMS"), verifyRecord.Status.Description())
+	app.Log.Data("Verification SMS sent successfully:", bodyTxt, verifyRecord.TwoFactor.Code)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Prepare Response
 	//||------------------------------------------------------------------------------------------------||
 
+	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("SENT_SMS"), verifyRecord.Status.Description())
 	verifyRecord.UpdateStatusPendingVerification()
 
 	//||------------------------------------------------------------------------------------------------||

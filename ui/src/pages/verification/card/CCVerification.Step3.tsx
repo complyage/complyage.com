@@ -12,6 +12,12 @@
       import { CheckCircle, AlertCircle }                  from "lucide-react";
 
       //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
+
+      //||------------------------------------------------------------------------------------------------||
       //|| Props
       //||------------------------------------------------------------------------------------------------||
 
@@ -30,6 +36,12 @@
       export default function CCVerificationStep3({ process, updateProcess }: CCStepProps) {
 
             //||------------------------------------------------------------------------------------------------||
+            //|| Navigate
+            //||------------------------------------------------------------------------------------------------||
+
+            const navigate                     = useOverlayNavigate();  
+
+            //||------------------------------------------------------------------------------------------------||
             //|| State
             //||------------------------------------------------------------------------------------------------||
 
@@ -46,7 +58,7 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-			<div className="max-w-2xl mx-auto py-8 px-4">
+			<div className="max-w-2xl mx-auto pt-2 px-4">
 				<div className="flex flex-col items-center mb-8">
 					<CheckCircle className="w-14 h-14 text-green-400 mb-3" />
 					<div className="text-2xl font-bold text-green-300 mb-1">Card charged successfully!</div>
@@ -99,7 +111,7 @@
 				</div>
 				<div className="flex flex-col items-center">
 					<button
-						onClick={() => { window.location.href=`/verification/check?identifier=${process.verificationUUID}`} }
+						onClick={() => { navigate(`/verification/check?identifier=${process.verificationUUID}`)} }
 						className="w-full md:w-2/3 text-lg font-bold py-4 px-8 bg-gradient-to-tr from-yellow-400 to-orange-500 text-black rounded-2xl shadow-lg hover:from-yellow-300 hover:to-orange-400 transition-all">
 						Enter My Code
 					</button>

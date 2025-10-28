@@ -24,11 +24,25 @@ import Exit                   from './pages/public/Exit'
 //|| Auth
 //||------------------------------------------------------------------------------------------------||
 
+import Private                from './pages/public/Private'
 import Forgot                 from './pages/public/Forgot'
 import Signup                 from './pages/public/Signup'
-import TwoFactorVerify        from './pages/public/TwoFactorVerify'
-import SignupComplete         from './pages/public/SignupComplete'
+import Verify                 from './pages/public/Verify'
+import Complete               from './pages/public/Complete'
 import Login                  from './pages/public/Login'
+import Logout                 from './pages/public/Logout'
+
+//||------------------------------------------------------------------------------------------------||
+//|| Auth Overlay 
+//||------------------------------------------------------------------------------------------------||
+
+import OverlayForgot                 from './pages/overlay/Forgot'
+import OverlaySignup                 from './pages/overlay/Signup'
+import OverlayVerify                 from './pages/overlay/Verify'
+import OverlayComplete               from './pages/overlay/Complete'
+import OverlayLogin                  from './pages/overlay/Login'
+import OverlayLogout                 from './pages/overlay/Logout'
+import OverlayPrivate                from './pages/overlay/Private'
 
 //||------------------------------------------------------------------------------------------------||
 //|| Private
@@ -40,7 +54,6 @@ import Identity               from './pages/members/Identity'
 import Shared                 from './pages/members/Shared'
 import Settings               from './pages/members/Settings'
 import Verification           from './pages/members/Verification'
-import Logout                 from './pages/members/Logout'
 import VPNs                   from './pages/members/VPNs'
 import Quit                   from './pages/members/Quit'
 
@@ -97,18 +110,26 @@ export default function App() {
                   <Route path="/terms" element={<TOS />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/contact" element={<Contact />} />
-
-
-			<Route path="/signup" element={<Signup />} />
-                  <Route path="/forgot" element={<Forgot />} />
 			<Route path="/gilead" element={<EnforcementZones />} />
-			<Route path="/verify" element={<TwoFactorVerify />} />
-			<Route path="/complete" element={<SignupComplete />} />
+
+			<Route path="/overlay/private" element={<OverlayPrivate />} />
+                  <Route path="/overlay/complete" element={<OverlayComplete />} />
+                  <Route path="/overlay/forgot" element={<OverlayForgot />} />
+                  <Route path="/overlay/login" element={<OverlayLogin />} />
+                  <Route path="/overlay/logout" element={<OverlayLogout />} />
+                  <Route path="/overlay/signup" element={<OverlaySignup />} />
+                  <Route path="/overlay/verify" element={<OverlayVerify />} />
+
+			<Route path="/private" element={<Private />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot" element={<Forgot />} />
+			<Route path="/complete" element={<Complete />} />
 			<Route path="/login" element={<Login />} />
 			<Route path="/logout" element={<Logout />} />
-			<Route path="/exit" element={<Exit />} />
-                  
+                  <Route path="/verify" element={<Verify />} />
 
+
+			<Route path="/exit" element={<Exit />} />
 			<Route path="/members" element={<Dashboard />} />
 			<Route path="/members/sites" element={<Sites />} />
 			<Route path="/members/settings" element={<Settings />} />
@@ -118,16 +139,24 @@ export default function App() {
                   <Route path="/members/vpns" element={<VPNs />} />                  
 			<Route path="/members/quit" element={<Quit />} />
 
+			
                   <Route path="/verification/init" element={<VerificationInit />} />
+                  <Route path="/verification/card" element={<CCVerification />} />
                   <Route path="/verification/check" element={<VerificationCheck />} />
-                  <Route path="/verification/status" element={<VerificationStatus />} />
-                  
+                  <Route path="/verification/status" element={<VerificationStatus />} />                  
                   <Route path="/verification/id" element={<IDVerification />} />
                   <Route path="/verification/face" element={<FaceVerification />} />
-                  <Route path="/verification/card" element={<CCVerification />} />
                   <Route path="/verification/phone" element={<PhoneVerification />} />
                   <Route path="/verification/address" element={<AddressVerification />} />
                   
+                  <Route path="/overlay/verification/address"  element={<AddressVerification overlay={true} />} />
+                  <Route path="/overlay/verification/init"     element={<VerificationInit overlay={true} />} />
+                  <Route path="/overlay/verification/card"     element={<CCVerification overlay={true} />} />
+                  <Route path="/overlay/verification/check"    element={<VerificationCheck overlay={true} />} />
+                  <Route path="/overlay/verification/id"       element={<IDVerification overlay={true} />} />
+                  <Route path="/overlay/verification/phone"    element={<PhoneVerification overlay={true} />} />
+                  <Route path="/overlay/verification/status"   element={<VerificationStatus overlay={true} />} />                                    
+                  <Route path="/overlay/verification/face"     element={<FaceVerification overlay={true} />} />
 
                   <Route path="/admin" element={<AdminDashboard />} />
 		</Routes>

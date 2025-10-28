@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ant Media Broadcast</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    video {
+      width: 480px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #000;
+    }
+    #status {
+      margin-top: 8px;
+      color: #444;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🎙️ Broadcast → <code>WebRTCApp / stream1</code></h2>
+  <video id="localVideo" autoplay muted playsinline></video>
+  <p id="status">Status: boot</p>
+
+  <script type="module">
+    import { WebRTCAdaptor } from "https://esm.sh/@antmedia/webrtc_adaptor";
+
+    const APP_WS   = "wss://access.chatrtc.com:5443/WebRTCApp/websocket";
+    const STREAMID = "stream1";
+    const videoEl  = document.getElementById("localVideo");
+    const statusEl = document.getElementById("status");
+
+    function setStatus(msg) {
+      console.log("🛰️", msg);
+      statusEl.textContent = "Status: " + msg;
+    }
+
+    function getSilentAudioTrack() {
+      const ctx = new AudioContext();
+      const dest = ctx.createMediaStreamDestination();
+      return dest.stream.getAudioTracks()[0];  // 🔇 Truly silent
+    }
+
+    async function init() {
+      let stream = null;
+      let hasAudio = false;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 360 },
+            frameRate: { ideal: 24 }
+          },
+          audio: true
+        });
+        const audioTracks = stream.getAudioTracks();
+        hasAudio = audioTracks.length > 0 && audioTracks[0].enabled && audioTracks[0].readyState === "live";
+        console.log("🎤 Audio track:", audioTracks[0]);
+        setStatus("media_ready (video + audio)");
+      } catch (err) {
+        console.warn("🎤 Audio failed:", err);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 640 },
+              height: { ideal: 360 },
+              frameRate: { ideal: 24 }
+            }
+          });
+          setStatus("media_ready (video only)");
+        } catch (err2) {
+          console.error("❌ Camera error:", err2);
+          setStatus("media_error");
+          return;
+        }
+      }
+
+      // Inject silent audio track if no mic
+      if (!hasAudio) {
+        const silentTrack = getSilentAudioTrack();
+        stream.addTrack(silentTrack);
+        console.warn("🔇 Injected silent audio track");
+        setStatus("media_ready (silent audio)");
+      }
+
+      videoEl.srcObject = stream;
+
+      const adaptor = new WebRTCAdaptor({
+        websocket_url: APP_WS,
+        mediaConstraints: { video: true, audio: true },
+        localVideoId: "localVideo",
+        peerconnection_config: {
+          iceServers: [
+            { urls: "stun:stun1.l.google.com:19302" },
+            { urls: "stun:stun2.l.google.com:19302" }
+          ]
+        },
+        sdp_constraints: {
+          OfferToReceiveAudio: false,
+          OfferToReceiveVideo: false
+        },
+        callback: (info, obj) => {
+          setStatus(info);
+          if (info === "initialized") {
+            console.log("✅ Initialized, publishing:", STREAMID);
+            adaptor.publish(STREAMID, undefined, stream);
+          }
+          if (info === "publish_started") {
+            console.log("📡 Publish started:", STREAMID);
+            setStatus("✅ publish_started");
+          }
+          if (info === "publish_finished") {
+            console.warn("⚠️ Publish stopped");
+            setStatus("publish_finished");
+          }
+        },
+        callbackError: (err, msg) => {
+          console.error("❌ WebRTC Error:", err, msg);
+          setStatus("webrtc_error: " + (err?.definition || msg || "unknown"));
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

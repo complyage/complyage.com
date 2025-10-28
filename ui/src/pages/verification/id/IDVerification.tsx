@@ -7,10 +7,15 @@
       //|| Import
       //||------------------------------------------------------------------------------------------------||
 
-      import React, {useRef, useState, useEffect}           from "react";
-      import {useNavigate, useSearchParams}                 from "react-router-dom";
-      import { Home, IdCard }                                     from "lucide-react";
-      import { getEnv }                                     from "../../../data/getEnv";
+      import {useState, useEffect}                          from "react";
+      import {useSearchParams}                              from "react-router-dom";
+      import { Home }                                       from "lucide-react";
+
+      //||------------------------------------------------------------------------------------------------||
+      //|| Hooks
+      //||------------------------------------------------------------------------------------------------||
+
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Interfaces
@@ -51,7 +56,7 @@
       //|| Page
       //||------------------------------------------------------------------------------------------------||
 
-      export default function IDVerification() {
+      export default function IDVerification({overlay}: { overlay?: boolean }) {
 
             //||------------------------------------------------------------------------------------------------||
             //|| Verification
@@ -65,7 +70,7 @@
             //|| Navigate
             //||------------------------------------------------------------------------------------------------||
 
-            const navigate                     = useNavigate();  
+            const navigate                     = useOverlayNavigate();  
 
             //||------------------------------------------------------------------------------------------------||
             //|| Process
@@ -251,14 +256,23 @@
             }      
 
             //||------------------------------------------------------------------------------------------------||
+            //|| Section Title
+            //||------------------------------------------------------------------------------------------------||
+
+            const sectionTitle = steps[process.step - 1]?.label + String(process.step) || "No Title";
+
+            //||------------------------------------------------------------------------------------------------||
             //|| Step
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout>
+                  <MembersLayout overlay={overlay}>
                         <div className="w-full max-w-5xl mx-auto">                              
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" /> 
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" verificationType="IDEN" />
                               { process.step <= 1 && <IDVerificationStep1 updateProcess={ updateProcess } process={process} />}
+                              { process.step >= 1 && (
+                                    <h2 className="text-xl font-bold text-yellow-500 text-center p-2 w-[50%] mx-auto">{ sectionTitle }</h2>
+                              )}
                               { process.step === 2 && <IDVerificationMedia which="front" updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
                               { process.step === 3 && <IDVerificationMedia which="back" updateProcess={ updateProcess } process={process}  onUpload={ onUpload } getUpload={ getUpload } />}
                               { process.step === 4 && <IDVerificationSelfie updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}

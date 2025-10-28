@@ -33,7 +33,7 @@ export default function Pricing() {
                   <MainHero
                         image="/img/hero/pricing.webp"
                         title="Free. Simple."
-                        description="Protect your privacy and stay compliant - always free for platforms and free for individuals, with one small optional cost if you choose physical address verification or credit card verification."
+                        description="Protect your privacy and stay compliant - always free for platforms and free for individuals, with a $1 cost if you choose physical address verification or credit card verification, that basically just covers our cost"
                         ctaLabel="Integrate Now"
                         ctaHref="/signup"
                   />                  

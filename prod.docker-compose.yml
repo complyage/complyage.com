@@ -1,0 +1,139 @@
+# ==================================================================================
+# ComplyAge Production Stack
+# ==================================================================================
+# Each service uses a common Dockerfile template (Dockerfile.base.service)
+# Copied into its folder by deploy.sh before build.
+# ==================================================================================
+
+version: "3.9"
+
+services:
+
+   # ----------------------------------------------------------------------------------
+   # REDIS INSTANCES
+   # ----------------------------------------------------------------------------------
+
+   live-auth-redis:
+      image: redis:7-alpine
+      container_name: live-redis-cache
+      restart: unless-stopped
+      ports:
+         - "13000:6379"
+      volumes:
+         - redis_cache_data:/data
+      command: ["redis-server", "--appendonly", "yes"]
+
+   live-oauth-redis:
+      image: redis:7-alpine
+      container_name: live-redis-oauth
+      restart: unless-stopped
+      ports:
+         - "13001:6379"
+      volumes:
+         - redis_oauth_data:/data
+      command: ["redis-server", "--appendonly", "yes"]
+
+   live-enforce-redis:
+      image: redis:7-alpine
+      container_name: live-redis-enforce
+      restart: unless-stopped
+      ports:
+         - "13002:6379"
+      command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+   # ----------------------------------------------------------------------------------
+   # DEPLOYMENT SERVICE
+   # ----------------------------------------------------------------------------------
+
+   deployment:
+      build:
+         context: ./.deployment
+         args:
+            SERVICE_NAME: deployment
+            SERVICE_PORT: 9090
+            GITHUB_TOKEN: ${GITHUB_TOKEN}
+      container_name: complyage_deployment
+      restart: always
+      environment:
+         - ENV=production
+         - DEPLOY_KEY=${DEPLOY_KEY}
+      ports:
+         - "9090:9090"
+
+   # ----------------------------------------------------------------------------------
+   # API SERVICE
+   # ----------------------------------------------------------------------------------
+
+   api:
+      build:
+         context: ./api
+         args:
+            SERVICE_NAME: api
+            SERVICE_PORT: 8081
+            GITHUB_TOKEN: ${GITHUB_TOKEN}
+      container_name: complyage_api
+      restart: always
+      depends_on:
+         - live-auth-redis
+         - deployment
+      environment:
+         - ENV=production
+         - API_PORT=8081
+         - REDIS_HOST=live-auth-redis
+      ports:
+         - "8081:8081"
+
+   # ----------------------------------------------------------------------------------
+   # GATE SERVICE
+   # ----------------------------------------------------------------------------------
+
+   gate:
+      build:
+         context: ./gate
+         args:
+            SERVICE_NAME: gate
+            SERVICE_PORT: 8082
+            GITHUB_TOKEN: ${GITHUB_TOKEN}
+      container_name: complyage_gate
+      restart: always
+      depends_on:
+         - api
+         - live-enforce-redis
+      environment:
+         - ENV=production
+         - GATE_PORT=8082
+         - REDIS_HOST=live-enforce-redis
+      ports:
+         - "8082:8082"
+
+   # ----------------------------------------------------------------------------------
+   # OAUTH SERVICE
+   # ----------------------------------------------------------------------------------
+
+   oauth:
+      build:
+         context: ./oauth
+         args:
+            SERVICE_NAME: oauth
+            SERVICE_PORT: 8083
+            GITHUB_TOKEN: ${GITHUB_TOKEN}
+      container_name: complyage_oauth
+      restart: always
+      depends_on:
+         - api
+         - live-oauth-redis
+      environment:
+         - ENV=production
+         - OAUTH_PORT=8083
+         - REDIS_HOST=live-oauth-redis
+      ports:
+         - "8083:8083"
+
+# ----------------------------------------------------------------------------------
+# PERSISTENT VOLUMES
+# ----------------------------------------------------------------------------------
+
+volumes:
+   redis_cache_data:
+   redis_oauth_data:
+   redis_enforce_data:

@@ -50,7 +50,7 @@
       //|| Page
       //||------------------------------------------------------------------------------------------------||
 
-      export default function FaceVerification() {
+      export default function FaceVerification({overlay}: { overlay?: boolean }) {
 
             //||------------------------------------------------------------------------------------------------||
             //|| Verification
@@ -236,7 +236,7 @@
 
             if (mainError !== null ) {
                   return (
-                        <MembersLayout title="Face erification" icon={ Smile }>
+                        <MembersLayout title="Face erification" icon={ Smile } overlay={overlay}>
                               <div className="w-full max-w-2xl mx-auto text-center p-6">
                                     <InlineAlert message={ mainError } isError={false} />
                                     {process.verificationUUID !== "" && (<button onClick={() => navigate(`/verification/status?identifier=${ process.verificationUUID}`)} className="mt-4 btn bg-blue-600 text-2xl h-auto py-2">View Status</button>)}
@@ -253,10 +253,9 @@
             //||------------------------------------------------------------------------------------------------||
 
             return (
-                  <MembersLayout>
-                        <div>Step : {  process.step }</div>
+                  <MembersLayout overlay={overlay}>
                         <div className="w-full max-w-5xl mx-auto">                              
-                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" /> 
+                              <ProgressSteps steps={ steps } currentStep={ process.step } className="mb-6" verificationType="FACE" />
                               { process.step < 1 && <FaceVerificationInitial updateProcess={ updateProcess } process={process} />}
                               { process.step === 2 && <FaceVerificationStep1 which="front" updateProcess={ updateProcess } process={process} onUpload={ onUpload } getUpload={ getUpload } />}
                               { process.step === 3 && <FaceVerificationStep2 which="back" updateProcess={ updateProcess } process={process}  onUpload={ onUpload } getUpload={ getUpload } />}

@@ -1,0 +1,34 @@
+#------------------------------------------------------------------------||
+#-|| Go HTTP 
+#-|| FUTURE | Have deployment show a upload for config.json/.env file
+#------------------------------------------------------------------------||
+1. Enable HTTP Server -> Wait for call
+
+#------------------------------------------------------------------------||
+#-|| Go Deployment
+#------------------------------------------------------------------------||
+1. Delete the repo directory
+2. git clone the repo to /complyage/complyage.com
+3. Copy the .env.development
+4. Copy the config.json
+5. chmod +x /complyage/complyage.com/.deployment/deploy.sh
+6. Execute /complyage/complyage.com/.deployment/deploy.sho
+7. Shutdown
+
+#------------------------------------------------------------------------||
+#-|| Deploy.sh
+#------------------------------------------------------------------------||
+1. Shutdown the /complyage/complyage.com/docker-compose.yaml
+2. Rebuild /complyage/complyage.com/docker-compose.yaml
+3. docker-compose -up -d
+4. Shutdown the nginx
+5. Copy the /complyage/complyage.com/.nginx/compose-proxy-conf to nginx config
+6. go build ./... /complyage/complyage.com/.deployment
+7. go run ./... /complyage/complyage.com/.deployment
+8. go build ./... /complyage/complyage.com/api
+9. go run ./... /complyage/complyage.com/api
+10. go build ./... /complyage/complyage.com/gate
+11. go run ./... /complyage/complyage.com/gate
+12. go build ./... /complyage/complyage.com/oauth
+13. go run ./... /complyage/complyage.com/oauth
+14. Restart nginx

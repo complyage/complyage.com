@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o tmp/main.exe ."
+  bin = "tmp/main.exe"
+  include_ext = ["go"]
+  include_dir = ["../base", "../aria"]
+  exclude_dir = ["vendor", "tmp", "loader", "node_modules"]
+  exclude_regex = ["_test.go", "(?i)loader", "(?i)node_modules"]
+  follow_symlink = true
+  stop_on_error = true
+
+[log]
+  time = true

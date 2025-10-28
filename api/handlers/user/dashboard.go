@@ -5,11 +5,13 @@ package user
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/ips"
-	"base/verify"
-	"base/zones"
 	"fmt"
 	"net/http"
+
+	"github.com/complyage/base/identity"
+	"github.com/complyage/base/ips"
+	"github.com/complyage/base/types"
+	"github.com/complyage/base/zones"
 
 	ariaHTTP "github.com/ralphferrara/aria/http"
 	"github.com/ralphferrara/aria/responses"
@@ -23,13 +25,13 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type UserDashboardData struct {
-	IsVerified  bool             `json:"isVerified"`
-	VerifiedAge int              `json:"verifiedAge"`
-	IPAddress   string           `json:"ipAddress"`
-	MinimumType verify.DataType  `json:"minimumType"`
-	Location    ips.Location     `json:"location"`
-	Zone        *zones.ShortZone `json:"zone"`
-	Identity    verify.Identity  `json:"identity"`
+	IsVerified  bool              `json:"isVerified"`
+	VerifiedAge int               `json:"verifiedAge"`
+	IPAddress   string            `json:"ipAddress"`
+	MinimumType types.DataType    `json:"minimumType"`
+	Location    ips.Location      `json:"location"`
+	Zone        *zones.ShortZone  `json:"zone"`
+	Identity    identity.Identity `json:"identity"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -93,12 +95,11 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 	//|| Get Identity
 	//||------------------------------------------------------------------------------------------------||
 
-	identity, err := verify.LoadIdentityFromJSON(account.Identity)
+	idn, err := identity.Load(account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusInternalServerError, "Unable to parse account identity")
-		return
+		idn = identity.Identity{} // now correct
 	}
-	response.Identity = identity
+	response.Identity = idn
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Figure out if we are and can be verified by CRCD
@@ -106,7 +107,7 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 
 	response.IsVerified = false
 	response.VerifiedAge = 0
-	response.MinimumType = verify.DataTypeIDEN
+	response.MinimumType = types.DataTypeIDEN
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Figure out if we are and can be verified by CRCD
@@ -122,36 +123,36 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 	if str.Contains(requirements, "CRCD") {
 		fmt.Println("Zone requires CRCD")
 		if !minimumSet {
-			response.MinimumType = verify.DataTypeCRCD
+			response.MinimumType = types.DataTypeCRCD
 			minimumSet = true
 		}
-		fmt.Println("CRCD Verified?", identity.CreditCard.Verified, "Age:", identity.CreditCard.DOB.Age(), "MinAge:", zone.MinAge)
-		if identity.CreditCard.Verified && identity.CreditCard.DOB.Age() >= zone.MinAge {
+		fmt.Println("CRCD Verified?", idn.CreditCard.Verified, "Age:", idn.CreditCard.DOB.Age(), "MinAge:", zone.MinAge)
+		if idn.CreditCard.Verified && idn.CreditCard.DOB.Age() >= zone.MinAge {
 			fmt.Println("CRCD meets requirements")
 			response.IsVerified = true
-			response.VerifiedAge = identity.CreditCard.DOB.Age()
+			response.VerifiedAge = idn.CreditCard.DOB.Age()
 		}
 	}
 
 	if str.Contains(requirements, "FACE") {
 		if !minimumSet {
-			response.MinimumType = verify.DataTypeFACE
+			response.MinimumType = types.DataTypeFACE
 			minimumSet = true
 		}
-		if identity.Face.Verified && identity.Face.DOB.Age() >= zone.MinAge {
+		if idn.Face.Verified && idn.Face.DOB.Age() >= zone.MinAge {
 			response.IsVerified = true
-			response.VerifiedAge = identity.Face.DOB.Age()
+			response.VerifiedAge = idn.Face.DOB.Age()
 		}
 	}
 
 	if str.Contains(requirements, "IDEN") {
 		if !minimumSet {
-			response.MinimumType = verify.DataTypeIDEN
+			response.MinimumType = types.DataTypeIDEN
 			minimumSet = true
 		}
-		if identity.IDCard.Verified && identity.IDCard.DOB.Age() >= zone.MinAge {
+		if idn.IDCard.Verified && idn.IDCard.DOB.Age() >= zone.MinAge {
 			response.IsVerified = true
-			response.VerifiedAge = identity.IDCard.DOB.Age()
+			response.VerifiedAge = idn.IDCard.DOB.Age()
 		}
 	}
 

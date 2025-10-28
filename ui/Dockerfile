@@ -1,13 +1,27 @@
-# For development
-FROM node:22
+# ----------------------------------------------------------------------------------
+# Stage 1: Build
+# ----------------------------------------------------------------------------------
+
+FROM golang:1.24.5-alpine AS builder
 
 WORKDIR /app
+RUN apk add --no-cache git
 
-COPY package*.json ./
-RUN npm install
+COPY ../base /base
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ui .
 
-EXPOSE 5173
+# ----------------------------------------------------------------------------------
+# Stage 2: Runtime
+# ----------------------------------------------------------------------------------
+      
+FROM alpine:latest
 
-CMD ["npm", "run", "dev"]
+WORKDIR /app
+COPY --from=builder /app/ui .
+EXPOSE 8080
+
+ENTRYPOINT ["./ui"]

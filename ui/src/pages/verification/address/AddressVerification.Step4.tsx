@@ -4,16 +4,11 @@
 //||------------------------------------------------------------------------------------------------||
 
       //||------------------------------------------------------------------------------------------------||
-      //|| Import
+      //|| Hooks
       //||------------------------------------------------------------------------------------------------||
 
-      import React, { useState, useCallback }              from "react";
-      
-      //||------------------------------------------------------------------------------------------------||
-      //|| Import
-      //||------------------------------------------------------------------------------------------------||
-      
-      import { Address }                                   from "../../../interfaces/base/geo";
+      import { useOverlayNavigate }                        from "../../../hooks/useOverlay";
+      import { CheckCircle }                               from "lucide-react";
 
       //||------------------------------------------------------------------------------------------------||
       //|| Props
@@ -28,9 +23,10 @@
       export default function AddressVerificationStep4({ process, updateProcess }: StepProps) {
 
             //||------------------------------------------------------------------------------------------------||
-            //|| State
+            //|| Navigate
             //||------------------------------------------------------------------------------------------------||
 
+            const navigate                     = useOverlayNavigate();  
 
             //||------------------------------------------------------------------------------------------------||
             //|| Render
@@ -38,10 +34,11 @@
 
             return (
                   <div className="space-y-6 p-6">
+				<div className="flex flex-col items-center mb-8">
+					<CheckCircle className="w-14 h-14 text-green-400 mb-3" />
+					<div className="text-2xl font-bold text-green-300 mb-1">Postcard Sent!</div>
+				</div>                        
                         <div className="bg-black/20 rounded-lg px-6 py-6 text-lg text-white shadow-md flex flex-col items-center">
-                              <h2 className="text-2xl font-bold text-orange-400 mb-3">
-                                    Almost done!
-                              </h2>
                               <p className="mb-4 text-base text-gray-200 text-center">
                                     To complete your address verification, we’ll mail a <span className="font-semibold text-yellow-300">postcard</span> to the address you provided. This postcard will contain a unique <span className="font-semibold text-yellow-300">6-digit code</span>.
                               </p>
@@ -56,7 +53,7 @@
                               <button
                                     className="btn btn-secondary"
                                     onClick={() => {
-                                          window.location.href = "/verification/init/?type=ADDR"
+                                          navigate("/verification/init/?type=ADDR")
                                     }}
                               >
                                     Back to Dashboard

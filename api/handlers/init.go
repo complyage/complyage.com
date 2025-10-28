@@ -32,22 +32,26 @@ func InitRoutes() {
 	app.HTTP["api"].Router.HandleFunc("/auth/signup", sentry.SignupHandler).Methods("POST")
 	app.HTTP["api"].Router.HandleFunc("/auth/forgot", sentry.ForgotPasswordHandler).Methods("POST")
 	app.HTTP["api"].Router.HandleFunc("/auth/twofactor", sentry.TwoFactorHandler).Methods("POST")
-	app.HTTP["api"].Router.HandleFunc("/auth/me", sentry.AuthMeHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/complete", sentry.CompleteHandler).Methods("POST", "GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/login", sentry.LoginHandler).Methods("POST")
+	app.HTTP["api"].Router.HandleFunc("/auth/me", sentry.AuthMeHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/logout", sentry.LogoutHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/generate", sentry.GenerateKeyPairHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/reset", sentry.ResetPasswordHandler).Methods("POST")
+	app.HTTP["api"].Router.HandleFunc("/auth/quick", sentry.QuickCheckHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/auth/quit", sentry.QuitHandler).Methods("POST")
 	app.HTTP["api"].Router.HandleFunc("/auth/delete-account", sentry.DeleteAccountHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| User Routes
 	//||------------------------------------------------------------------------------------------------||
 	app.HTTP["api"].Router.HandleFunc("/user/dashboard", user.UserDashboard).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/user/record", user.UserRecord).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/verifications", user.UserVerifications).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/shared", user.UserSharedHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/location", user.LocationUserDashboard).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/user/vpns/rate", user.VPNRatingUserHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/user/private/fetch", user.UserPrivateFetch).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/user/private/set", user.UserPrivateSet).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Get News/Zones Public
 	//||------------------------------------------------------------------------------------------------||
@@ -61,7 +65,7 @@ func InitRoutes() {
 	//|| Member Sites
 	//||------------------------------------------------------------------------------------------------||
 	app.HTTP["api"].Router.HandleFunc("/v1/api/sites/zones", sites.SitesZoneHandler).Methods("GET")
-	app.HTTP["api"].Router.HandleFunc("/v1/api/sites/vtypes", sites.VerificationTypesListHandler).Methods("GET")
+	app.HTTP["api"].Router.HandleFunc("/v1/api/sites/scopes", sites.ScopesListHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/sites/list", sites.SitesListHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/sites/load", sites.SitesLoadHandler).Methods("GET")
 	app.HTTP["api"].Router.HandleFunc("/v1/api/sites/upload", sites.UploadHandler).Methods("POST")

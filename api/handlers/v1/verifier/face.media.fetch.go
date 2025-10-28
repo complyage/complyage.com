@@ -5,14 +5,14 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/abstract"
-	"base/verify"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -22,6 +22,8 @@ import (
 
 func VerifyFaceMediaFetch(w http.ResponseWriter, r *http.Request) {
 
+	app.Log.Info("Handler: Face Media Fetch")
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Query Params
 	//||------------------------------------------------------------------------------------------------||
@@ -29,65 +31,32 @@ func VerifyFaceMediaFetch(w http.ResponseWriter, r *http.Request) {
 	identifier := r.URL.Query().Get("identifier")
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get Account
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	account, err := abstract.GetAccountByVerificationUUID(identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusNotFound, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Session
-	//||------------------------------------------------------------------------------------------------||
-
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
+	verifyRecord, err := verify.CheckLoad(identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check Session Match
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusForbidden, "Session does not match verification record")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Load Verification Record
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Pull the Data
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyData := verifyRecord.Encrypted.Data.FACE
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Add the Correct Media
 	//||------------------------------------------------------------------------------------------------||
 
-	mediaRecord := verifyData.Selfie
+	mediaRecord := verifyRecord.Data.FACE.Selfie
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Done

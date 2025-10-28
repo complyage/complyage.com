@@ -4,4 +4,7 @@ go 1.24.5
 
 require github.com/go-sql-driver/mysql v1.9.3 // direct
 
-require filippo.io/edwards25519 v1.1.0 // indirect
+require (
+	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/complyage/base v0.0.0-20251024032357-10f4f0360806 // indirect
+)

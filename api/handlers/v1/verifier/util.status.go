@@ -5,14 +5,14 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/abstract"
-	"base/verify"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -33,73 +33,33 @@ type VerifyStatusResponse struct {
 
 func VerifyStatusHandler(w http.ResponseWriter, r *http.Request) {
 
-	verify.LogInfo("VerifyStatusHandler")
+	app.Log.Info("Handler: Veridy Status")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Query Params
 	//||------------------------------------------------------------------------------------------------||
 
 	identifier := r.URL.Query().Get("identifier")
-	if identifier == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing identifier param")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check
-	//||------------------------------------------------------------------------------------------------||
-
-	if identifier == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing identifier")
-		return
-	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch a Session
+	//|| Load Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
+	verifyRecord, err := verify.CheckLoad(identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch Verification Record (with account public for decrypt)
-	//||------------------------------------------------------------------------------------------------||
-
-	account, err := abstract.GetAccountByVerificationUUID(identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusBadRequest, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Session Account
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusBadRequest, "Session does not match account")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification Record matches Account
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 

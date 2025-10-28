@@ -8,7 +8,7 @@
       //||------------------------------------------------------------------------------------------------||
 
       export interface ModelZone {
-            id               : string;
+            id               : number;
             state            : string;
             country          : string;
             requirements     : string;

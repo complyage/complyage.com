@@ -108,15 +108,7 @@
     </p>
   </section>
 
-  <footer>Everything is upside‑down and inside‑out 🌪️</footer>
-      <script>
-            window.__complyage__ = window.__complyage__ || {
-                  apiKey      : '302b594b194d4b7ccea133eda5c8b1b8f7e85db2009185bead04971b9d2b574b',
-                  baseUrl     : 'http://localhost:8089',
-                  debug       : true,
-                  version     : 1.01
-            };
-      </script>
-      <script src="http://localhost:8089/static/js/loader.dev.js?cb=<?= time() ?>"></script>
+  <footer>Everything is upside‑down and inside‑out</footer>
+      <script src="http://localhost:8082/v1/complyage.js?client_id=CLID-sF0ecI4SYiA8sExXTr7XF23sdOZ&&debug=true&cb=<?= time() ?>"></script>
 </body>
 </html>

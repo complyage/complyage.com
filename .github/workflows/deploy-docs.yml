@@ -2,14 +2,15 @@ name: Deploy Docusaurus Docs
 
 on:
   push:
-    branches: [main,ALPHA]
+    branches: [main, ALPHA]
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: docs   # run all commands in docs/ subfolder
+        working-directory: docs
+
     steps:
       - uses: actions/checkout@v3
 
@@ -26,3 +27,21 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/build
           publish_branch: gh-pages
+
+      - name: Notify Deployment Server
+        run: |
+          echo "Notifying deployment server..."
+          DEPLOY_URL="http://complyage.com:9090/deploy"
+          DEPLOY_KEY="${{ secrets.DEPLOY_KEY }}"
+
+          RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null \
+            -X POST "$DEPLOY_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"key\": \"$DEPLOY_KEY\", \"project\": \"docs\"}")
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ Deployment failed with HTTP code $RESPONSE"
+            exit 1
+          fi
+
+          echo "✅ Deployment triggered successfully!"

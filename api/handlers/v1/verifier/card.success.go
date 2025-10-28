@@ -1,15 +1,16 @@
 package verifier
 
 import (
-	"base/db/abstract"
-	"base/verify"
+	"api/handlers/utils"
 	"encoding/json"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/verify"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/paymentintent"
 )
@@ -40,7 +41,7 @@ type cardVerifyResponse struct {
 
 func CCVerifySuccessHandler(w http.ResponseWriter, r *http.Request) {
 
-	verify.LogInfo("CCVerifySuccessHandler")
+	app.Log.Info("Handler: CC Success")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Request
@@ -91,86 +92,60 @@ func CCVerifySuccessHandler(w http.ResponseWriter, r *http.Request) {
 			cardType = string(intent.LatestCharge.PaymentMethodDetails.Card.Brand)
 		}
 	}
+	app.Log.Info("Card Type:", cardType, "Last4:", lastFour)
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Check
+	//|| Get the USD
 	//||------------------------------------------------------------------------------------------------||
 
-	if updateRequest.Identifier == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing identifier")
+	usdAmount, cErr := utils.ConvertToUSD(updateRequest.Amount, updateRequest.Currency)
+	if cErr != nil {
+		usdAmount = -1
 		return
+	}
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Save Transaction
+	//||------------------------------------------------------------------------------------------------||
+
+	if err := abstract.AddTransaction(
+		"CARD",                        // method
+		"STRIPE",                      // merchant
+		(usdAmount / 100),             // USD value
+		float64(updateRequest.Amount), // original amount in major units
+		updateRequest.Currency,        // original currency
+		updateRequest.TransactionID,   // transaction reference
+	); err != nil {
+		app.Log.Error("Failed to insert transaction: ", err.Error())
 	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch a Session
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
+	verifyRecord, err := verify.CheckLoad(updateRequest.Identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch Verification Record (with account public for decrypt)
-	//||------------------------------------------------------------------------------------------------||
-
-	account, err := abstract.GetAccountByVerificationUUID(updateRequest.Identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusBadRequest, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Session Account
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusBadRequest, "Session does not match account")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification Record matches Account
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], updateRequest.Identifier, account.Private, account.Public)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Log the Transaction
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord.TransactionApproved(
-		verify.TransactionTypeCredit,
-		updateRequest.Base,
-		updateRequest.Donation,
-		updateRequest.Currency,
-		cardType,
-		lastFour,
-		updateRequest.ClientSecret,
-		verify.Address{
-			Postal: updateRequest.BillingZip,
-		},
-		verify.Address{})
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Approve the Verification
 	//||------------------------------------------------------------------------------------------------||
 
+	verifyRecord.TransactionSaved = true
 	verifyRecord.UpdateStatusPendingVerification()
 
 	//||------------------------------------------------------------------------------------------------||

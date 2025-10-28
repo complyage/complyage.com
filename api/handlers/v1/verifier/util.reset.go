@@ -5,16 +5,17 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"agent/publish"
-	"base/db/abstract"
-	"base/verify"
-	"fmt"
 	"net/http"
+
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/types"
+	"github.com/complyage/base/verify"
+
+	"github.com/complyage/complyagent.com/publish"
 
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -23,6 +24,8 @@ import (
 
 func TestingResetVerification(w http.ResponseWriter, r *http.Request) {
 
+	app.Log.Info("Handler: Util Reset")
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Request
 	//||------------------------------------------------------------------------------------------------||
@@ -30,60 +33,24 @@ func TestingResetVerification(w http.ResponseWriter, r *http.Request) {
 	identifier := r.URL.Query().Get("identifier")
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Validate UUID
-	//||------------------------------------------------------------------------------------------------||
-
-	if identifier == "" {
-		responses.Error(w, http.StatusBadRequest, "Missing verification UUID")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch a Session
+	//|| Load Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	session, err := actions.FetchSession(cookie.Value)
+	verifyRecord, err := verify.CheckLoad(identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Fetch Verification Record (with account public for decrypt)
-	//||------------------------------------------------------------------------------------------------||
-
-	account, err := abstract.GetAccountByVerificationUUID(identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusBadRequest, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Session Account
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusBadRequest, "Session does not match account")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Verification Record matches Account
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
-	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 
@@ -93,32 +60,28 @@ func TestingResetVerification(w http.ResponseWriter, r *http.Request) {
 
 	verifyRecord.Steps = []verify.Step{}
 	verifyRecord.AddStep(app.Constants("VERIFY_STEP_TYPES").Get("AGENT_L1"), "")
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Update the Verification Status to Pending Verification
-	//||------------------------------------------------------------------------------------------------||
-
 	verifyRecord.UpdateStatusPendingVerification()
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Update the Verification Record
 	//||------------------------------------------------------------------------------------------------||
 
-	if verifyRecord.Type == verify.DataTypeIDEN {
-		fmt.Println("Starting ID Verification Reset for: " + verifyRecord.UUID)
+	if verifyRecord.Type == types.DataTypeIDEN {
+		app.Log.Data("Starting ID Verification Reset for: " + verifyRecord.UUID)
 		insert := publish.AgentVerifyIDStart(verifyRecord)
 		if insert != nil {
 			responses.Error(w, http.StatusInternalServerError, "Failed to start ID verification: "+insert.Error())
 			return
 		}
 	} else {
-		fmt.Println("Starting Facial Verification Reset for: " + verifyRecord.UUID)
+		app.Log.Data("Starting Facial Verification Reset for: " + verifyRecord.UUID)
 		insert := publish.AgentVerifyFaceStart(verifyRecord)
 		if insert != nil {
 			responses.Error(w, http.StatusInternalServerError, "Failed to start ID verification: "+insert.Error())
 			return
 		}
 	}
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Return Success
 	//||------------------------------------------------------------------------------------------------||

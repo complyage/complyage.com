@@ -1,12 +1,10 @@
 package abstract
 
 import (
-	"base/db/models"
-	"base/verify"
-	"encoding/json"
 	"fmt"
 
 	"github.com/ralphferrara/aria/app"
+	"github.com/ralphferrara/aria/auth/db"
 	"gorm.io/gorm"
 )
 
@@ -14,8 +12,8 @@ import (
 //|| Get Account Based on ID
 //||------------------------------------------------------------------------------------------------||
 
-func GetAccountByID(id string) (*models.Account, error) {
-	var account models.Account
+func GetAccountByID(id string) (*db.ModelAccount, error) {
+	var account db.ModelAccount
 
 	result := app.SQLDB["main"].DB.First(&account, id)
 	if result.Error != nil {
@@ -29,33 +27,11 @@ func GetAccountByID(id string) (*models.Account, error) {
 }
 
 //||------------------------------------------------------------------------------------------------||
-//|| Get Account Based on Email
-//||------------------------------------------------------------------------------------------------||
-
-func GetAccountByEmail(hashedEmail string) (*models.Account, error) {
-	var account models.Account
-
-	result := app.SQLDB["main"].DB.
-		Where("account_email = ?", hashedEmail).
-		Limit(1).
-		Find(&account)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	if result.RowsAffected == 0 {
-		return nil, nil
-	}
-
-	return &account, nil
-}
-
-//||------------------------------------------------------------------------------------------------||
 //|| Get Account Based on ID
 //||------------------------------------------------------------------------------------------------||
 
-func GetAccountByVerificationUUID(uuid string) (*models.Account, error) {
-	var account models.Account
+func GetAccountByVerificationUUID(uuid string) (*db.ModelAccount, error) {
+	var account db.ModelAccount
 
 	// Raw SQL query: join verify and accounts, filter by verify_uuid
 	const q = `
@@ -73,30 +49,6 @@ func GetAccountByVerificationUUID(uuid string) (*models.Account, error) {
 		return nil, nil // Not found
 	}
 	return &account, nil
-}
-
-//||------------------------------------------------------------------------------------------------||
-//|| Update User Identity
-//||------------------------------------------------------------------------------------------------||
-
-func UpdateUserIdentity(idAccount int64, ident verify.Identity) error {
-	blob, err := json.Marshal(ident)
-	if err != nil {
-		return err
-	}
-
-	tx := app.SQLDB["main"].DB.
-		Model(&models.Account{}).
-		Where("id_account = ?", idAccount).
-		Update("account_identity", string(blob))
-
-	if tx.Error != nil {
-		return tx.Error
-	}
-	if tx.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
 }
 
 //||------------------------------------------------------------------------------------------------||

@@ -5,17 +5,18 @@ package verifier
 //||------------------------------------------------------------------------------------------------||
 
 import (
-	"base/db/abstract"
-	"base/verify"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/complyage/base/db/abstract"
+	"github.com/complyage/base/types"
+	"github.com/complyage/base/verify"
+
 	"github.com/ralphferrara/aria/responses"
 
 	"github.com/ralphferrara/aria/app"
-	"github.com/ralphferrara/aria/auth/actions"
 )
 
 //||------------------------------------------------------------------------------------------------||
@@ -24,6 +25,8 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
+
+	app.Log.Info("Handler: Media Upload")
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Parse Query Params
@@ -42,41 +45,13 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get Account
+	//|| Validate Session Cookie
 	//||------------------------------------------------------------------------------------------------||
 
-	account, err := abstract.GetAccountByVerificationUUID(identifier)
-	if err != nil || account == nil {
-		responses.Error(w, http.StatusNotFound, "Account not found for verification")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Validate Session
-	//||------------------------------------------------------------------------------------------------||
-
-	cookie, err := r.Cookie("session")
+	account, err := abstract.AccountCheckLogin(r, true, 1)
 	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "No session cookie")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Get Session
-	//||------------------------------------------------------------------------------------------------||
-
-	session, err := actions.FetchSession(cookie.Value)
-	if err != nil {
-		responses.Error(w, http.StatusUnauthorized, "Invalid session")
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Check Session Match
-	//||------------------------------------------------------------------------------------------------||
-
-	if session.ID != account.ID {
-		responses.Error(w, http.StatusForbidden, "Session does not match verification record")
+		app.Log.Info(err.Error())
+		responses.Error(w, http.StatusUnauthorized, app.Err("API").Code("NO_SESSION"))
 		return
 	}
 
@@ -107,12 +82,13 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Load Verification Record
+	//|| Check
 	//||------------------------------------------------------------------------------------------------||
 
-	verifyRecord, err := verify.Load(app.SQLDB["main"], app.Storages["verifications"], identifier, account.Private, account.Public)
+	verifyRecord, err := verify.CheckLoad(identifier, account.ID)
 	if err != nil {
-		responses.Error(w, http.StatusBadRequest, "Verification record not found -> "+err.Error())
+		app.Log.Error("Failed to load verification record: ", err.Error())
+		responses.Error(w, http.StatusBadRequest, app.Err("Verify").Code("VERIFY_LOAD_UUID"))
 		return
 	}
 
@@ -120,16 +96,16 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	//|| Create Media
 	//||------------------------------------------------------------------------------------------------||
 
-	var mediaRecord verify.Media
+	var mediaRecord types.Media
 	if len(content) == 0 {
-		mediaRecord = verify.Media{
+		mediaRecord = types.Media{
 			Exists: false,
 			Size:   0,
 			Mime:   "",
 			Base64: "",
 		}
 	} else {
-		mediaRecord = verify.Media{
+		mediaRecord = types.Media{
 			Exists: true,
 			Size:   int64(len(content)),
 			Mime:   mime,
@@ -138,29 +114,17 @@ func VerifyIDMediaUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Pull the Data
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyData := verifyRecord.Encrypted.Data.IDEN
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Add the Correct Media
 	//||------------------------------------------------------------------------------------------------||
 
 	switch which {
 	case "front":
-		verifyData.Front = mediaRecord
+		verifyRecord.Data.IDEN.Front = mediaRecord
 	case "back":
-		verifyData.Back = mediaRecord
+		verifyRecord.Data.IDEN.Back = mediaRecord
 	case "selfie":
-		verifyData.Selfie = mediaRecord
+		verifyRecord.Data.IDEN.Selfie = mediaRecord
 	}
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Reassign the Data
-	//||------------------------------------------------------------------------------------------------||
-
-	verifyRecord.SetDataIDEN(verifyData)
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Save All

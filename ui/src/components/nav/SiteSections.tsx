@@ -8,7 +8,7 @@ import React from "react";
 //|| SectionBar Component
 //||------------------------------------------------------------------------------------------------||
 
-import type { SectionTypes } from "../../interfaces/types.sitesections";
+import type { SectionTypes } from "../../interfaces/models/model.sites";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Props
@@ -25,11 +25,11 @@ interface SiteSectionsProps {
 
 export default function SiteSections({ value, setValue }: SiteSectionsProps) {
       const sections: Record<SectionTypes, string> = {
-            basic       : "Basic",
-            zones       : "Zones",
-            integration : "Integration",
+            basic       : "Identity",
             gate        : "Age Gate",
             oauth       : "OAuth",
+            agent       : "Agent",
+            testing     : "Testing",
       };
 
       return (
