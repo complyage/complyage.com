@@ -7,6 +7,20 @@ FROM golang:1.24.5-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache git
 
+# ----------------------------------------------------------------------------------
+# Remove Dev go mod and update to the github
+# ----------------------------------------------------------------------------------
+
+RUN rm -f go.mod go.sum \
+    && go mod init api \
+    && go get github.com/complyage/base@latest \
+    && go get github.com/ralphferrara/aria@latest \
+    && go mod tidy
+
+# ----------------------------------------------------------------------------------
+# Copy and Regenerate go.mod
+# ----------------------------------------------------------------------------------
+
 # Copy all project files
 COPY . .
 RUN go mod tidy
