@@ -2,96 +2,77 @@
 set -e
 
 echo "====================================================================="
-echo " ComplyAge Deployment Script "
+echo " ComplyAge Dockerized Deployment Script "
 echo "====================================================================="
 
 REPO_DIR="/complyage/complyage.com"
+ARIA_DIR="$REPO_DIR/aria"
+COMPOSE_FILE="$REPO_DIR/prod.docker-compose.yml"
 NGINX_CONF_SRC="$REPO_DIR/.nginx/compose-proxy.conf"
 NGINX_CONF_DST="/etc/nginx/conf.d/compose-proxy.conf"
 
 #------------------------------------------------------------------------||
-#-|| [1/14] Shutdown the /complyage/complyage.com/docker-compose.yaml
+#-|| [1/8] Stop running containers
 #------------------------------------------------------------------------||
 
-echo "[1/14] Shutting down Docker stack..."
-docker compose -f "$REPO_DIR/docker-compose.yml" down || true
+echo "[1/8] Stopping any existing Docker containers..."
+docker compose -f "$COMPOSE_FILE" down || true
 
 #------------------------------------------------------------------------||
-#-|| [2/14] Rebuilding Docker stack
+#-|| [2/8] Update or clone Aria Framework
 #------------------------------------------------------------------------||
 
-echo "[2/14] Rebuilding Docker stack..."
-docker compose -f "$REPO_DIR/docker-compose.yml" build --no-cache
+echo "[2/8] Updating Aria Framework..."
+if [ -d "$ARIA_DIR/.git" ]; then
+    echo "Aria already exists — pulling latest changes..."
+    cd "$ARIA_DIR" && git reset --hard && git pull origin main
+else
+    echo "Aria not found — cloning fresh..."
+    git clone https://github.com/ralphferrara/aria.git "$ARIA_DIR"
+fi
 
 #------------------------------------------------------------------------||
-#-|| [3/14] Starting Docker stack
+#-|| [3/8] Clean and rebuild Docker images
 #------------------------------------------------------------------------||
 
-echo "[3/14] Starting Docker stack..."
-docker compose -f "$REPO_DIR/docker-compose.yml" up -d
+echo "[3/8] Rebuilding all containers..."
+cd "$REPO_DIR"
+docker compose -f "$COMPOSE_FILE" build --no-cache
 
 #------------------------------------------------------------------------||
-#-|| [4/14] Stopping Nginx
+#-|| [4/8] Start Docker stack
 #------------------------------------------------------------------------||
 
-echo "[4/14] Stopping Nginx..."
-systemctl stop nginx || true
+echo "[4/8] Starting Docker stack..."
+docker compose -f "$COMPOSE_FILE" up -d
 
 #------------------------------------------------------------------------||
-#-|| [5/14] Copying new Nginx proxy configuration
+#-|| [5/8] Apply updated Nginx configuration
 #------------------------------------------------------------------------||
 
-echo "[5/14] Copying proxy configuration..."
+echo "[5/8] Updating Nginx reverse proxy configuration..."
 cp -f "$NGINX_CONF_SRC" "$NGINX_CONF_DST"
+systemctl restart nginx || true
 
 #------------------------------------------------------------------------||
-#-|| [6/14] Building Go services (.deployment)
+#-|| [6/8] Verify running containers
 #------------------------------------------------------------------------||
 
-echo "[6/14] Building .deployment service..."
-cd "$REPO_DIR/.deployment"
-go build ./...
-echo "[7/14] Running .deployment service..."
-nohup go run ./... > /var/log/deploy.log 2>&1 &
+echo "[6/8] Checking running containers..."
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 #------------------------------------------------------------------------||
-#-|| [8/14] Building API service
+#-|| [7/8] Show latest logs for key services
 #------------------------------------------------------------------------||
 
-echo "[8/14] Building API service..."
-cd "$REPO_DIR/api"
-go build ./...
-echo "[9/14] Running API service..."
-nohup go run ./... > /var/log/api.log 2>&1 &
+echo "[7/8] Tailing logs for first 10 seconds..."
+timeout 10 docker compose -f "$COMPOSE_FILE" logs --tail=20 || true
 
 #------------------------------------------------------------------------||
-#-|| [10/14] Building Gate service
+#-|| [8/8] Cleanup old images
 #------------------------------------------------------------------------||
 
-echo "[10/14] Building Gate service..."
-cd "$REPO_DIR/gate"
-go build ./...
-echo "[11/14] Running Gate service..."
-nohup go run ./... > /var/log/gate.log 2>&1 &
-
-#------------------------------------------------------------------------||
-#-|| [12/14] Building OAuth service
-#------------------------------------------------------------------------||
-
-echo "[12/14] Building OAuth service..."
-cd "$REPO_DIR/oauth"
-go build ./...
-echo "[13/14] Running OAuth service..."
-nohup go run ./... > /var/log/oauth.log 2>&1 &
-
-#------------------------------------------------------------------------||
-#-|| [14/14] Restarting Nginx and cleanup
-#------------------------------------------------------------------------||
-
-echo "[14/14] Restarting Nginx..."
-systemctl start nginx || true
-
-echo "Cleaning dangling Docker images..."
+echo "[8/8] Cleaning up unused Docker images..."
 docker image prune -f || true
 
 echo "====================================================================="

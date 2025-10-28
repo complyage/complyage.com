@@ -1,9 +1,13 @@
 version: "3.9"
 
+#==============================================================================================
+#  ComplyAge Production Stack
+#==============================================================================================
+
 services:
-  #----------------------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------------------
   # Redis Caches
-  #----------------------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------------------
 
   live-auth-redis:
     image: redis:7-alpine
@@ -32,6 +36,81 @@ services:
     ports:
       - "13002:6379"
     command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  #--------------------------------------------------------------------------------------------
+  # Deployment Service
+  #--------------------------------------------------------------------------------------------
+
+  deployment:
+    build:
+      context: ./.deployment
+      dockerfile: Dockerfile
+    container_name: complyage_deployment
+    restart: always
+    environment:
+      - DEPLOY_KEY=${DEPLOY_KEY}
+    ports:
+      - "9090:9090"
+
+  #--------------------------------------------------------------------------------------------
+  # API Service
+  #--------------------------------------------------------------------------------------------
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: complyage_api
+    restart: always
+    depends_on:
+      - live-auth-redis
+      - deployment
+    environment:
+      - ENV=production
+      - API_PORT=8081
+      - REDIS_HOST=live-auth-redis
+    ports:
+      - "8081:8081"
+
+  #--------------------------------------------------------------------------------------------
+  # Gate Service
+  #--------------------------------------------------------------------------------------------
+
+  gate:
+    build:
+      context: ./gate
+      dockerfile: Dockerfile
+    container_name: complyage_gate
+    restart: always
+    depends_on:
+      - api
+      - live-enforce-redis
+    environment:
+      - ENV=production
+      - GATE_PORT=8082
+      - REDIS_HOST=live-enforce-redis
+    ports:
+      - "8082:8082"
+
+  #--------------------------------------------------------------------------------------------
+  # OAuth Service
+  #--------------------------------------------------------------------------------------------
+
+  oauth:
+    build:
+      context: ./oauth
+      dockerfile: Dockerfile
+    container_name: complyage_oauth
+    restart: always
+    depends_on:
+      - api
+      - live-oauth-redis
+    environment:
+      - ENV=production
+      - OAUTH_PORT=8083
+      - REDIS_HOST=live-oauth-redis
+    ports:
+      - "8083:8083"
 
 #----------------------------------------------------------------------------------------------
 # Volumes

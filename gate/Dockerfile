@@ -20,6 +20,6 @@ FROM alpine:latest
 
 WORKDIR /app
 COPY --from=builder /app/gate .
-EXPOSE 8081
+EXPOSE 8082
 
 ENTRYPOINT ["./gate"]

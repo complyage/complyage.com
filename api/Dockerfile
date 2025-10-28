@@ -7,7 +7,6 @@ FROM golang:1.24.5-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache git
 
-# Copy shared base package and module files
 COPY . .
 RUN go mod tidy
 
@@ -16,11 +15,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api .
 # ----------------------------------------------------------------------------------
 # Stage 2: Runtime
 # ----------------------------------------------------------------------------------
-      
+
 FROM alpine:latest
 
 WORKDIR /app
 COPY --from=builder /app/api .
-EXPOSE 8082
+EXPOSE 8081
 
 ENTRYPOINT ["./api"]
