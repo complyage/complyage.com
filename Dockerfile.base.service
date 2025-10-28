@@ -1,0 +1,87 @@
+# ----------------------------------------------------------------------------------
+# Stage 1: Build
+# ----------------------------------------------------------------------------------
+
+FROM golang:1.24.5-alpine AS builder
+WORKDIR /app
+
+# ----------------------------------------------------------------------------------
+# Build arguments (unique per service)
+# ----------------------------------------------------------------------------------
+
+ARG SERVICE_NAME
+ARG SERVICE_PORT
+ARG GITHUB_TOKEN
+
+# ----------------------------------------------------------------------------------
+# Install prerequisites
+# ----------------------------------------------------------------------------------
+
+RUN apk add --no-cache git ca-certificates openssh
+
+# ----------------------------------------------------------------------------------
+# Auth for private repos (disable proxies)
+# ----------------------------------------------------------------------------------
+
+ENV GOPRIVATE=github.com/complyage,github.com/ralphferrara
+ENV GONOSUMDB=github.com/complyage,github.com/ralphferrara
+ENV GOSUMDB=off
+ENV GOPROXY=direct
+
+RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+
+# ----------------------------------------------------------------------------------
+# Copy module files safely
+# ----------------------------------------------------------------------------------
+
+COPY go.mod ./
+COPY go.sum ./
+RUN [ -f go.mod ] || go mod init ${SERVICE_NAME}
+
+# Clean out any local replacements
+RUN sed -i '/replace/d' go.mod || true && sed -i '/=> ../d' go.mod || true
+
+# ----------------------------------------------------------------------------------
+# Clone private modules directly (always succeeds)
+# ----------------------------------------------------------------------------------
+
+RUN mkdir -p /root/go/src/github.com/complyage /root/go/src/github.com/ralphferrara && \
+    git clone https://${GITHUB_TOKEN}:x-oauth-basic@github.com/complyage/base.git /root/go/src/github.com/complyage/base && \
+    git clone https://${GITHUB_TOKEN}:x-oauth-basic@github.com/ralphferrara/aria.git /root/go/src/github.com/ralphferrara/aria
+
+# ----------------------------------------------------------------------------------
+# Force replace to local modules *before* resolving deps
+# ----------------------------------------------------------------------------------
+
+RUN go mod edit -replace=github.com/complyage/base=/root/go/src/github.com/complyage/base && \
+    go mod edit -replace=github.com/ralphferrara/aria=/root/go/src/github.com/ralphferrara/aria && \
+    go mod edit -require=github.com/complyage/base@v0.0.0 && \
+    go mod edit -require=github.com/ralphferrara/aria@v0.0.0
+
+# ----------------------------------------------------------------------------------
+# Copy the rest of your service code
+# ----------------------------------------------------------------------------------
+
+COPY . .
+
+# ----------------------------------------------------------------------------------
+# Final tidy and build
+# ----------------------------------------------------------------------------------
+
+RUN go mod tidy && go mod download all && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ${SERVICE_NAME} .
+
+# ----------------------------------------------------------------------------------
+# Stage 2: Runtime
+# ----------------------------------------------------------------------------------
+
+FROM alpine:latest
+WORKDIR /app
+
+ARG SERVICE_NAME
+ARG SERVICE_PORT
+
+COPY --from=builder /app/${SERVICE_NAME} .
+
+EXPOSE ${SERVICE_PORT}
+ENTRYPOINT ["sh", "-c", "./${SERVICE_NAME}"]

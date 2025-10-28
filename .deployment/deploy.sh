@@ -32,47 +32,76 @@ else
 fi
 
 #------------------------------------------------------------------------||
-#-|| [3/8] Clean and rebuild Docker images
+#-|| [3/8] Copy base Dockerfile into each service
 #------------------------------------------------------------------------||
 
-echo "[3/8] Rebuilding all containers..."
+echo "[3/8] Copying base Dockerfile into service directories..."
+
+BASE_FILE="$REPO_DIR/Dockerfile.base.service"
+
+for service in api gate oauth .deployment; do
+    TARGET_DIR="$REPO_DIR/$service"
+    if [ -d "$TARGET_DIR" ]; then
+        echo " → Copying to $service/"
+        cp -f "$BASE_FILE" "$TARGET_DIR/Dockerfile"
+    else
+        echo " Skipping $service (directory not found)"
+    fi
+done
+
+#------------------------------------------------------------------------||
+#-|| [3.5/8] Clean up go.mod replace directives
+#------------------------------------------------------------------------||
+
+echo "[3.5/8] Cleaning local 'replace' directives from Go modules..."
+
+for dir in api gate oauth deployment; do
+   if [ -f "$REPO_DIR/$dir/go.mod" ]; then
+      echo " → Cleaning $dir/go.mod"
+      sed -i '/replace.*complyage.base/d' "$REPO_DIR/$dir/go.mod" || true
+      sed -i '/replace.*ralphferrara.aria/d' "$REPO_DIR/$dir/go.mod" || true
+      sed -i '/=> ../d' "$REPO_DIR/$dir/go.mod" || true
+   fi
+done
+
+#------------------------------------------------------------------------||
+#-|| [4/8] Clean and rebuild Docker images
+#------------------------------------------------------------------------||
+
+echo "[4/8] Rebuilding all containers..."
 cd "$REPO_DIR"
 docker compose -f "$COMPOSE_FILE" build --no-cache
 
 #------------------------------------------------------------------------||
-#-|| [4/8] Start Docker stack
+#-|| [5/8] Start Docker stack
 #------------------------------------------------------------------------||
 
-echo "[4/8] Starting Docker stack..."
+echo "[5/8] Starting Docker stack..."
 docker compose -f "$COMPOSE_FILE" up -d
 
 #------------------------------------------------------------------------||
-#-|| [5/8] Apply updated Nginx configuration
+#-|| [6/8] Apply updated Nginx configuration
 #------------------------------------------------------------------------||
 
-echo "[5/8] Updating Nginx reverse proxy configuration..."
+echo "[6/8] Updating Nginx reverse proxy configuration..."
 cp -f "$NGINX_CONF_SRC" "$NGINX_CONF_DST"
 systemctl restart nginx || true
 
 #------------------------------------------------------------------------||
-#-|| [6/8] Verify running containers
+#-|| [7/8] Verify running containers
 #------------------------------------------------------------------------||
 
-echo "[6/8] Checking running containers..."
+echo "[7/8] Checking running containers..."
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 #------------------------------------------------------------------------||
-#-|| [7/8] Show latest logs for key services
+#-|| [8/8] Show logs & cleanup
 #------------------------------------------------------------------------||
 
-echo "[7/8] Tailing logs for first 10 seconds..."
+echo "[8/8] Tailing logs for first 10 seconds..."
 timeout 10 docker compose -f "$COMPOSE_FILE" logs --tail=20 || true
 
-#------------------------------------------------------------------------||
-#-|| [8/8] Cleanup old images
-#------------------------------------------------------------------------||
-
-echo "[8/8] Cleaning up unused Docker images..."
+echo "Cleaning up unused Docker images..."
 docker image prune -f || true
 
 echo "====================================================================="
