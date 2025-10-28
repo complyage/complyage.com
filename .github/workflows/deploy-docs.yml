@@ -1,4 +1,4 @@
-name: Deploy Docusaurus Docs
+name: Deploy to Production
 
 on:
   push:
