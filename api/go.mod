@@ -129,5 +129,4 @@ require (
 )
 
 replace github.com/complyage/base => ../base
-
 replace github.com/ralphferrara/aria => ../aria
