@@ -93,7 +93,14 @@ WORKDIR /app
 ARG SERVICE_NAME
 ARG SERVICE_PORT
 
-COPY --from=builder /app/${SERVICE_NAME} .
+# Copy the compiled binary
+COPY --from=builder /app/${SERVICE_NAME} /app/${SERVICE_NAME}
 
+# Ensure the binary is executable
+RUN chmod +x /app/${SERVICE_NAME}
+
+# Expose the service port
 EXPOSE ${SERVICE_PORT}
-ENTRYPOINT ["sh", "-c", "./${SERVICE_NAME}"]
+
+# Run directly, no shell wrapper
+ENTRYPOINT ["/app/${SERVICE_NAME}"]
