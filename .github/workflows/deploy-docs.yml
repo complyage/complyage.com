@@ -33,12 +33,8 @@ jobs:
 
       - name: Notify Deployment Server
         run: |
-<<<<<<< Updated upstream
-          echo "🚀 Notifying deployment server..."
-=======
           echo "Notifying deployment server..."
           DEPLOY_URL="https://deploy.complyage.com:9090/deploy"
->>>>>>> Stashed changes
           DEPLOY_KEY="${{ secrets.DEPLOY_KEY }}"
           DEPLOY_URL="https://complyage.com:9090/deploy?check=${DEPLOY_KEY}"
 
