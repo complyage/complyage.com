@@ -23,6 +23,7 @@ import apiURL                                                 from "../../utils/
 import LinkQuery                          from "../../components/dynamic/LinkQuery";
 import SpinnerCircle                      from "../../components/base/SpinnerCircle";
 import Turnstile                          from "../../components/base/Turnstile";
+import PasswordField from "../../components/base/PasswordField";
 
 //||------------------------------------------------------------------------------------------------||
 //|| JSX
@@ -135,14 +136,13 @@ export default function AuthLogin() {
                               />
 
                               <label className="label">Password</label>
-                              <input
-                                    type="password"
+                              <PasswordField    
                                     placeholder="Your Password"
+                                    autoComplete="current-password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input input-bordered w-full py-2 text-xl h-auto"
                                     required
-                              />
+                              />    
 
                               <div className="w-full min-h-[70px] flex flex-col items-center justify-center mt-4">
                                      <button

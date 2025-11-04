@@ -27,9 +27,9 @@ export default function NavMain() {
       //|| Helper: active link style
       //||------------------------------------------------------------------------------------------------||
       const linkClass = (path: string, extra = "") =>
-            `flex items-center gap-3 text-lg font-medium px-4 py-3 rounded-lg transition-colors duration-200
+            `flex items-center gap-3 text-lg font-medium px-4 py-1 rounded-lg transition-colors duration-200
              ${pathname === path || pathname.startsWith(path)
-                  ? "bg-orange-100 text-orange-600"
+                  ? "bg-black text-orange-300"
                   : "hover:bg-base-200 text-base-content"} ${extra}`;
 
       //||------------------------------------------------------------------------------------------------||
@@ -68,7 +68,7 @@ export default function NavMain() {
                                     ) : (
                                           <>
                                                 <LinkQuery to="/login"  className={linkClass("/login")}><LogIn size={18}/>Login</LinkQuery>
-                                                <LinkQuery to="/signup" className={`btn btn-secondary ml-4 btn-md flex items-center gap-2 ${pathname === "/signup" ? "text-orange-500" : ""}`}><UserPlus size={16}/>Sign Up</LinkQuery>
+                                                <LinkQuery to="/signup" className={`btn btn-secondary ml-4 btn-md flex items-center gap-2 ${pathname === "/signup" ? "text-white" : ""}`}><UserPlus size={16}/>Sign Up</LinkQuery>
                                           </>
                                     )}
                               </div>
