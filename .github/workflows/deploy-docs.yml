@@ -31,19 +31,24 @@ jobs:
           publish_dir: ./docs/build
           publish_branch: gh-pages
 
+      #------------------------------------------------------------
+      # Notify Deployment Server
+      #------------------------------------------------------------
       - name: Notify Deployment Server
         run: |
-          echo "Notifying deployment server..."
-          DEPLOY_URL="https://deploy.complyage.com:9090/deploy"
+          echo "🚀 Notifying deployment server..."
+
           DEPLOY_KEY="${{ secrets.DEPLOY_KEY }}"
-          DEPLOY_URL="https://complyage.com:9090/deploy?check=${DEPLOY_KEY}"
+          DEPLOY_URL="https://deploy.complyage.com/deploy?check=${DEPLOY_KEY}"
 
           echo "Calling: $DEPLOY_URL"
-
-          RESPONSE=$(curl -sk -w "%{http_code}" -o /dev/null "$DEPLOY_URL")
+          RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/resp.txt "$DEPLOY_URL")
 
           if [ "$RESPONSE" != "200" ]; then
             echo "❌ Deployment trigger failed with HTTP code $RESPONSE"
+            echo "--- Server response ---"
+            cat /tmp/resp.txt
+            echo "-----------------------"
             exit 1
           fi
 
