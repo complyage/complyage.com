@@ -65,6 +65,52 @@ for dir in api gate oauth deployment; do
 done
 
 #------------------------------------------------------------------------||
+#-|| [4.5/9] Copy shared configs and secure credentials into each service directory
+#------------------------------------------------------------------------||
+
+echo "[4.5/9] Copying shared .env, config.json, and .secure directory into each service..."
+
+CONFIG_SRC="/complyage/.config"
+SECURE_SRC="/complyage/.secure"
+SERVICES=("api" "gate" "oauth" ".deployment")
+
+for service in "${SERVICES[@]}"; do
+    TARGET_DIR="/complyage/complyage.com/$service"
+    if [ -d "$TARGET_DIR" ]; then
+        echo " → Processing $service..."
+
+        # Copy .env
+        if [ -f "$CONFIG_SRC/.env" ]; then
+            cp -f "$CONFIG_SRC/.env" "$TARGET_DIR/.env"
+            echo "   ✓ Copied .env"
+        else
+            echo "   ⚠️ Missing $CONFIG_SRC/.env"
+        fi
+
+        # Copy config.json
+        if [ -f "$CONFIG_SRC/config.json" ]; then
+            cp -f "$CONFIG_SRC/config.json" "$TARGET_DIR/config.json"
+            echo "   ✓ Copied config.json"
+        else
+            echo "   ⚠️ Missing $CONFIG_SRC/config.json"
+        fi
+
+        # Copy .secure directory
+        if [ -d "$SECURE_SRC" ]; then
+            mkdir -p "$TARGET_DIR/.secure"
+            cp -r "$SECURE_SRC/"* "$TARGET_DIR/.secure/" 2>/dev/null || true
+            echo "   ✓ Copied .secure directory"
+        else
+            echo "   ⚠️ Missing $SECURE_SRC directory"
+        fi
+
+    else
+        echo " ⚠️ Skipping $service (directory not found)"
+    fi
+done
+
+
+#------------------------------------------------------------------------||
 #-|| [5/9] Clean and rebuild Docker images
 #------------------------------------------------------------------------||
 

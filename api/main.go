@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api/communicate"
 	"api/handlers"
 	"fmt"
 
@@ -24,6 +25,7 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 func main() {
+
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Env
 	//||------------------------------------------------------------------------------------------------||
@@ -41,6 +43,7 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	setup.Setup.Functions.OnAccountComplete = abstract.OnAccountComplete
 	setup.Setup.Functions.OnAuthCheck = abstract.AuthMe
+	setup.Setup.Functions.OnSendTwoFactorCode = communicate.SendTwoFactorCode
 	setup.Setup.Domain = ".complyage.com"
 	auth.Init(app.SQLDB["main"].DB, app.Config.Auth, ".complyage.com")
 	//||------------------------------------------------------------------------------------------------||

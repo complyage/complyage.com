@@ -33,6 +33,7 @@ export default function AuthSignup() {
       const prefix                              = location.pathname.startsWith("/overlay") ? "/overlay" : "";
       const params                              = new URLSearchParams(location.search);
       const oauthParam                          = params.get("oauth");
+      //const [email, setEmail]                   = useState(() => `user${Math.floor(Math.random() * 10000)}@example.com`);
       const [email, setEmail]                   = useState(() => `user${Math.floor(Math.random() * 10000)}@example.com`);
       const [captchaToken, setCaptchaToken]     = useState<string | null>(null);
       const [statusMessage, setStatusMessage]   = useState("");

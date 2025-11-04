@@ -35,7 +35,7 @@ export default function MainHero({ image, title, description, ctaLabel, ctaHref 
                   <div className="absolute inset-0 bg-black/40" />
 
                   <div className="relative max-w-5xl mt-[60px] text-white">
-                        <h1 className="text-6xl md:text-7xl font-extrabold mb-6 leading-tight drop-shadow-lg">
+                        <h1 className="pt-16 md:pt-0 text-5xl md:text-7xl font-extrabold mb-6 leading-tight drop-shadow-lg">
                               {title}
                         </h1>
                         <p className="text-xl md:text-2xl leading-relaxed max-w-4xl mx-auto opacity-95 drop-shadow font-bold text-shadow-2xs">

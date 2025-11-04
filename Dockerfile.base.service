@@ -6,22 +6,19 @@ FROM golang:1.24.5-alpine AS builder
 WORKDIR /app
 
 # ----------------------------------------------------------------------------------
-# Build arguments (unique per service)
+# Build arguments
 # ----------------------------------------------------------------------------------
 
-ARG SERVICE_NAME
-ARG SERVICE_PORT
 ARG GITHUB_TOKEN
+ARG INSTANCE_PORT
 
 # ----------------------------------------------------------------------------------
 # Install prerequisites
 # ----------------------------------------------------------------------------------
 
 RUN apk add --no-cache git ca-certificates openssh && \
-    if [ "$SERVICE_NAME" = "api" ]; then \
-        echo "🔧 Installing WebP dependencies for API..."; \
-        apk add --no-cache build-base libwebp-dev; \
-    fi
+    echo "🔧 Installing build dependencies..." && \
+    apk add --no-cache build-base libwebp-dev
 
 # ----------------------------------------------------------------------------------
 # Auth for private repos (disable proxies)
@@ -30,7 +27,7 @@ RUN apk add --no-cache git ca-certificates openssh && \
 ENV GOPRIVATE=github.com/complyage,github.com/ralphferrara
 ENV GONOSUMDB=github.com/complyage,github.com/ralphferrara
 ENV GOSUMDB=off
-ENV GOPROXY=direct
+ENV GOPROXY=https://proxy.golang.org,direct
 
 RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
@@ -38,9 +35,8 @@ RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".
 # Copy module files safely
 # ----------------------------------------------------------------------------------
 
-COPY go.mod ./ 
-COPY go.sum ./ 
-RUN [ -f go.mod ] || go mod init ${SERVICE_NAME}
+COPY go.mod go.sum ./
+RUN [ -f go.mod ] || go mod init instance
 
 # Clean out any local replacements
 RUN sed -i '/replace/d' go.mod || true && sed -i '/=> ../d' go.mod || true
@@ -50,8 +46,8 @@ RUN sed -i '/replace/d' go.mod || true && sed -i '/=> ../d' go.mod || true
 # ----------------------------------------------------------------------------------
 
 RUN mkdir -p /root/go/src/github.com/complyage /root/go/src/github.com/ralphferrara && \
-    git clone https://${GITHUB_TOKEN}:x-oauth-basic@github.com/complyage/base.git /root/go/src/github.com/complyage/base && \
-    git clone https://${GITHUB_TOKEN}:x-oauth-basic@github.com/ralphferrara/aria.git /root/go/src/github.com/ralphferrara/aria
+    git clone --depth=1 https://${GITHUB_TOKEN}:x-oauth-basic@github.com/complyage/base.git /root/go/src/github.com/complyage/base && \
+    git clone --depth=1 https://${GITHUB_TOKEN}:x-oauth-basic@github.com/ralphferrara/aria.git /root/go/src/github.com/ralphferrara/aria
 
 # ----------------------------------------------------------------------------------
 # Force replace to local modules *before* resolving deps
@@ -63,7 +59,7 @@ RUN go mod edit -replace=github.com/complyage/base=/root/go/src/github.com/compl
     go mod edit -require=github.com/ralphferrara/aria@v0.0.0
 
 # ----------------------------------------------------------------------------------
-# Copy the rest of your service code
+# Copy the rest of the instance code
 # ----------------------------------------------------------------------------------
 
 COPY . .
@@ -72,35 +68,39 @@ COPY . .
 # Final tidy and build
 # ----------------------------------------------------------------------------------
 
-# Enable proxy for public deps (fixes cloud.google.com/go/* fetch failures)
-RUN go env -w GOPROXY=https://proxy.golang.org,direct && \
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    go env -w GOPROXY=https://proxy.golang.org,direct && \
     go mod tidy && go mod download all && \
-    if [ "$SERVICE_NAME" = "api" ]; then \
-        echo "🔨 Building API with CGO + WebP support..."; \
-        CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ${SERVICE_NAME} .; \
-    else \
-        echo "⚙️ Building lightweight service (no CGO)..."; \
-        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ${SERVICE_NAME} .; \
-    fi
+    echo "⚙️ Building instance binary..." && \
+    CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o instance . && \
+    test -f /app/instance || (echo "❌ Build failed — missing /app/instance" && exit 1)
 
 # ----------------------------------------------------------------------------------
 # Stage 2: Runtime
 # ----------------------------------------------------------------------------------
 
 FROM alpine:latest
-WORKDIR /app
 
-ARG SERVICE_NAME
-ARG SERVICE_PORT
+# ✅ Work from /app/instance so ../config.json resolves correctly
+WORKDIR /app/instance
 
-# Copy the compiled binary
-COPY --from=builder /app/${SERVICE_NAME} /app/${SERVICE_NAME}
+ARG INSTANCE_PORT
+ENV INSTANCE_PORT=${INSTANCE_PORT}
 
-# Ensure the binary is executable
-RUN chmod +x /app/${SERVICE_NAME}
+# Copy compiled binary
+COPY --from=builder /app/instance /app/instance/instance
+RUN chmod +x /app/instance/instance
 
-# Expose the service port
-EXPOSE ${SERVICE_PORT}
+# Copy config + env into parent (/app)
+COPY .env /app/.env
+COPY config.json /app/config.json
+COPY .secure /app/.secure
 
-# Run directly, no shell wrapper
-ENTRYPOINT ["/app/${SERVICE_NAME}"]
+# Verify layout
+RUN echo "---- Verifying structure ----" && ls -la /app && ls -la /app/instance || true
+
+EXPOSE ${INSTANCE_PORT}
+
+# Run instance normally (auto stays up if crash)
+CMD sh -c "./instance || (echo '\n⚠️ Instance exited — keeping container alive for debugging...' && tail -f /dev/null)"
