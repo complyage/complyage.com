@@ -59,6 +59,8 @@ services:
          - DEPLOY_KEY=${DEPLOY_KEY}
       ports:
          - "9090:9090"
+      extra_hosts:
+         - "host.docker.internal:host-gateway"
 
    # ----------------------------------------------------------------------------------
    # API SERVICE
@@ -82,6 +84,8 @@ services:
          - REDIS_HOST=live-auth-redis
       ports:
          - "8081:8081"
+      extra_hosts:
+         - "host.docker.internal:host-gateway"
 
    # ----------------------------------------------------------------------------------
    # GATE SERVICE
@@ -105,6 +109,8 @@ services:
          - REDIS_HOST=live-enforce-redis
       ports:
          - "8082:8082"
+      extra_hosts:
+         - "host.docker.internal:host-gateway"
 
    # ----------------------------------------------------------------------------------
    # OAUTH SERVICE
@@ -128,6 +134,8 @@ services:
          - REDIS_HOST=live-oauth-redis
       ports:
          - "8083:8083"
+      extra_hosts:
+         - "host.docker.internal:host-gateway"
 
 # ----------------------------------------------------------------------------------
 # PERSISTENT VOLUMES

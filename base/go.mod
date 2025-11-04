@@ -5,7 +5,9 @@ go 1.24.5
 require (
 	github.com/fogleman/gg v1.3.0
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/ralphferrara/aria v0.0.0-20250917054147-6e3e09fbab46
+	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/stripe/stripe-go/v82 v82.5.0
 	gorm.io/datatypes v1.2.6
@@ -86,6 +88,7 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/streadway/amqp v1.1.0 // indirect
 	github.com/tinylib/msgp v1.3.0 // indirect

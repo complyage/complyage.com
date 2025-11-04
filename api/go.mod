@@ -16,6 +16,8 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/minio/minio-go/v7 v7.0.95 // indirect
 	github.com/nyaruka/phonenumbers v1.6.5 // indirect
+	github.com/sendgrid/rest v2.6.9+incompatible // indirect
+	github.com/sendgrid/sendgrid-go v3.16.1+incompatible // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
 )
 
@@ -129,4 +131,5 @@ require (
 )
 
 replace github.com/complyage/base => ../base
+
 replace github.com/ralphferrara/aria => ../aria

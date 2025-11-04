@@ -135,7 +135,12 @@ export default function EnforcementZones() {
                                     boxZoom={false}
                                     dragging={false}
                                     zoomControl={false}
-                                    style={{ height: "500px", width: "100%" }}
+                                    style={{
+                                                height: "500px",
+                                                width: "100%",
+                                                position: "relative",
+                                                zIndex: 0, // ← keeps map below nav and dropdowns
+                                    }}                                    
                                     className="rounded-lg shadow-lg"
                               >
                                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />

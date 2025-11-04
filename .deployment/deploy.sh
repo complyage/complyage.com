@@ -12,30 +12,30 @@ NGINX_CONF_SRC="$REPO_DIR/.nginx/compose-proxy.conf"
 NGINX_CONF_DST="/etc/nginx/conf.d/compose-proxy.conf"
 
 #------------------------------------------------------------------------||
-#-|| [1/8] Stop running containers
+#-|| [1/9] Stop running containers
 #------------------------------------------------------------------------||
 
-echo "[1/8] Stopping any existing Docker containers..."
+echo "[1/9] Stopping any existing Docker containers..."
 docker compose -f "$COMPOSE_FILE" down || true
 
 #------------------------------------------------------------------------||
-#-|| [2/8] Update or clone Aria Framework
+#-|| [2/9] Update or clone Aria Framework
 #------------------------------------------------------------------------||
 
-echo "[2/8] Updating Aria Framework..."
+echo "[2/9] Updating Aria Framework..."
 if [ -d "$ARIA_DIR/.git" ]; then
-    echo "Aria already exists — pulling latest changes..."
+    echo " → Aria already exists — pulling latest changes..."
     cd "$ARIA_DIR" && git reset --hard && git pull origin main
 else
-    echo "Aria not found — cloning fresh..."
+    echo " → Aria not found — cloning fresh..."
     git clone https://github.com/ralphferrara/aria.git "$ARIA_DIR"
 fi
 
 #------------------------------------------------------------------------||
-#-|| [3/8] Copy base Dockerfile into each service
+#-|| [3/9] Copy base Dockerfile into each service
 #------------------------------------------------------------------------||
 
-echo "[3/8] Copying base Dockerfile into service directories..."
+echo "[3/9] Copying base Dockerfile into service directories..."
 
 BASE_FILE="$REPO_DIR/Dockerfile.base.service"
 
@@ -45,15 +45,15 @@ for service in api gate oauth .deployment; do
         echo " → Copying to $service/"
         cp -f "$BASE_FILE" "$TARGET_DIR/Dockerfile"
     else
-        echo " Skipping $service (directory not found)"
+        echo " ⚠️ Skipping $service (directory not found)"
     fi
 done
 
 #------------------------------------------------------------------------||
-#-|| [3.5/8] Clean up go.mod replace directives
+#-|| [4/9] Clean up go.mod replace directives
 #------------------------------------------------------------------------||
 
-echo "[3.5/8] Cleaning local 'replace' directives from Go modules..."
+echo "[4/9] Cleaning local 'replace' directives from Go modules..."
 
 for dir in api gate oauth deployment; do
    if [ -f "$REPO_DIR/$dir/go.mod" ]; then
@@ -65,66 +65,103 @@ for dir in api gate oauth deployment; do
 done
 
 #------------------------------------------------------------------------||
-#-|| [4/8] Clean and rebuild Docker images
+#-|| [4.5/9] Copy shared configs and secure credentials into each service directory
 #------------------------------------------------------------------------||
 
-echo "[4/8] Rebuilding all containers..."
+echo "[4.5/9] Copying shared .env, config.json, and .secure directory into each service..."
+
+CONFIG_SRC="/complyage/.config"
+SECURE_SRC="/complyage/.secure"
+SERVICES=("api" "gate" "oauth" ".deployment")
+
+for service in "${SERVICES[@]}"; do
+    TARGET_DIR="/complyage/complyage.com/$service"
+    if [ -d "$TARGET_DIR" ]; then
+        echo " → Processing $service..."
+
+        # Copy .env
+        if [ -f "$CONFIG_SRC/.env" ]; then
+            cp -f "$CONFIG_SRC/.env" "$TARGET_DIR/.env"
+            echo "   ✓ Copied .env"
+        else
+            echo "   ⚠️ Missing $CONFIG_SRC/.env"
+        fi
+
+        # Copy config.json
+        if [ -f "$CONFIG_SRC/config.json" ]; then
+            cp -f "$CONFIG_SRC/config.json" "$TARGET_DIR/config.json"
+            echo "   ✓ Copied config.json"
+        else
+            echo "   ⚠️ Missing $CONFIG_SRC/config.json"
+        fi
+
+        # Copy .secure directory
+        if [ -d "$SECURE_SRC" ]; then
+            mkdir -p "$TARGET_DIR/.secure"
+            cp -r "$SECURE_SRC/"* "$TARGET_DIR/.secure/" 2>/dev/null || true
+            echo "   ✓ Copied .secure directory"
+        else
+            echo "   ⚠️ Missing $SECURE_SRC directory"
+        fi
+
+    else
+        echo " ⚠️ Skipping $service (directory not found)"
+    fi
+done
+
+
+#------------------------------------------------------------------------||
+#-|| [5/9] Clean and rebuild Docker images
+#------------------------------------------------------------------------||
+
+echo "[5/9] Rebuilding all containers..."
 cd "$REPO_DIR"
 docker compose -f "$COMPOSE_FILE" build --no-cache
 
 #------------------------------------------------------------------------||
-#-|| [5/8] Start Docker stack
+#-|| [6/9] Start Docker stack
 #------------------------------------------------------------------------||
 
-echo "[5/8] Starting Docker stack..."
+echo "[6/9] Starting Docker stack..."
 docker compose -f "$COMPOSE_FILE" up -d
 
 #------------------------------------------------------------------------||
-#-|| [5.5/8] Build and deploy UI
+#-|| [7/9] Build UI (npm install + build)
 #------------------------------------------------------------------------||
 
-echo "[5.5/8] Building and deploying UI..."
+echo "[7/9] Building UI..."
 
 UI_DIR="$REPO_DIR/ui"
-UI_DIST_DIR="$UI_DIR/dist"
-NGINX_UI_DIR="/var/www/complyage-ui"
 
 if [ -d "$UI_DIR" ]; then
     echo " → Installing dependencies..."
     cd "$UI_DIR"
-    npm ci --omit=dev || npm install --omit=dev
+    npm install --omit=dev || npm ci --omit=dev
 
     echo " → Building production bundle..."
     npm run build
 
-    echo " → Copying build output to Nginx web root..."
-    mkdir -p "$NGINX_UI_DIR"
-    rsync -av --delete "$UI_DIST_DIR/" "$NGINX_UI_DIR/"
+    echo " ✅ UI build complete: $UI_DIR/dist"
 else
     echo " ⚠️ UI directory not found at $UI_DIR — skipping build."
 fi
 
-
 #------------------------------------------------------------------------||
-#-|| [6/8] Apply updated Nginx configuration
+#-|| [8/9] Apply updated Nginx configuration
 #------------------------------------------------------------------------||
 
-echo "[6/8] Updating Nginx reverse proxy configuration..."
+echo "[8/9] Updating Nginx reverse proxy configuration..."
 cp -f "$NGINX_CONF_SRC" "$NGINX_CONF_DST"
 systemctl restart nginx || true
 
 #------------------------------------------------------------------------||
-#-|| [7/8] Verify running containers
+#-|| [9/9] Verify containers, show logs, and cleanup
 #------------------------------------------------------------------------||
 
-echo "[7/8] Checking running containers..."
+echo "[9/9] Checking running containers..."
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-#------------------------------------------------------------------------||
-#-|| [8/8] Show logs & cleanup
-#------------------------------------------------------------------------||
-
-echo "[8/8] Tailing logs for first 10 seconds..."
+echo "Tailing logs for first 10 seconds..."
 timeout 10 docker compose -f "$COMPOSE_FILE" logs --tail=20 || true
 
 echo "Cleaning up unused Docker images..."

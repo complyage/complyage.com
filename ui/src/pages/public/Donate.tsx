@@ -109,28 +109,41 @@ export default function DonatePage() {
                   />
 
 			{/* Donation Method Buttons - OUTSIDE */}
-			<section className="w-full max-w-5xl mx-auto mt-10 mb-0 flex flex-col items-center">
-				<div className="flex justify-center gap-2 w-full mb-7">
-					<button
-						className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold transition-colors text-xl
-                                          ${activeTab === "card" ? "bg-blue-500/60 text-white shadow-lg" : "bg-gray-700 text-white/80 hover:bg-blue-500/70"}`}
-						onClick={() => setActiveTab("card")}>
-						<CreditCard className="w-6 h-6" /> Credit Card
-					</button>
-					<button
-						className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold transition-colors text-xl
-                                          ${ activeTab === "crypto" ? "bg-blue-500/60 text-white shadow-lg" : "bg-gray-700 text-white/80 hover:bg-blue-500/70"}`}
-						onClick={() => setActiveTab("crypto")}>
-						<Bitcoin className="w-6 h-6" /> Crypto
-					</button>
-					<button
-						className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold transition-colors text-xl
-                                          ${activeTab === "cash" ? "bg-blue-500/60 text-white shadow-lg" : "bg-gray-700 text-white/80 hover:bg-blue-500/70"}`}
-						onClick={() => setActiveTab("cash")}>
-						<MailIcon className="w-6 h-6" /> Cash/Check
-					</button>
-				</div>
-			</section>
+			{/* Donation Method Buttons */}
+                  <section className="w-full max-w-5xl mx-auto mt-10 mb-0 px-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                              <button
+                                    className={`flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-bold text-lg sm:text-xl transition-all
+                                          ${activeTab === "card"
+                                                ? "bg-blue-500 text-white shadow-lg scale-[1.02]"
+                                                : "bg-gray-800 text-white/80 hover:bg-blue-600 hover:text-white"}`}
+                                    onClick={() => setActiveTab("card")}
+                              >
+                                    <CreditCard className="w-6 h-6" /> Credit Card
+                              </button>
+
+                              <button
+                                    className={`flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-bold text-lg sm:text-xl transition-all
+                                          ${activeTab === "crypto"
+                                                ? "bg-blue-500 text-white shadow-lg scale-[1.02]"
+                                                : "bg-gray-800 text-white/80 hover:bg-blue-600 hover:text-white"}`}
+                                    onClick={() => setActiveTab("crypto")}
+                              >
+                                    <Bitcoin className="w-6 h-6" /> Crypto
+                              </button>
+
+                              <button
+                                    className={`flex items-center justify-center gap-3 px-6 py-5 rounded-2xl font-bold text-lg sm:text-xl transition-all
+                                          ${activeTab === "cash"
+                                                ? "bg-blue-500 text-white shadow-lg scale-[1.02]"
+                                                : "bg-gray-800 text-white/80 hover:bg-blue-600 hover:text-white"}`}
+                                    onClick={() => setActiveTab("cash")}
+                              >
+                                    <MailIcon className="w-6 h-6" /> Cash / Check
+                              </button>
+                        </div>
+                  </section>
+
 
 			{/* Donation UI */}
 			<section className="py-8 px-4 w-full max-w-5xl mx-auto flex flex-col gap-10">

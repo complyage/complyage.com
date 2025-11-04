@@ -29,6 +29,7 @@ import SpinnerCircle                                          from "../../compon
 import BIP39                                                  from "../../components/base/BIP39";
 import KeyPairGenerator                                       from "../../components/base/KeyPairGenerator";
 import InlineAlert                                            from "../../components/base/InlineAlert";
+import PasswordField                                          from "../../components/base/PasswordField";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Interfaces
@@ -142,12 +143,9 @@ export default function AuthComplete() {
 
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
                               <label className="font-semibold">Password</label>
-                              <input
-                                    type="password"
+                              <PasswordField
                                     placeholder="Enter your password"
-                                    value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input input-bordered w-full py-5 text-xl h-12"
                                     required
                               />
 
