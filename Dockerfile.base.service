@@ -16,9 +16,7 @@ ARG INSTANCE_PORT
 # Install prerequisites
 # ----------------------------------------------------------------------------------
 
-RUN apk add --no-cache git ca-certificates openssh && \
-    echo "🔧 Installing build dependencies..." && \
-    apk add --no-cache build-base libwebp-dev
+RUN apk add --no-cache git ca-certificates openssh bash build-base libwebp-dev
 
 # ----------------------------------------------------------------------------------
 # Auth for private repos (disable proxies)
@@ -42,7 +40,7 @@ RUN [ -f go.mod ] || go mod init instance
 RUN sed -i '/replace/d' go.mod || true && sed -i '/=> ../d' go.mod || true
 
 # ----------------------------------------------------------------------------------
-# Clone private modules directly (always succeeds)
+# Clone private modules directly
 # ----------------------------------------------------------------------------------
 
 RUN mkdir -p /root/go/src/github.com/complyage /root/go/src/github.com/ralphferrara && \
@@ -50,7 +48,7 @@ RUN mkdir -p /root/go/src/github.com/complyage /root/go/src/github.com/ralphferr
     git clone --depth=1 https://${GITHUB_TOKEN}:x-oauth-basic@github.com/ralphferrara/aria.git /root/go/src/github.com/ralphferrara/aria
 
 # ----------------------------------------------------------------------------------
-# Force replace to local modules *before* resolving deps
+# Force replace to local modules before resolving deps
 # ----------------------------------------------------------------------------------
 
 RUN go mod edit -replace=github.com/complyage/base=/root/go/src/github.com/complyage/base && \
@@ -76,13 +74,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o instance . && \
     test -f /app/instance || (echo "❌ Build failed — missing /app/instance" && exit 1)
 
+
 # ----------------------------------------------------------------------------------
 # Stage 2: Runtime
 # ----------------------------------------------------------------------------------
 
 FROM alpine:latest
 
-# ✅ Work from /app/instance so ../config.json resolves correctly
+# Install only what's necessary at runtime (git, bash, curl for scripts, CA certs)
+RUN apk add --no-cache git bash curl ca-certificates && update-ca-certificates
+
 WORKDIR /app/instance
 
 ARG INSTANCE_PORT
@@ -92,7 +93,7 @@ ENV INSTANCE_PORT=${INSTANCE_PORT}
 COPY --from=builder /app/instance /app/instance/instance
 RUN chmod +x /app/instance/instance
 
-# Copy config + env into parent (/app)
+# Copy configuration files
 COPY .env /app/.env
 COPY config.json /app/config.json
 COPY .secure /app/.secure
@@ -102,5 +103,8 @@ RUN echo "---- Verifying structure ----" && ls -la /app && ls -la /app/instance 
 
 EXPOSE ${INSTANCE_PORT}
 
-# Run instance normally (auto stays up if crash)
+# Add PATH safety (ensures /usr/bin etc. visible for exec.Command)
+ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Default entrypoint
 CMD sh -c "./instance || (echo '\n⚠️ Instance exited — keeping container alive for debugging...' && tail -f /dev/null)"
