@@ -189,6 +189,49 @@ cp -f "$NGINX_CONF_SRC" "$NGINX_CONF_DST"
 systemctl restart nginx || true
 
 #------------------------------------------------------------------------||
+#-|| [8.5/9] Manage and Renew Let's Encrypt Certificates
+#------------------------------------------------------------------------||
+
+echo "[8.5/9] Checking and renewing SSL certificates with Certbot..."
+
+# Ensure certbot is installed
+if ! command -v certbot &> /dev/null; then
+    echo " → Installing certbot..."
+    apt-get update -y && apt-get install -y certbot python3-certbot-nginx
+fi
+
+# Domains you want to secure
+DOMAINS=(
+    "complyage.com"
+    "www.complyage.com"
+    "api.complyage.com"
+    "gate.complyage.com"
+    "oauth.complyage.com"
+)
+
+# Email used for Let's Encrypt notifications
+CERT_EMAIL="admin@complyage.com"
+
+# Loop through each domain and ensure it has a certificate
+for domain in "${DOMAINS[@]}"; do
+    echo " → Ensuring certificate for: $domain"
+    if ! certbot certificates | grep -q "$domain"; then
+        echo "   ↳ No existing cert found. Creating one..."
+        certbot --nginx --non-interactive --agree-tos --redirect -m "$CERT_EMAIL" -d "$domain"
+    fi
+done
+
+# Renew all certificates if due
+echo " → Running certbot renew..."
+certbot renew --quiet
+
+# Reload Nginx after renewals (no downtime)
+systemctl reload nginx || true
+
+echo " ✅ Certificate check and renewal complete."
+
+
+#------------------------------------------------------------------------||
 #-|| [9/9] Verify containers, show logs, and cleanup
 #------------------------------------------------------------------------||
 
