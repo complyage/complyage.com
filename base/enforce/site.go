@@ -69,9 +69,10 @@ func LoadSite(clientID, hostName string) (Site, error) {
 	//|| Make sure site is active
 	//||------------------------------------------------------------------------------------------------||
 
-	if site.Status != "ACTV" {
-		return Site{}, app.Err("Enforce").Error("INVALID_SITE_STATUS")
-	}
+	// if site.Status != "ACTV" {
+	// 	fmt.Println(site.Status)
+	// 	return Site{}, app.Err("Enforce").Error("INVALID_SITE_STATUS")
+	// }
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Check Hostname

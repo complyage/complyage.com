@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+      font-size                     : 20px;
+      name                          : "dark";
+      default                       : true;
+      color-scheme                  : dark;   
+      --color-primary               : rgba(51, 65, 85, 1);
+      --color-secondary             : rgba(249, 115, 22, 1);
+}

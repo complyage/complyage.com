@@ -13,5 +13,5 @@ type KeeperRecord struct {
 	IPAddress string `json:"ipAddress"`
 	ClientId  string `json:"clientId"`
 	Status    string `json:"status"`
-	ReturnURL string `json:"returnUrl"`
+	ReturnURL string `json:"returnUrl,omitempty"`
 }

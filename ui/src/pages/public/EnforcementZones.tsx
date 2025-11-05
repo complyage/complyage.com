@@ -38,24 +38,39 @@ import { ZoneRequirement } from "../../interfaces/models/model.zones";
 //||------------------------------------------------------------------------------------------------||
 
 import "leaflet/dist/leaflet.css";
+//||------------------------------------------------------------------------------------------------||
+//|| Fix Leaflet Marker Icons for Production
+//||------------------------------------------------------------------------------------------------||
+import L from "leaflet";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import markerRetina from "leaflet/dist/images/marker-icon-2x.png";
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+      iconRetinaUrl: markerRetina,
+      iconUrl: markerIcon,
+      shadowUrl: markerShadow,
+});
 
 //||------------------------------------------------------------------------------------------------||
 //|| Types
 //||------------------------------------------------------------------------------------------------||
 
 interface Zone {
-      id?: string | number;
-      state?: string;
-      country?: string;
-      law?: string;
-      effective?: string;
-      requirements?: string;
-      penalties?: string;
-      lat?: string;
-      long?: string;
-      latitude?: string;
-      longitude?: string;
-      coords?: LatLngExpression | null;
+      id?               : string | number;
+      state?            : string;
+      country?          : string;
+      law?              : string;
+      effective?        : string;
+      requirements?     : string;
+      penalties?        : string;
+      lat?              : string;
+      long?             : string;
+      latitude?         : string;
+      longitude?        : string;
+      coords?           : LatLngExpression | null;
 }
 
 //||------------------------------------------------------------------------------------------------||

@@ -17,6 +17,7 @@ import { ModelSite }                from "../../interfaces/models/model.sites";
 
 import MembersLayout                from "../../layouts/MembersLayout";
 import { ChevronRightIcon }         from "lucide-react";
+import apiURL                       from "../../utils/apiURL";
 
 //||------------------------------------------------------------------------------------------------||
 //|| Site Sections
@@ -99,7 +100,7 @@ export default function Sites() {
             setChanged(false);
             setDeleting(false);
             currentSite.current = null;
-            const response = await fetch("/v1/api/sites/create", { method: "POST", credentials: "include" });
+            const response = await fetch(apiURL("/v1/api/sites/create"), { method: "POST", credentials: "include" });
             if (!response.ok) {
                   alert("Failed to create new site");
                   return;

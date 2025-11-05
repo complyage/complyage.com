@@ -136,14 +136,48 @@ UI_DIR="$REPO_DIR/ui"
 if [ -d "$UI_DIR" ]; then
     echo " → Installing dependencies..."
     cd "$UI_DIR"
-    npm install --omit=dev || npm ci --omit=dev
 
+    # Always use npm ci for deterministic installs
+    # Include devDependencies so Vite is available
+    if [ -f "package-lock.json" ]; then
+        npm ci
+    else
+        npm install
+    fi
+
+    # Build using Vite
     echo " → Building production bundle..."
-    npm run build
+    npx vite build
 
     echo " ✅ UI build complete: $UI_DIR/dist"
 else
     echo " ⚠️ UI directory not found at $UI_DIR — skipping build."
+fi
+
+#------------------------------------------------------------------------||
+#-|| [7.5/9] Build Documentation (Vite)
+#------------------------------------------------------------------------||
+
+echo "[7.5/9] Building Documentation..."
+
+DOCS_DIR="$REPO_DIR/documentation"
+
+if [ -d "$DOCS_DIR" ]; then
+    echo " → Installing dependencies for documentation..."
+    cd "$DOCS_DIR"
+
+    if [ -f "package-lock.json" ]; then
+        npm ci
+    else
+        npm install
+    fi
+
+    echo " → Building production bundle..."
+    npx vite build
+
+    echo " ✅ Documentation build complete: $DOCS_DIR/dist"
+else
+    echo " ⚠️ Documentation directory not found — skipping."
 fi
 
 #------------------------------------------------------------------------||

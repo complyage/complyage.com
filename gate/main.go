@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/complyage/base/ips"
 	"github.com/complyage/base/keeper"
 	"github.com/complyage/base/sites"
@@ -39,9 +41,11 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load IPs
 	//||------------------------------------------------------------------------------------------------||
-	if app.Config.App.Env == "production" {
-		ips.LoadIPRanges()
-	}
+	fmt.Println("Loading IP Ranges to memory...")
+	//if app.Config.App.Env == "production" {
+	ips.LoadIPRanges()
+	//}
+	fmt.Println("Loaded IP Ranges.")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Zones
 	//||------------------------------------------------------------------------------------------------||
@@ -63,6 +67,10 @@ func main() {
 	//||------------------------------------------------------------------------------------------------||
 	app.HTTP["gate"].Router.HandleFunc("/v1/check", handlers.InitialCheckHandler).Methods("GET")
 	app.HTTP["gate"].Router.HandleFunc("/v1/complyage.js", handlers.GenerateScriptHandler).Methods("GET")
+	//||------------------------------------------------------------------------------------------------||
+	//|| Manual Check
+	//||------------------------------------------------------------------------------------------------||
+	app.HTTP["gate"].Router.HandleFunc("/v1/manual", handlers.ManualHandler).Methods("POST")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Keep Alive
 	//||------------------------------------------------------------------------------------------------||
