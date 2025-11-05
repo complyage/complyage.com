@@ -23,11 +23,6 @@ func HandleDeployment(w http.ResponseWriter, r *http.Request) {
 	deployDir := filepath.Join(repoDir, ".deployment")
 	deployScript := filepath.Join(deployDir, "deploy.sh")
 
-	configSrc := "/complyage/.config/config.json"
-	envComplyageSrc := "/complyage/.config/.env"
-	configDst := filepath.Join(repoDir, "config.json")
-	envComplyageDst := filepath.Join(repoDir, ".env")
-
 	//--------------------------------------------------------------------------------------------
 	// Clean + Clone repo fresh
 	//--------------------------------------------------------------------------------------------
@@ -38,20 +33,6 @@ func HandleDeployment(w http.ResponseWriter, r *http.Request) {
 	if err := cmd.Run(); err != nil {
 		http.Error(w, fmt.Sprintf("git clone failed: %v", err), http.StatusInternalServerError)
 		return
-	}
-
-	//--------------------------------------------------------------------------------------------
-	// Copy config and environment
-	//--------------------------------------------------------------------------------------------
-	for src, dst := range map[string]string{
-		configSrc:       configDst,
-		envComplyageSrc: envComplyageDst,
-	} {
-		fmt.Printf("Copying %s -> %s\n", src, dst)
-		if err := CopyFile(src, dst); err != nil {
-			http.Error(w, fmt.Sprintf("copy failed %s: %v", src, err), http.StatusInternalServerError)
-			return
-		}
 	}
 
 	//--------------------------------------------------------------------------------------------
