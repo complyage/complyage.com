@@ -18,9 +18,24 @@ import (
 //||------------------------------------------------------------------------------------------------||
 
 type ManualRequest struct {
-	IP        string `json:"ip"`
+	IP        string `json:"ip_address"`
 	SessionId string `json:"session_id"`
 	ClientId  string `json:"client_id"`
+}
+
+//||------------------------------------------------------------------------------------------------||
+//|| Manual Response
+//||------------------------------------------------------------------------------------------------||
+
+type ManualResponse struct {
+	SessionID string `json:"session_id"`
+	Enforced  bool   `json:"enforced"`
+	Verified  bool   `json:"verified"`
+	Age       int    `json:"age"`
+	UserID    int64  `json:"user_id"`
+	IPAddress string `json:"ip_address"`
+	ClientID  string `json:"client_id"`
+	Status    string `json:"status"`
 }
 
 //||------------------------------------------------------------------------------------------------||
@@ -46,6 +61,20 @@ func ManualHandler(w http.ResponseWriter, r *http.Request) {
 		responses.Error(w, http.StatusInternalServerError, "Error loading manual keeper")
 		return
 	}
+	//||------------------------------------------------------------------------------------------------||
+	//|| Manual
+	//||------------------------------------------------------------------------------------------------||
+	manualResponse := ManualResponse{
+		SessionID: keep.KeeperId,
+		Enforced:  keep.Enforced,
+		Verified:  keep.Verified,
+		Age:       keep.Age,
+		UserID:    keep.UserId,
+		IPAddress: keep.IPAddress,
+		ClientID:  keep.ClientId,
+		Status:    keep.Status,
+	}
+	fmt.Println("Manual Response:", manualResponse)
 	//||------------------------------------------------------------------------------------------------||
 	//|| Write the Cookie
 	//||------------------------------------------------------------------------------------------------||

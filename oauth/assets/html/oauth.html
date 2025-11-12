@@ -84,19 +84,15 @@
                         <!-- Init Overlay -->
                         <aside id="initOverlay" class="w-full flex justify-center items-center">
                               <div class="flex flex-col items-center justify-center text-center w-4/5">
-                                    <img class="mb-2" src="/static/img/complyage-w.webp" alt="{{::DEFAULT::LOGO}}" />
+                                    <img class="mb-2" src="/static/img/complyage-w.webp" alt="{{::DEFAULT:LOGO}}" />
                                     <h2 class="text-gray-400 text-2xl px-2 py-5 font-bold">
                                           {{::DEFAULT:TAKEBACKPRIVACY}} {{::DEFAULT:KEEPPRIVACY}}
                                     </h2>
                                     <p class="text-md leading-7 px-2 pt-1 pb-6 m-0 text-gray-200">
                                           {{::DEFAULT:BLURBSIGNUP}} <br />
-                                    </p>
+                                    </p>                              
                                     {{STATUS_LOGIN}}
-                                    <div class="flex-col items-center justify-center text-center p-4 rounded-lg text-sm font-bold w-4/5 bg-black/50 text-white">
-                                          <span>{{IP}}</span>
-                                          <span class="text-gray-400"">Location: {{REGION}}, {{COUNTRY}}</span>
-                                          <span class="text-yellow-500">{{ENFORCED}}</span>
-                                    </div>
+                                    {{SUB_VPN}}
                               </div>
                         </aside>
                   
@@ -215,9 +211,6 @@
                   const frame   = document.getElementById("actionFrame");
                   frame.src     = "";
             }            
-
-            function previewData() {
-            }
 
             function closePreview() {
                   bodyClass("overlay-init");

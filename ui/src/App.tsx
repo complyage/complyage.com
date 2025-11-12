@@ -79,7 +79,7 @@ import FaceVerification       from './pages/verification/face/FaceVerification'
 //|| Admin
 //||------------------------------------------------------------------------------------------------||
 
-import AdminDashboard            from './pages/admin/AdminDashboard'
+import AdminDashboard         from './pages/admin/AdminDashboard'
 
 //||------------------------------------------------------------------------------------------------||
 //|| App

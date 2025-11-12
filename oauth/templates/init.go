@@ -22,6 +22,7 @@ func init() {
 	//||------------------------------------------------------------------------------------------------||
 	template.Register("sub.permission", "./assets/html/sub.permission.html")
 	template.Register("sub.permission.age", "./assets/html/sub.permission.age.html")
+	template.Register("sub.vpn", "./assets/html/sub.vpn.html")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Badge/Button
 	//||------------------------------------------------------------------------------------------------||

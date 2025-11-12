@@ -23,11 +23,10 @@ type Zone struct {
 //||------------------------------------------------------------------------------------------------||
 
 type Site struct {
-	ID       uint   `json:"id"`
-	ClientId string `json:"clientId"`
-	Verifier string `json:"verifier"`
-	// Public      string            `json:"-"`
-	// Private     string            `json:"-"`
+	ID          uint              `json:"id"`
+	ClientId    string            `json:"clientId"`
+	Verifier    string            `json:"verifier"`
+	Private     string            `json:"-"`
 	Name        string            `json:"name"`
 	Logo        string            `json:"logo"`
 	Description string            `json:"description"`

@@ -67,25 +67,6 @@ func PreviewShareHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Get the Requested information
-	//||------------------------------------------------------------------------------------------------||
-
-	verification := ""
-	for _, es := range oa.Enforcement.Scopes {
-		app.Log.Info("Checking Scope:", es.Code.String(), scope)
-		if es.Code.String() == scope {
-			app.Log.Info("Found Scope:", es.Code.String(), scope)
-			verification = es.Verification
-			break
-		}
-	}
-
-	if verification == "" {
-		responses.Error(w, http.StatusBadRequest, app.Err("OAuth").Code("INVALID_SCOPE"))
-		return
-	}
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Get the Verification
 	//||------------------------------------------------------------------------------------------------||
 

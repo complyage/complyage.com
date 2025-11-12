@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/complyage/base/enforce"
+	"github.com/complyage/base/vpns"
 
 	"github.com/ralphferrara/aria/app"
 	"github.com/ralphferrara/aria/base/template"
@@ -55,6 +56,19 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	tpl := template.Create("oauth")
 
 	//||------------------------------------------------------------------------------------------------||
+	//|| VPN Template
+	//||------------------------------------------------------------------------------------------------||
+
+	vpn := vpns.GetRandomVPN()
+	vpnTemplate := template.Create("sub.vpn")
+	if vpn != nil {
+		vpnTemplate.Add("VPN_NAME", vpn.Name)
+		vpnTemplate.Add("VPN_URL", vpn.URL)
+		vpnTemplate.Add("VPN_BLURB", vpn.Blurb)
+		tpl.Add("SUB_VPN", vpnTemplate.Compile())
+	}
+
+	//||------------------------------------------------------------------------------------------------||
 	//|| Logged In / Logged Out
 	//||------------------------------------------------------------------------------------------------||
 
@@ -67,61 +81,30 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.Add("STATUS_LOGIN", statusTemplate.Compile())
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Of Age
-	//||------------------------------------------------------------------------------------------------||
-
-	if enforcement.Age.ZoneVerified {
-		tpl.Add("OFAGECLASS", "ofAge")
-		tpl.Add("MARKER_AGE_APPROVED", "{{::DEFAULT:CONGRATS_AGE_VERIFIED}}")
-	} else {
-		tpl.Add("OFAGECLASS", "notOfAge")
-		tpl.Add("MARKER_AGE_APPROVED", "{{::DEFAULT:AGE_VERIFICATION_REQUIRED}}")
-	}
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| OAuth
 	//||------------------------------------------------------------------------------------------------||
 
 	htmlPermissions := strings.Builder{}
 	for _, s := range enforcement.Scopes {
-
 		fmt.Println("Processing Scope:", s.Code)
 		log.PrettyPrint(s)
-
 		//||------------------------------------------------------------------------------------------------||
 		//|| Permissions Template Markers
 		//||------------------------------------------------------------------------------------------------||
-
 		html := templates.SubPermissionHTML(s, enforcement.User.Level > 0, true)
-
 		//||------------------------------------------------------------------------------------------------||
 		//|| Add to Main HTML
 		//||------------------------------------------------------------------------------------------------||
-
 		htmlPermissions.WriteString(html)
 	}
 
 	tpl.Data = tpl.Compile()
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Add the Age Header to the permissions area
-	//||------------------------------------------------------------------------------------------------||
-
-	ageCheck := templates.SubAgeHTML(&enforcement)
-	tpl.Add("AGECHECK", ageCheck)
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Permissions
 	//||------------------------------------------------------------------------------------------------||
 
 	tpl.Add("PERMISSIONS", htmlPermissions.String())
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Age Gate Header
-	//||------------------------------------------------------------------------------------------------||
-
-	agh := template.Create("span.age.methods")
-	tpl.Add("AGEGATEHEADER", agh.Compile())
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Footer
@@ -151,6 +134,16 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	tpl.Add("FOOTER", footer.Compile())
+
+	//||------------------------------------------------------------------------------------------------||
+	//|| Zone Enforced
+	//||------------------------------------------------------------------------------------------------||
+
+	if enforcement.Zone.Enforced {
+		tpl.Add("ENFORCED", "{{::DEFAULT:ENFORCED}}")
+	} else {
+		tpl.Add("ENFORCED", "{{::DEFAULT:NOT_ENFORCED}}")
+	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Pre-compile the Template before adding the global markers
@@ -190,16 +183,6 @@ func ServeAgeGateHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.Add("REGION", enforcement.Zone.Region)
 	tpl.Add("COUNTRY", enforcement.Zone.Country)
 	tpl.Add("CACHEBUST", strconv.FormatInt(time.Now().Unix(), 10))
-
-	//||------------------------------------------------------------------------------------------------||
-	//|| Zone
-	//||------------------------------------------------------------------------------------------------||
-
-	if enforcement.Zone.Enforced {
-		tpl.Add("ENFORCED", "{{::DEFAULT:ENFORCED}}")
-	} else {
-		tpl.Add("ENFORCED", "{{::DEFAULT:NOT_ENFORCED}}")
-	}
 
 	//||------------------------------------------------------------------------------------------------||
 	//|| Replace Zone Markers

@@ -42,9 +42,9 @@ func main() {
 	//|| Load IPs
 	//||------------------------------------------------------------------------------------------------||
 	fmt.Println("Loading IP Ranges to memory...")
-	//if app.Config.App.Env == "production" {
-	ips.LoadIPRanges()
-	//}
+	if app.Config.App.Env == "production" {
+		ips.LoadIPRanges()
+	}
 	fmt.Println("Loaded IP Ranges.")
 	//||------------------------------------------------------------------------------------------------||
 	//|| Load Zones

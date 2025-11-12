@@ -84,13 +84,6 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.Data = tpl.Compile()
 
 	//||------------------------------------------------------------------------------------------------||
-	//|| Age
-	//||------------------------------------------------------------------------------------------------||
-
-	ageCheck := templates.SubAgeHTML(&enforcement)
-	tpl.Add("AGECHECK", ageCheck)
-
-	//||------------------------------------------------------------------------------------------------||
 	//|| Cache Bust
 	//||------------------------------------------------------------------------------------------------||
 
@@ -184,10 +177,13 @@ func ServeOAuthHandler(w http.ResponseWriter, r *http.Request) {
 					//||------------------------------------------------------------------------------------------------||
 					//|| We Are Ready To Go
 					//||------------------------------------------------------------------------------------------------||
+					scope := r.URL.Query().Get("scope")
 					footer = template.Create("footer.verified")
 					footer.Add("TOKEN", oa.Token)
 					footer.Add("AUTHORIZEKEY", oa.AuthorizeKey)
 					footer.Add("DENYKEY", oa.DenyKey)
+					footer.Add("SCOPE", scope)
+					footer.Add("PREVIEWKEY", oa.PreviewKey)
 				}
 			}
 		}
